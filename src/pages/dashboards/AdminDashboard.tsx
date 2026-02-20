@@ -126,17 +126,7 @@ export function AdminDashboard() {
                 const completedSessions = sessions?.filter(s => s.completed).length || 0
                 const totalSessions = sessions?.length || 0
 
-                setKpiData({
-                    revenue: totalRevenue,
-                    activeClients: activeClientsCount || 0,
-                    newLeads: newLeadsCount || 0,
-                    conversionRate,
-                    completedSessions,
-                    totalSessions,
-                    pendingEvaluations: 0,
-                    evalSuccess: 0,
-                    evalData: []
-                })
+                // (Later: we can group these by source if we want a real funnel)
 
                 // 2. Revenue Trend (Last 6 Months)
                 // We keep this global or filter by city for the trend
@@ -185,15 +175,20 @@ export function AdminDashboard() {
                     evalStats.rejected = evaluations.filter(e => e.result === 'rechazada').length
                 }
 
-                setKpiData(prev => ({
-                    ...prev,
+                setKpiData({
+                    revenue: totalRevenue,
+                    activeClients: activeClientsCount || 0,
+                    newLeads: newLeadsCount || 0,
+                    conversionRate,
+                    completedSessions,
+                    totalSessions,
                     pendingEvaluations: evaluations?.length || 0,
                     evalSuccess: evalStats.total > 0 ? Math.round((evalStats.approved / evalStats.total) * 100) : 0,
                     evalData: [
                         { name: 'Aprobadas', value: evalStats.approved },
                         { name: 'Rechazadas', value: evalStats.rejected }
                     ]
-                }))
+                })
 
                 // 4. Evaluations by Trainer
                 let evalsQueryByTrainer = supabase
@@ -266,8 +261,9 @@ export function AdminDashboard() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
                         <KPICard title="Ingresos Totales" value={`€${kpiData.revenue.toLocaleString()}`} icon={DollarSign} color="#16a34a" trend="Recaudado" trendUp />
                         <KPICard title="Clientes Activos" value={kpiData.activeClients} icon={UserCheck} color="#2563eb" trend="Suscritos" trendUp />
+                        <KPICard title="Nuevos Leads" value={kpiData.newLeads} icon={Users} color="#06b6d4" trend="Interesados" trendUp />
                         <KPICard title="Sesiones Mes" value={`${kpiData.completedSessions}/${kpiData.totalSessions}`} icon={Activity} color="#8b5cf6" trend="Progreso" trendUp />
-                        <KPICard title="Ocupación" value="85%" icon={Users} color="#f59e0b" trend="Capacidad" trendUp />
+                        <KPICard title="Éxito Eval." value={`${kpiData.evalSuccess}%`} icon={TrendingUp} color="#10b981" trend="Aprobaron" trendUp />
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
@@ -347,9 +343,9 @@ export function AdminDashboard() {
                 <>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                         <KPICard title="Gasto Publicitario" value={`€${marketingStats.adSpend.toLocaleString()}`} icon={TrendingUp} color="#3b82f6" trend="Inversión" trendUp={false} />
-                        <KPICard title="Leads Totales" value={marketingStats.totalLeads} icon={Users} color="#06b6d4" trend="Captados" trendUp />
-                        <KPICard title="CPL" value={`€${marketingStats.cpl.toFixed(2)}`} icon={Activity} color="#f59e0b" trend="Costo/Lead" trendUp={false} />
-                        <KPICard title="CAC Real" value={`€${marketingStats.cac}`} icon={UserCheck} color="#ec4899" trend="Costo/Adqu." trendUp={false} />
+                        <KPICard title="Leads Totales" value={kpiData.newLeads} icon={Users} color="#06b6d4" trend="Captados" trendUp />
+                        <KPICard title="CPL" value={kpiData.newLeads > 0 ? `€${(marketingStats.adSpend / kpiData.newLeads).toFixed(2)}` : '€0.00'} icon={Activity} color="#f59e0b" trend="Costo/Lead" trendUp={false} />
+                        <KPICard title="CAC Real" value={kpiData.activeClients > 0 ? `€${Math.round(marketingStats.adSpend / kpiData.activeClients)}` : '€0'} icon={UserCheck} color="#ec4899" trend="Costo/Adqu." trendUp={false} />
                         <KPICard title="ROI" value={`${marketingStats.roi}%`} icon={TrendingUp} color="#10b981" trend="Retorno" trendUp />
                     </div>
 

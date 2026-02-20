@@ -7,7 +7,7 @@ import {
     PieChart, Pie, Cell
 } from 'recharts'
 import { useFilters } from '../../context/FilterContext'
-import { isAfter, subDays, parseISO, differenceInHours } from 'date-fns'
+import { parseISO, differenceInHours } from 'date-fns'
 
 const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#6366f1']
 
