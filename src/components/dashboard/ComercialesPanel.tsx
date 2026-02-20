@@ -239,17 +239,43 @@ export function ComercialesPanel() {
             {/* Charts Area */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
 
-                {/* Leads Assigned Chart */}
+                {/* Ratio Contacto Chart */}
                 <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '350px' }}>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>Leads Asignados por Persona</h3>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>Ratio de Contacto (%)</h3>
                     <div style={{ width: '100%', height: 280 }}>
                         <ResponsiveContainer>
                             <BarChart data={metrics.stats}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                                 <YAxis axisLine={false} tickLine={false} />
-                                <RechartsTooltip cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="totalAssigned" name="Leads" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                                <RechartsTooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    formatter={(value: number) => [`${value.toFixed(1)}%`, 'Ratio']}
+                                />
+                                <Bar dataKey="contactRatio" name="Ratio" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                                    {metrics.stats.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Eval Approved Chart */}
+                <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '350px' }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>Evaluaciones Aprobadas (%)</h3>
+                    <div style={{ width: '100%', height: 280 }}>
+                        <ResponsiveContainer>
+                            <BarChart data={metrics.stats}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                <YAxis axisLine={false} tickLine={false} />
+                                <RechartsTooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    formatter={(value: number) => [`${value.toFixed(1)}%`, 'Aprobadas']}
+                                />
+                                <Bar dataKey="evalApproveRatio" name="Aprobadas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={60}>
                                     {metrics.stats.map((_, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
@@ -261,7 +287,7 @@ export function ComercialesPanel() {
 
                 {/* Programs Sold Chart */}
                 <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '350px' }}>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>Programas Vendidos por Persona</h3>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>Programas Vendidos (#)</h3>
                     <div style={{ width: '100%', height: 280 }}>
                         <ResponsiveContainer>
                             <BarChart data={metrics.stats}>
@@ -269,7 +295,76 @@ export function ComercialesPanel() {
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                                 <YAxis axisLine={false} tickLine={false} />
                                 <RechartsTooltip cursor={{ fill: 'transparent' }} />
-                                <Bar dataKey="programsSold" name="Vendidos" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                                <Bar dataKey="programsSold" name="Vendidos" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                                    {metrics.stats.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Revenue Chart */}
+                <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '350px' }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>Ingresos Generados (€)</h3>
+                    <div style={{ width: '100%', height: 280 }}>
+                        <ResponsiveContainer>
+                            <BarChart data={metrics.stats}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                <YAxis axisLine={false} tickLine={false} />
+                                <RechartsTooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    formatter={(value: number) => [`€${value.toLocaleString()}`, 'Ingresos']}
+                                />
+                                <Bar dataKey="revenue" name="Ingresos" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                                    {metrics.stats.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Avg Contact Time Chart */}
+                <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '350px' }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>Tiempo Medio Primer Contacto (h)</h3>
+                    <div style={{ width: '100%', height: 280 }}>
+                        <ResponsiveContainer>
+                            <BarChart data={metrics.stats}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                <YAxis axisLine={false} tickLine={false} />
+                                <RechartsTooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    formatter={(value: number) => [`${value.toFixed(1)}h`, 'Tiempo']}
+                                />
+                                <Bar dataKey="avgContactTime" name="Tiempo" fill="#64748b" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                                    {metrics.stats.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Global Conversion Chart */}
+                <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '350px' }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>Conversión Global (%)</h3>
+                    <div style={{ width: '100%', height: 280 }}>
+                        <ResponsiveContainer>
+                            <BarChart data={metrics.stats}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                <YAxis axisLine={false} tickLine={false} />
+                                <RechartsTooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    formatter={(value: number) => [`${value.toFixed(1)}%`, 'Conversión']}
+                                />
+                                <Bar dataKey="globalConversion" name="Conversión" fill="#ec4899" radius={[4, 4, 0, 0]} maxBarSize={60}>
                                     {metrics.stats.map((_, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
