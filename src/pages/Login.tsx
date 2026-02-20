@@ -35,7 +35,7 @@ export function Login() {
         <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3f4f6' }}>
             <div style={{ padding: '2rem', backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', width: '100%', maxWidth: '400px' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-                    <img src="/src/assets/logo.png" alt="Logo" style={{ width: '80px', height: 'auto' }} />
+                    <img src="/logo.png" alt="Logo" style={{ width: '80px', height: 'auto' }} />
                 </div>
                 <h1 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', textAlign: 'center' }}>Escuela Canina Fran Estévez</h1>
                 <p style={{ textAlign: 'center', color: '#6b7280', marginBottom: '1.5rem' }}>Inicia sesión para continuar</p>
