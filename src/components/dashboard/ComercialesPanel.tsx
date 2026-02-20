@@ -12,9 +12,8 @@ import { isAfter, subDays, parseISO, differenceInHours } from 'date-fns'
 const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#6366f1']
 
 export function ComercialesPanel() {
-    const { cityId } = useFilters()
+    const { cityId, dateRange } = useFilters()
     const [loading, setLoading] = useState(true)
-    const [dateFilter, setDateFilter] = useState<'30' | '90' | 'all'>('30')
 
     // Data states
     const [comerciales, setComerciales] = useState<any[]>([])
@@ -67,13 +66,25 @@ export function ComercialesPanel() {
             // Need to join payment -> client -> city, it's easier to just use client's payments
         }
 
-        // Date Filter
-        if (dateFilter !== 'all') {
-            const cutoffDate = subDays(new Date(), parseInt(dateFilter))
-            filteredLeads = filteredLeads.filter(l => isAfter(parseISO(l.created_at), cutoffDate))
-            filteredClients = filteredClients.filter(c => isAfter(parseISO(c.created_at), cutoffDate))
-            filteredEvals = filteredEvals.filter(e => isAfter(parseISO(e.created_at), cutoffDate))
-            filteredPayments = filteredPayments.filter(p => isAfter(parseISO(p.created_at), cutoffDate))
+        // Date Filter (Global context)
+        if (dateRange) {
+            const { from, to } = dateRange
+            filteredLeads = filteredLeads.filter(l => {
+                const date = parseISO(l.created_at)
+                return date >= from && date <= to
+            })
+            filteredClients = filteredClients.filter(c => {
+                const date = parseISO(c.created_at)
+                return date >= from && date <= to
+            })
+            filteredEvals = filteredEvals.filter(e => {
+                const date = parseISO(e.created_at)
+                return date >= from && date <= to
+            })
+            filteredPayments = filteredPayments.filter(p => {
+                const date = parseISO(p.created_at)
+                return date >= from && date <= to
+            })
         }
 
         // Aggregate by Comercial
@@ -184,25 +195,14 @@ export function ComercialesPanel() {
                 evalToProgramRatio: globalEvalToProgramRatio
             }
         }
-    }, [dateFilter, comerciales, leads, clients, evaluations, payments, cityId])
+    }, [dateRange, comerciales, leads, clients, evaluations, payments, cityId])
 
     if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando métricas comerciales...</div>
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-            {/* Local Filters */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-1rem' }}>
-                <select
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value as any)}
-                    style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontWeight: 500 }}
-                >
-                    <option value="30">Últimos 30 días</option>
-                    <option value="90">Últimos 90 días</option>
-                    <option value="all">Historico Total</option>
-                </select>
-            </div>
+
 
             {/* Comerciales Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
