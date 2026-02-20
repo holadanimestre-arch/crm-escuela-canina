@@ -12,10 +12,11 @@ import { useFilters } from '../../context/FilterContext'
 import { subMonths, format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ComercialesPanel } from '../../components/dashboard/ComercialesPanel'
+import { AdiestradoresPanel } from '../../components/dashboard/AdiestradoresPanel'
 
 export function AdminDashboard() {
     const { cityId, dateRange } = useFilters()
-    const [activeTab, setActiveTab] = useState<'direccion' | 'marketing' | 'equipo'>('direccion')
+    const [activeTab, setActiveTab] = useState<'direccion' | 'marketing' | 'equipo' | 'adiestradores'>('direccion')
     const [loading, setLoading] = useState(true)
     const [kpiData, setKpiData] = useState({
         revenue: 0,
@@ -233,7 +234,8 @@ export function AdminDashboard() {
                     {[
                         { id: 'direccion', label: 'Dirección' },
                         { id: 'marketing', label: 'Marketing' },
-                        { id: 'equipo', label: 'Equipo' }
+                        { id: 'equipo', label: 'Comerciales' },
+                        { id: 'adiestradores', label: 'Adiestradores' }
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -433,6 +435,7 @@ export function AdminDashboard() {
             )}
 
             {activeTab === 'equipo' && <ComercialesPanel />}
+            {activeTab === 'adiestradores' && <AdiestradoresPanel />}
         </div>
     )
 }
