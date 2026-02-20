@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useFilters, DateRangePreset } from '../context/FilterContext'
+import { format, parseISO } from 'date-fns'
 import {
     LayoutDashboard,
     Users,
@@ -17,7 +18,7 @@ import {
 
 export function AppLayout() {
     const { signOut, profile } = useAuth()
-    const { cityId, setCityId, datePreset, setDatePreset } = useFilters()
+    const { cityId, setCityId, datePreset, setDatePreset, dateRange, setDateRange } = useFilters()
     const location = useLocation()
     const [cities, setCities] = useState<any[]>([])
 
@@ -233,8 +234,42 @@ export function AppLayout() {
                                 <option value="30days">Últimos 30 días</option>
                                 <option value="month">Este Mes</option>
                                 <option value="prev_month">Mes Anterior</option>
+                                <option value="custom">Personalizado</option>
                             </select>
                         </div>
+
+                        {datePreset === 'custom' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6b7280' }}>Desde:</span>
+                                    <input
+                                        type="date"
+                                        value={format(dateRange.from, 'yyyy-MM-dd')}
+                                        onChange={(e) => setDateRange({ ...dateRange, from: parseISO(e.target.value) })}
+                                        style={{
+                                            padding: '0.4rem 0.5rem',
+                                            borderRadius: '0.375rem',
+                                            border: '1px solid #e5e7eb',
+                                            fontSize: '0.875rem'
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6b7280' }}>Hasta:</span>
+                                    <input
+                                        type="date"
+                                        value={format(dateRange.to, 'yyyy-MM-dd')}
+                                        onChange={(e) => setDateRange({ ...dateRange, to: parseISO(e.target.value) })}
+                                        style={{
+                                            padding: '0.4rem 0.5rem',
+                                            borderRadius: '0.375rem',
+                                            border: '1px solid #e5e7eb',
+                                            fontSize: '0.875rem'
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </header>
 
