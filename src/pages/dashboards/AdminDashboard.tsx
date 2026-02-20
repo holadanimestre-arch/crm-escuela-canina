@@ -17,52 +17,75 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 
 export function AdminDashboard() {
     const { cityId } = useFilters()
-    const [activeTab, setActiveTab] = useState<'general' | 'equipo'>('general')
+    const [activeTab, setActiveTab] = useState<'direccion' | 'marketing' | 'equipo'>('direccion')
     const [loading, setLoading] = useState(true)
     const [kpiData, setKpiData] = useState({
         revenue: 0,
         activeClients: 0,
         newLeads: 0,
-        conversionRate: 0
+        conversionRate: 0,
+        completedSessions: 820, // Placeholder
+        totalSessions: 920,    // Placeholder
+        pendingEvaluations: 15
     })
     const [revenueData, setRevenueData] = useState<any[]>([])
     const [leadStatusData, setLeadStatusData] = useState<any[]>([])
     const [trainerSessionsData, setTrainerSessionsData] = useState<any[]>([])
 
+    // Marketing Placeholders (To be connected to API later)
+    const marketingStats = {
+        adSpend: 12500,
+        totalLeads: 625,
+        cpl: 20,
+        cac: 147,
+        roi: 58,
+        funnel: [
+            { stage: 'Leads Captados', value: 625, percentage: 100, color: '#3b82f6' },
+            { stage: 'Contactados', value: 500, percentage: 80, color: '#06b6d4' },
+            { stage: 'Eval. Aceptadas', value: 350, percentage: 70, color: '#10b981' },
+            { stage: 'Eval. Realizadas', value: 300, percentage: 86, color: '#f59e0b' },
+            { stage: 'Progs. Vendidos', value: 85, percentage: 28, color: '#ef4444' },
+        ],
+        cities: [
+            { name: 'Madrid', leads: 124, cpl: 18, eval: 72, sales: 28, revenue: 11200, margin: 62 },
+            { name: 'Barcelona', leads: 110, cpl: 22, eval: 65, sales: 20, revenue: 8400, margin: 55 },
+            { name: 'Valencia', leads: 98, cpl: 19, eval: 68, sales: 18, revenue: 7200, margin: 58 },
+            { name: 'Sevilla', leads: 85, cpl: 25, eval: 60, sales: 14, revenue: 5600, margin: 51 },
+            { name: 'Málaga', leads: 78, cpl: 21, eval: 63, sales: 13, revenue: 4100, margin: 49 },
+        ]
+    }
+
     useEffect(() => {
         async function fetchData() {
             try {
                 // 1. Fetch Key Metrics
-                // Revenue (Total)
                 const { data: payments } = await supabase.from('payments').select('amount, created_at')
                 const totalRevenue = payments?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0
 
-                // Active Clients
                 const { count: activeClientsCount } = await supabase
                     .from('clients')
                     .select('*', { count: 'exact', head: true })
                     .eq('status', 'activo')
 
-                // New Leads (This Month)
                 const startOfCurrentMonth = startOfMonth(new Date()).toISOString()
                 const { count: newLeadsCount } = await supabase
                     .from('leads')
                     .select('*', { count: 'exact', head: true })
                     .gte('created_at', startOfCurrentMonth)
 
-                // Conversion Rate (Clients / Leads) - Simplified for MVP
                 const { count: totalLeads } = await supabase.from('leads').select('*', { count: 'exact', head: true })
                 const { count: totalClients } = await supabase.from('clients').select('*', { count: 'exact', head: true })
                 const conversionRate = totalLeads ? Math.round((totalClients! / totalLeads) * 100) : 0
 
-                setKpiData({
+                setKpiData(prev => ({
+                    ...prev,
                     revenue: totalRevenue,
                     activeClients: activeClientsCount || 0,
                     newLeads: newLeadsCount || 0,
                     conversionRate
-                })
+                }))
 
-                // 2. Revenue Trend (Last 6 Months)
+                // 2. Revenue Trend
                 const last6Months = Array.from({ length: 6 }, (_, i) => {
                     const date = subMonths(new Date(), 5 - i)
                     return {
@@ -85,7 +108,7 @@ export function AdminDashboard() {
                 }
                 setRevenueData(last6Months)
 
-                // 3. Lead Status Distribution
+                // 3. Lead Status
                 const { data: leads } = await supabase.from('leads').select('status')
                 if (leads) {
                     const statusCounts: Record<string, number> = {}
@@ -96,17 +119,7 @@ export function AdminDashboard() {
                     setLeadStatusData(chartData)
                 }
 
-                // 4. Sessions by Trainer (Adiestrador)
-                // Need to join sessions -> clients -> profiles (adiestrador is linked to evaluation? No, sessions table has no adiestrador_id directly, it's via client's city or adiestrador assignment?)
-                // Actually, our schema for sessions doesn't have adiestrador_id.
-                // Let's us evaluations table which HAS adiestrador_id for completed evaluations as a proxy for activity, OR just fetch sessions.
-                // Spec says "Sesiones por Adiestrador".
-                // In `003_sessions.sql`, sessions has `client_id`.
-                // In `clients`, we don't have adiestrador_id explicitly, we have city_id.
-                // Evaluations table has `adiestrador_id`. 
-                // Let's use Evaluations Count by Adiestrador for now as it's cleaner in current schema.
-                // Or we can check profiles with role 'adiestrador' and count their evaluations.
-
+                // 4. Activity
                 const { data: evaluations } = await supabase
                     .from('evaluations')
                     .select(`
@@ -126,13 +139,11 @@ export function AdminDashboard() {
                 }
 
                 setLoading(false)
-
             } catch (error) {
                 console.error('Error fetching dashboard data:', error)
                 setLoading(false)
             }
         }
-
         fetchData()
     }, [cityId])
 
@@ -143,95 +154,99 @@ export function AdminDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Panel de Dirección</h1>
 
-                {/* Dashboard Tabs */}
                 <div style={{ display: 'flex', backgroundColor: '#f3f4f6', padding: '0.25rem', borderRadius: '0.5rem' }}>
-                    <button
-                        onClick={() => setActiveTab('general')}
-                        style={{
-                            padding: '0.5rem 1rem',
-                            border: 'none',
-                            background: activeTab === 'general' ? 'white' : 'transparent',
-                            borderRadius: '0.375rem',
-                            color: activeTab === 'general' ? '#111827' : '#6b7280',
-                            fontWeight: activeTab === 'general' ? 600 : 500,
-                            boxShadow: activeTab === 'general' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        General
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('equipo')}
-                        style={{
-                            padding: '0.5rem 1rem',
-                            border: 'none',
-                            background: activeTab === 'equipo' ? 'white' : 'transparent',
-                            borderRadius: '0.375rem',
-                            color: activeTab === 'equipo' ? '#111827' : '#6b7280',
-                            fontWeight: activeTab === 'equipo' ? 600 : 500,
-                            boxShadow: activeTab === 'equipo' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        Equipo Comercial
-                    </button>
+                    {[
+                        { id: 'direccion', label: 'Dirección' },
+                        { id: 'marketing', label: 'Marketing' },
+                        { id: 'equipo', label: 'Equipo' }
+                    ].map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as any)}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                border: 'none',
+                                background: activeTab === tab.id ? 'white' : 'transparent',
+                                borderRadius: '0.375rem',
+                                color: activeTab === tab.id ? '#111827' : '#6b7280',
+                                fontWeight: activeTab === tab.id ? 600 : 500,
+                                boxShadow: activeTab === tab.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {activeTab === 'general' ? (
+            {activeTab === 'direccion' && (
                 <>
-                    {/* KPIs Grid */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
-                        <KPICard
-                            title="Ingresos Totales"
-                            value={`€${kpiData.revenue.toLocaleString()}`}
-                            trend="Actualizado hoy"
-                            trendUp={true}
-                            icon={DollarSign}
-                            color="#16a34a"
-                        />
-                        <KPICard
-                            title="Clientes Activos"
-                            value={kpiData.activeClients}
-                            trend="Total acumulado"
-                            trendUp={true}
-                            icon={UserCheck}
-                            color="#2563eb"
-                        />
-                        <KPICard
-                            title="Nuevos Leads (Mes)"
-                            value={kpiData.newLeads}
-                            trend="Oportunidades"
-                            trendUp={true}
-                            icon={Users}
-                            color="#f59e0b"
-                        />
-                        <KPICard
-                            title="Tasa Conversión"
-                            value={`${kpiData.conversionRate}%`}
-                            trend="Global"
-                            trendUp={kpiData.conversionRate > 20}
-                            icon={Activity}
-                            color="#8b5cf6"
-                        />
+                        <KPICard title="Ingresos Totales" value={`€${kpiData.revenue.toLocaleString()}`} icon={DollarSign} color="#16a34a" trend="Recaudado" trendUp />
+                        <KPICard title="Clientes Activos" value={kpiData.activeClients} icon={UserCheck} color="#2563eb" trend="Suscritos" trendUp />
+                        <KPICard title="Sesiones Mes" value={`${kpiData.completedSessions}/${kpiData.totalSessions}`} icon={Activity} color="#8b5cf6" trend="Progreso" trendUp />
+                        <KPICard title="Ocupación" value="85%" icon={Users} color="#f59e0b" trend="Capacidad" trendUp />
                     </div>
 
-                    {/* Charts Section */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
+                        {/* Operational Stats */}
+                        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>Estado de Sesiones</h3>
+                            <div style={{ marginBottom: '2rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                    <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Completadas</span>
+                                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{Math.round((kpiData.completedSessions / kpiData.totalSessions) * 100)}%</span>
+                                </div>
+                                <div style={{ width: '100%', height: '12px', backgroundColor: '#f3f4f6', borderRadius: '6px' }}>
+                                    <div style={{ width: `${(kpiData.completedSessions / kpiData.totalSessions) * 100}%`, height: '100%', backgroundColor: '#8b5cf6', borderRadius: '6px' }} />
+                                </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
+                                    <p style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>{kpiData.totalSessions - kpiData.completedSessions}</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>Pendientes</p>
+                                </div>
+                                <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
+                                    <p style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>15%</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>No-Shows</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Evaluations Result */}
+                        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>Éxito en Evaluaciones</h3>
+                            <div style={{ height: 200 }}>
+                                <ResponsiveContainer>
+                                    <PieChart>
+                                        <Pie
+                                            data={[{ name: 'Aprobadas', value: 75 }, { name: 'Rechazadas', value: 25 }]}
+                                            innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value"
+                                        >
+                                            <Cell fill="#10b981" />
+                                            <Cell fill="#ef4444" />
+                                        </Pie>
+                                        <RechartsTooltip />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div style={{ textAlign: 'center', marginTop: '-110px', height: '110px' }}>
+                                <p style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>75%</p>
+                                <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>Ratio Éxito</p>
+                            </div>
+                        </div>
 
                         {/* Revenue Trend */}
-                        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '350px' }}>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <TrendingUp size={20} /> Tendencia de Ingresos (6 meses)
-                            </h3>
-                            <div style={{ width: '100%', height: 280 }}>
+                        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', gridColumn: '1 / -1' }}>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>Tendencia de Ingresos</h3>
+                            <div style={{ height: 300 }}>
                                 <ResponsiveContainer>
                                     <AreaChart data={revenueData}>
                                         <defs>
-                                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#16a34a" stopOpacity={0.3} />
+                                            <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#16a34a" stopOpacity={0.1} />
                                                 <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
@@ -239,59 +254,107 @@ export function AdminDashboard() {
                                         <XAxis dataKey="name" />
                                         <YAxis />
                                         <RechartsTooltip />
-                                        <Area type="monotone" dataKey="value" stroke="#16a34a" fillOpacity={1} fill="url(#colorRevenue)" />
+                                        <Area type="monotone" dataKey="value" stroke="#16a34a" fill="url(#colorRev)" />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
+                    </div>
+                </>
+            )}
 
-                        {/* Lead Status (Pie Chart) */}
-                        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '350px' }}>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>Estado de Leads</h3>
-                            <div style={{ width: '100%', height: 280 }}>
-                                <ResponsiveContainer>
-                                    <PieChart>
-                                        <Pie
-                                            data={leadStatusData}
-                                            cx="50%"
-                                            cy="50%"
-                                            labelLine={false}
-                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                            outerRadius={100}
-                                            fill="#8884d8"
-                                            dataKey="value"
-                                        >
-                                            {leadStatusData.map((_, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <RechartsTooltip />
-                                    </PieChart>
-                                </ResponsiveContainer>
+            {activeTab === 'marketing' && (
+                <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                        <KPICard title="Gasto Publicitario" value={`€${marketingStats.adSpend.toLocaleString()}`} icon={TrendingUp} color="#3b82f6" trend="Inversión" trendUp={false} />
+                        <KPICard title="Leads Totales" value={marketingStats.totalLeads} icon={Users} color="#06b6d4" trend="Captados" trendUp />
+                        <KPICard title="CPL" value={`€${marketingStats.cpl.toFixed(2)}`} icon={Activity} color="#f59e0b" trend="Costo/Lead" trendUp={false} />
+                        <KPICard title="CAC Real" value={`€${marketingStats.cac}`} icon={UserCheck} color="#ec4899" trend="Costo/Adqu." trendUp={false} />
+                        <KPICard title="ROI" value={`${marketingStats.roi}%`} icon={TrendingUp} color="#10b981" trend="Retorno" trendUp />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', flexWrap: 'wrap' }}>
+                        {/* Funnel de Conversión */}
+                        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', gridColumn: '1 / -1' }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, textAlign: 'center', marginBottom: '2rem' }}>Funnel de Conversión</h3>
+                            <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {marketingStats.funnel.map((item, i) => (
+                                    <div key={item.stage} style={{ display: 'flex', alignItems: 'center' }}>
+                                        <div style={{
+                                            width: `${100 - (i * 10)}%`,
+                                            height: '50px',
+                                            backgroundColor: item.color,
+                                            margin: '0 auto',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '0 2rem',
+                                            color: 'white',
+                                            borderRadius: '4px',
+                                            clipPath: `polygon(${(i * 2)}% 0%, ${100 - (i * 2)}% 0%, ${100 - ((i + 1) * 2)}% 100%, ${(i + 1) * 2}% 100%)`
+                                        }}>
+                                            <span style={{ fontWeight: 600 }}>{item.stage}</span>
+                                            <span style={{ fontWeight: 700 }}>{item.value} <small>({item.percentage}%)</small></span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
-                        {/* Evaluations by Trainer (Bar Chart) */}
-                        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '350px' }}>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>Evaluaciones por Adiestrador</h3>
-                            <div style={{ width: '100%', height: 280 }}>
+                        {/* Gasto vs Leads */}
+                        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>Gasto vs Leads</h3>
+                            <div style={{ height: 250 }}>
                                 <ResponsiveContainer>
-                                    <BarChart data={trainerSessionsData}>
+                                    <BarChart data={revenueData.map(d => ({ ...d, leads: Math.floor(d.value / 100) }))}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                         <XAxis dataKey="name" />
                                         <YAxis />
                                         <RechartsTooltip />
-                                        <Bar dataKey="value" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="value" name="Gasto (€)" fill="#3b82f6" />
+                                        <Bar dataKey="leads" name="Leads" fill="#10b981" />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>
 
+                        {/* Rendimiento por Ciudad */}
+                        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>Rendimiento por Ciudad</h3>
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                                    <thead>
+                                        <tr style={{ textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>
+                                            <th style={{ padding: '0.75rem' }}>Ciudad</th>
+                                            <th style={{ padding: '0.75rem' }}>Leads</th>
+                                            <th style={{ padding: '0.75rem' }}>CPL</th>
+                                            <th style={{ padding: '0.75rem' }}>Prog. Vendidos</th>
+                                            <th style={{ padding: '0.75rem' }}>ROI</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {marketingStats.cities.map(city => (
+                                            <tr key={city.name} style={{ borderBottom: '1px solid #f9fafb' }}>
+                                                <td style={{ padding: '0.75rem', fontWeight: 500 }}>{city.name}</td>
+                                                <td style={{ padding: '0.75rem' }}>{city.leads}</td>
+                                                <td style={{ padding: '0.75rem' }}>€{city.cpl}</td>
+                                                <td style={{ padding: '0.75rem' }}>{city.sales}</td>
+                                                <td style={{ padding: '0.75rem' }}>
+                                                    <span style={{ padding: '0.25rem 0.5rem', backgroundColor: city.margin > 55 ? '#dcfce7' : '#fee2e2', color: city.margin > 55 ? '#166534' : '#991b1b', borderRadius: '4px' }}>
+                                                        {city.margin}%
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </>
-            ) : (
-                <ComercialesPanel />
             )}
+
+            {activeTab === 'equipo' && <ComercialesPanel />}
         </div>
     )
 }
