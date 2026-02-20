@@ -135,8 +135,12 @@ export function AppLayout() {
 
                 <div style={{ padding: '1.5rem', borderTop: '1px solid #1f2937' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: 600, color: 'white' }}>
-                            {profile?.full_name?.[0] || 'U'}
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: 600, color: 'white', overflow: 'hidden' }}>
+                            {profile?.avatar_url ? (
+                                <img src={profile.avatar_url} alt={profile.full_name || 'U'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                profile?.full_name?.[0] || 'U'
+                            )}
                         </div>
                         <div style={{ overflow: 'hidden' }}>
                             <p style={{ fontSize: '0.875rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'white' }}>{profile?.full_name || 'Usuario'}</p>

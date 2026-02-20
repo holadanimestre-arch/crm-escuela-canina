@@ -16,6 +16,7 @@ export interface Database {
                     full_name: string | null
                     role: 'admin' | 'comercial' | 'adiestrador'
                     assigned_city_id: string | null
+                    avatar_url: string | null
                     created_at: string
                 }
                 Insert: {
@@ -24,6 +25,7 @@ export interface Database {
                     full_name?: string | null
                     role?: 'admin' | 'comercial' | 'adiestrador'
                     assigned_city_id?: string | null
+                    avatar_url?: string | null
                     created_at?: string
                 }
                 Update: {
@@ -32,6 +34,7 @@ export interface Database {
                     full_name?: string | null
                     role?: 'admin' | 'comercial' | 'adiestrador'
                     assigned_city_id?: string | null
+                    avatar_url?: string | null
                     created_at?: string
                 }
             }
