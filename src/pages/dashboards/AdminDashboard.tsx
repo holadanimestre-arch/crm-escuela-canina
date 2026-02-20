@@ -357,20 +357,22 @@ export function AdminDashboard() {
                                 {marketingStats.funnel.map((item, i) => (
                                     <div key={item.stage} style={{ display: 'flex', alignItems: 'center' }}>
                                         <div style={{
-                                            width: `${100 - (i * 10)}%`,
-                                            height: '50px',
+                                            width: `${100 - (i * 8)}%`,
+                                            height: '54px',
                                             backgroundColor: item.color,
                                             margin: '0 auto',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'space-between',
-                                            padding: '0 2rem',
+                                            padding: '0 1.5rem',
                                             color: 'white',
                                             borderRadius: '4px',
-                                            clipPath: `polygon(${(i * 2)}% 0%, ${100 - (i * 2)}% 0%, ${100 - ((i + 1) * 2)}% 100%, ${(i + 1) * 2}% 100%)`
+                                            position: 'relative',
+                                            fontSize: '0.9rem',
+                                            clipPath: `polygon(2% 0%, 98% 0%, 97% 100%, 3% 100%)`
                                         }}>
-                                            <span style={{ fontWeight: 600 }}>{item.stage}</span>
-                                            <span style={{ fontWeight: 700 }}>{item.value} <small>({item.percentage}%)</small></span>
+                                            <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.stage}</span>
+                                            <span style={{ fontWeight: 700, flexShrink: 0 }}>{item.value} <small style={{ opacity: 0.9 }}>({item.percentage}%)</small></span>
                                         </div>
                                     </div>
                                 ))}
