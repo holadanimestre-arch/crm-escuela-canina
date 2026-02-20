@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { KPICard } from './KPICard'
+import { MetricInfo } from './MetricInfo'
 import { ClipboardCheck, PlayCircle, Clock, DollarSign, Award } from 'lucide-react'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -186,11 +187,11 @@ export function AdiestradoresPanel() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                <KPICard title="Evaluaciones" value={metrics.global.totalEvals} icon={ClipboardCheck} color="#8b5cf6" trend="Realizadas" trendUp />
-                <KPICard title="Éxito Eval." value={`${metrics.global.successRatio.toFixed(0)}%`} icon={Award} color="#10b981" trend="Aprobadas" trendUp />
-                <KPICard title="Sesiones" value={metrics.global.completedSessions} icon={PlayCircle} color="#3b82f6" trend="Impartidas" trendUp />
-                <KPICard title="Ingresos" value={`€${metrics.global.revenue.toLocaleString()}`} icon={DollarSign} color="#f59e0b" trend="Generados" trendUp />
-                <KPICard title="T. Medio 1ª Sesión" value={`${metrics.global.avgDaysToFirstSession.toFixed(1)}d`} icon={Clock} color="#64748b" trend="Rapidez" trendUp={metrics.global.avgDaysToFirstSession < 7} />
+                <KPICard title="Evaluaciones" value={metrics.global.totalEvals} icon={ClipboardCheck} color="#8b5cf6" trend="Realizadas" trendUp description="Total de evaluaciones técnicas realizadas por el equipo de adiestradores." />
+                <KPICard title="Éxito Eval." value={`${metrics.global.successRatio.toFixed(0)}%`} icon={Award} color="#10b981" trend="Aprobadas" trendUp description="Porcentaje de perros que han pasado la evaluación técnica con éxito." />
+                <KPICard title="Sesiones" value={metrics.global.completedSessions} icon={PlayCircle} color="#3b82f6" trend="Impartidas" trendUp description="Número total de clases individuales completadas en el periodo." />
+                <KPICard title="Ingresos" value={`€${metrics.global.revenue.toLocaleString()}`} icon={DollarSign} color="#f59e0b" trend="Generados" trendUp description="Valor total de los programas de adiestramiento vendidos y ejecutados." />
+                <KPICard title="T. Medio 1ª Sesión" value={`${metrics.global.avgDaysToFirstSession.toFixed(1)}d`} icon={Clock} color="#64748b" trend="Rapidez" trendUp={metrics.global.avgDaysToFirstSession < 7} description="Días que pasan de media desde la evaluación hasta la primera clase de entrenamiento." />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
@@ -242,12 +243,24 @@ export function AdiestradoresPanel() {
                         <thead>
                             <tr style={{ backgroundColor: '#f3f4f6' }}>
                                 <th style={{ padding: '1rem' }}>Adiestrador</th>
-                                <th style={{ padding: '1rem' }}>Eval. (#)</th>
-                                <th style={{ padding: '1rem' }}>Éxito (%)</th>
-                                <th style={{ padding: '1rem' }}>Sesiones</th>
-                                <th style={{ padding: '1rem' }}>Alumnos</th>
-                                <th style={{ padding: '1rem' }}>Ingresos</th>
-                                <th style={{ padding: '1rem' }}>T. Medio 1ª Ses.</th>
+                                <th style={{ padding: '1rem' }}>
+                                    <MetricInfo label="Eval. (#)" description="Evaluaciones técnicas totales realizadas." />
+                                </th>
+                                <th style={{ padding: '1rem' }}>
+                                    <MetricInfo label="Éxito (%)" description="Porcentaje de alumnos aprobados tras su evaluación." />
+                                </th>
+                                <th style={{ padding: '1rem' }}>
+                                    <MetricInfo label="Sesiones" description="Clases individuales impartidas por este adiestrador." />
+                                </th>
+                                <th style={{ padding: '1rem' }}>
+                                    <MetricInfo label="Alumnos" description="Número de perros activos que entrena actualmente." />
+                                </th>
+                                <th style={{ padding: '1rem' }}>
+                                    <MetricInfo label="Ingresos" description="Suma de pagos de clientes asignados a este adiestrador." />
+                                </th>
+                                <th style={{ padding: '1rem' }}>
+                                    <MetricInfo label="T. Medio 1ª Ses." description="Rapidez en arrancar el programa tras evaluar." />
+                                </th>
                             </tr>
                         </thead>
                         <tbody>

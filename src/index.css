@@ -18,3 +18,46 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+/* Metric Tooltips */
+.metric-tooltip-trigger {
+  position: relative;
+}
+
+.metric-tooltip {
+  visibility: hidden;
+  width: 200px;
+  background-color: #1f2937;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px 12px;
+  position: absolute;
+  z-index: 50;
+  bottom: 125%;
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.3s, visibility 0.3s;
+  transition-delay: 0s;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  pointer-events: none;
+}
+
+.metric-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 10%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1f2937 transparent transparent transparent;
+}
+
+.metric-tooltip-trigger:hover .metric-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 1s; /* The 1 second delay requested */
+}

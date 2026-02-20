@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { KPICard } from './KPICard'
+import { MetricInfo } from './MetricInfo'
 import { Users, PhoneCall, CheckCircle, Target, DollarSign, Clock, Award } from 'lucide-react'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -228,12 +229,12 @@ export function ComercialesPanel() {
 
             {/* Global KPIs Container */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                <KPICard title="Ratio Contacto" value={`${metrics.global.contactRatio.toFixed(0)}%`} icon={PhoneCall} color="#3b82f6" trend="Exitoso" trendUp />
-                <KPICard title="% Eval. Aprobadas" value={`${metrics.global.evalApproveRatio.toFixed(0)}%`} icon={CheckCircle} color="#10b981" trend="De agendadas" trendUp />
-                <KPICard title="Progs. Vendidos" value={metrics.global.programsSold} icon={Target} color="#8b5cf6" trend="Total" trendUp />
-                <KPICard title="Ingresos" value={`€${metrics.global.revenue.toLocaleString()}`} icon={DollarSign} color="#f59e0b" trend="Volumen" trendUp />
-                <KPICard title="T. Medio Primer Contacto" value={metrics.global.avgContactTime > 0 ? `${metrics.global.avgContactTime.toFixed(1)}h` : 'N/A'} icon={Clock} color="#64748b" trend="Rapidez" trendUp={metrics.global.avgContactTime < 24} />
-                <KPICard title="Conversión Global" value={`${metrics.global.globalConversion.toFixed(1)}%`} icon={Award} color="#ec4899" trend="Lead a Venta" trendUp />
+                <KPICard title="Ratio Contacto" value={`${metrics.global.contactRatio.toFixed(0)}%`} icon={PhoneCall} color="#3b82f6" trend="Exitoso" trendUp description="Porcentaje de leads que han sido contactados (estado distinto a 'nuevo')." />
+                <KPICard title="% Eval. Aprobadas" value={`${metrics.global.evalApproveRatio.toFixed(0)}%`} icon={CheckCircle} color="#10b981" trend="De agendadas" trendUp description="Porcentaje de evaluaciones con resultado 'aprobada' sobre las evaluadas por el comercial." />
+                <KPICard title="Progs. Vendidos" value={metrics.global.programsSold} icon={Target} color="#8b5cf6" trend="Total" trendUp description="Número de clientes que han pasado a estado 'activo' o 'finalizado'." />
+                <KPICard title="Ingresos" value={`€${metrics.global.revenue.toLocaleString()}`} icon={DollarSign} color="#f59e0b" trend="Volumen" trendUp description="Ingresos totales generados por los clientes cerrados por el equipo comercial." />
+                <KPICard title="T. Medio Primer Contacto" value={metrics.global.avgContactTime > 0 ? `${metrics.global.avgContactTime.toFixed(1)}h` : 'N/A'} icon={Clock} color="#64748b" trend="Rapidez" trendUp={metrics.global.avgContactTime < 24} description="Tiempo medio transcurrido desde la creación del lead hasta el primer contacto." />
+                <KPICard title="Conversión Global" value={`${metrics.global.globalConversion.toFixed(1)}%`} icon={Award} color="#ec4899" trend="Lead a Venta" trendUp description="Porcentaje total de leads convertidos en ventas cerradas." />
             </div>
 
             {/* Charts Area */}
@@ -434,12 +435,24 @@ export function ComercialesPanel() {
                         <thead>
                             <tr style={{ backgroundColor: '#e0e7ff', color: '#3730a3' }}>
                                 <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>Comercial</th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>Leads</th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>Contactados</th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>% Eval. Aprobada</th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>Eval. (#)</th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>Ingresos</th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>Conversión</th>
+                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                    <MetricInfo label="Leads" description="Total de prospectos asignados a este comercial." />
+                                </th>
+                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                    <MetricInfo label="Contactados" description="Número y porcentaje de leads que el comercial ha logrado contactar." />
+                                </th>
+                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                    <MetricInfo label="% Eval. Aprobada" description="Grado de acierto del comercial al filtrar leads que luego aprueban la evaluación técnica." />
+                                </th>
+                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                    <MetricInfo label="Eval. (#)" description="Número total de evaluaciones realizadas a sus leads." />
+                                </th>
+                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                    <MetricInfo label="Ingresos" description="Facturación total aportada por sus clientes." />
+                                </th>
+                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                    <MetricInfo label="Conversión" description="Eficacia final: porcentaje de sus leads que acaban siendo clientes de pago." />
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
