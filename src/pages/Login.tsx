@@ -1,13 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 export function Login() {
     const navigate = useNavigate()
+    const { session } = useAuth()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        // Automatically redirect to home if a session is detected
+        if (session) {
+            navigate('/')
+        }
+    }, [session, navigate])
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()

@@ -75,20 +75,41 @@ export function Usuarios() {
                 }
             })
 
-            if (authError) throw authError
+            if (authError) {
+                if (authError.message.includes('already registered')) {
+                    throw new Error('Este email ya está registrado en el sistema. Si no aparece en la lista, es posible que el perfil fuera borrado pero el acceso siga activo. Intenta borrarlo completamente antes de volver a crearlo.')
+                }
+                throw authError
+            }
             if (!authData.user) throw new Error('No se pudo crear el usuario')
 
+            // Detect fake success if email already exists (Supabase Email Enumeration Protection)
+            if (authData.user?.identities && authData.user.identities.length === 0) {
+                if (confirm(`El email ${email} ya está registrado ocultamente.\n\n¿Quieres que intente limpiar este acceso automáticamente para que puedas crearlo de nuevo?`)) {
+                    handleRepairUser(email)
+                    return // stop creation flow since we initiated repair
+                } else {
+                    throw new Error('Cancelado. El email ya está registrado.')
+                }
+            }
             // Update the profile with the selected role and city
             // The trigger handle_new_user defaults to 'comercial', so we update it
-            const { error: profileError } = await supabase
+            // Ensure the profile exists or is updated (Upsert handles "zombie" cases)
+            const { data: profileData, error: profileError, count } = await supabase
                 .from('profiles')
-                .update({
+                .upsert({
+                    id: authData.user.id,
+                    email: email,
+                    full_name: fullName,
                     role,
                     assigned_city_id: role === 'adiestrador' ? assignedCityId : null
-                })
-                .eq('id', authData.user.id)
+                }, { onConflict: 'id' })
+                .select()
 
             if (profileError) throw profileError
+            if (!profileData || profileData.length === 0) {
+                throw new Error('El usuario se registró en Auth pero no se pudo crear su perfil en la base de datos.')
+            }
 
             alert('Usuario creado correctamente. El usuario ya puede iniciar sesión.')
             setIsModalOpen(false)
@@ -96,7 +117,13 @@ export function Usuarios() {
             fetchData()
         } catch (error: any) {
             console.error('Error creating user:', error)
-            alert('Error al crear usuario: ' + (error.message || 'Error desconocido'))
+            if (error.message.includes('ya está registrado')) {
+                if (confirm(error.message + '\n\n¿Quieres que intente limpiar este email automáticamente para que puedas crearlo de nuevo?')) {
+                    handleRepairUser(email)
+                }
+            } else {
+                alert('Error al crear usuario: ' + (error.message || 'Error desconocido'))
+            }
         } finally {
             setSubmitting(false)
         }
@@ -135,19 +162,40 @@ export function Usuarios() {
         setSubmitting(true)
 
         try {
-            const { error } = await supabase
-                .from('profiles')
-                .delete()
-                .eq('id', userToDelete.id)
+            // Llamamos a la versión 2 de la función RPC para borrar tanto auth.users como el perfil
+            const { error } = await supabase.rpc('delete_user_v2', {
+                p_user_id: userToDelete.id
+            })
 
             if (error) throw error
 
-            alert('Usuario eliminado correctamente.')
+            alert('Usuario eliminado por completo del sistema.')
             setUserToDelete(null)
             fetchData()
         } catch (error: any) {
             console.error('Error deleting user:', error)
-            alert('Error al eliminar usuario: ' + error.message)
+            alert('Error al eliminar usuario: ' + (error.message || 'Error desconocido'))
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const handleRepairUser = async (emailToRepair: string) => {
+        if (!confirm(`¿Seguro que quieres limpiar el acceso de ${emailToRepair}? Esto permitirá volver a crearlo si antes falló.`)) return
+        setSubmitting(true)
+
+        try {
+            const { error } = await supabase.rpc('delete_user_v2', {
+                p_email: emailToRepair
+            })
+
+            if (error) throw error
+
+            alert('Email desbloqueado. Ahora puedes intentar crearlo de nuevo.')
+            fetchData()
+        } catch (error: any) {
+            console.error('Error repairing user:', error)
+            alert('Error al limpiar email: ' + (error.message || 'Error desconocido'))
         } finally {
             setSubmitting(false)
         }
