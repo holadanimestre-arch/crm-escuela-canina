@@ -95,7 +95,7 @@ export function Usuarios() {
             // Update the profile with the selected role and city
             // The trigger handle_new_user defaults to 'comercial', so we update it
             // Ensure the profile exists or is updated (Upsert handles "zombie" cases)
-            const { data: profileData, error: profileError, count } = await supabase
+            const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .upsert({
                     id: authData.user.id,
