@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { useFilters } from '../../context/FilterContext'
-import { Phone, ClipboardCheck, CalendarClock, ArrowLeft, Search, CheckCircle, XCircle, MessageCircle } from 'lucide-react'
+import { Phone, ClipboardCheck, CalendarClock, ArrowLeft, Search, CheckCircle, XCircle, MessageCircle, PhoneOff, MapPin, Mail, User } from 'lucide-react'
 import { Modal } from '../../components/Modal'
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -11,8 +11,12 @@ interface PendingClient {
     id: string
     name: string
     phone: string | null
+    email: string | null
     dog_breed: string | null
     dog_age: string | null
+    address: string | null
+    call_reason: string | null
+    observations: string | null
     created_at: string
     cities: { name: string } | null
 }
@@ -42,11 +46,12 @@ export function AdiestradorDashboard() {
     }, [cityId])
 
     async function fetchCounts() {
-        // Llamadas pendientes: clients sin evaluation_done_at y sin scheduled_date en evaluations
+        // Llamadas pendientes: clients sin evaluation_done_at, sin no_contesta_at, y sin evaluación agendada
         let pendingQuery = supabase
             .from('clients')
             .select('id', { count: 'exact', head: true })
             .is('evaluation_done_at', null)
+            .is('no_contesta_at', null)
         if (cityId !== 'all') pendingQuery = pendingQuery.eq('city_id', cityId)
         const { count: pendingCount } = await pendingQuery
 
@@ -243,9 +248,11 @@ function LlamadasPendientes({ onBack }: { onBack: () => void }) {
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(true)
     const [schedulingClient, setSchedulingClient] = useState<PendingClient | null>(null)
+    const [detailClient, setDetailClient] = useState<PendingClient | null>(null)
     const [evalDate, setEvalDate] = useState('')
     const [evalTime, setEvalTime] = useState('10:00')
     const [saving, setSaving] = useState(false)
+    const [savingNoContesta, setSavingNoContesta] = useState(false)
 
     const { cityId } = useFilters()
     const { profile } = useAuth()
@@ -254,18 +261,16 @@ function LlamadasPendientes({ onBack }: { onBack: () => void }) {
 
     async function fetchClients() {
         setLoading(true)
-        // Clients que no tienen evaluacion_done_at (aún no se les ha hecho la evaluación)
-        // y que no tienen una evaluación agendada (scheduled_date)
         let query = supabase
             .from('clients')
-            .select('id, name, phone, dog_breed, dog_age, created_at, cities(name)')
+            .select('id, name, phone, email, dog_breed, dog_age, address, call_reason, observations, created_at, cities(name)')
             .is('evaluation_done_at', null)
+            .is('no_contesta_at', null)
 
         if (cityId !== 'all') query = query.eq('city_id', cityId)
 
         const { data } = await query.order('created_at', { ascending: false })
         if (data) {
-            // Now filter out clients that already have an evaluation scheduled
             const clientIds = data.map((c: any) => c.id)
             let evalsWithSchedule: string[] = []
             if (clientIds.length > 0) {
@@ -291,18 +296,16 @@ function LlamadasPendientes({ onBack }: { onBack: () => void }) {
         setSaving(true)
         try {
             const scheduledDate = `${evalDate}T${evalTime}:00`
-            // Get city_id from client
             const { data: clientData } = await supabase.from('clients').select('city_id').eq('id', schedulingClient.id).single()
 
             if (clientData) {
-                // Delete the incomplete evaluation and re-insert with city_id
                 await supabase.from('evaluations').delete().eq('client_id', schedulingClient.id).is('result', null)
                 const { error: insertError } = await supabase.from('evaluations').insert({
                     client_id: schedulingClient.id,
                     city_id: clientData.city_id,
                     scheduled_date: scheduledDate,
                     adiestrador_id: profile?.id,
-                    result: null as any // Will be set later
+                    result: null as any
                 })
                 if (insertError) throw insertError
             }
@@ -316,6 +319,24 @@ function LlamadasPendientes({ onBack }: { onBack: () => void }) {
             alert('Error al agendar: ' + err.message)
         } finally {
             setSaving(false)
+        }
+    }
+
+    async function handleNoContesta(client: PendingClient) {
+        if (!confirm(`¿Marcar a ${client.name} como "No contesta"? Se creará una alerta para Administración.`)) return
+        setSavingNoContesta(true)
+        try {
+            const { error } = await supabase
+                .from('clients')
+                .update({ no_contesta_at: new Date().toISOString() })
+                .eq('id', client.id)
+            if (error) throw error
+            setDetailClient(null)
+            fetchClients()
+        } catch (err: any) {
+            alert('Error: ' + err.message)
+        } finally {
+            setSavingNoContesta(false)
         }
     }
 
@@ -341,10 +362,14 @@ function LlamadasPendientes({ onBack }: { onBack: () => void }) {
                     {filteredClients.map(client => (
                         <div
                             key={client.id}
+                            onClick={() => setDetailClient(client)}
                             style={{
                                 backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '0.75rem',
-                                padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem'
+                                padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem',
+                                cursor: 'pointer', transition: 'border-color 0.15s'
                             }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = '#000' }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb' }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div>
@@ -358,7 +383,21 @@ function LlamadasPendientes({ onBack }: { onBack: () => void }) {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            {/* Motivo Llamada */}
+                            {client.call_reason && (
+                                <div style={{ fontSize: '0.8rem', color: '#374151', backgroundColor: '#f9fafb', padding: '0.5rem 0.75rem', borderRadius: '0.375rem', borderLeft: '3px solid #000' }}>
+                                    <span style={{ fontWeight: 600, color: '#000' }}>Motivo:</span> {client.call_reason}
+                                </div>
+                            )}
+
+                            {/* Observaciones */}
+                            {client.observations && (
+                                <div style={{ fontSize: '0.8rem', color: '#6b7280', fontStyle: 'italic' }}>
+                                    📝 {client.observations}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
                                 {/* WhatsApp */}
                                 {client.phone && (
                                     <a
@@ -408,6 +447,111 @@ function LlamadasPendientes({ onBack }: { onBack: () => void }) {
                     ))}
                 </div>
             )}
+
+            {/* ──── CLIENT DETAIL MODAL ──── */}
+            <Modal isOpen={!!detailClient} onClose={() => setDetailClient(null)} title="Detalle del Cliente">
+                {detailClient && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {/* Name & Breed header */}
+                        <div style={{ textAlign: 'center', paddingBottom: '1rem', borderBottom: '1px solid #f3f4f6' }}>
+                            <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem' }}>
+                                <User size={24} color="#374151" />
+                            </div>
+                            <div style={{ fontSize: '1.125rem', fontWeight: 700 }}>{detailClient.name}</div>
+                            <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                                {detailClient.dog_breed || 'Sin raza'} {detailClient.dog_age ? `• ${detailClient.dog_age}` : ''}
+                            </div>
+                        </div>
+
+                        {/* Info rows */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {detailClient.phone && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem' }}>
+                                    <Phone size={16} color="#6b7280" />
+                                    <a href={`tel:${detailClient.phone}`} style={{ color: '#000', textDecoration: 'none', fontWeight: 500 }}>{detailClient.phone}</a>
+                                </div>
+                            )}
+                            {detailClient.email && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem' }}>
+                                    <Mail size={16} color="#6b7280" />
+                                    <span style={{ color: '#374151' }}>{detailClient.email}</span>
+                                </div>
+                            )}
+                            {detailClient.address && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem' }}>
+                                    <MapPin size={16} color="#6b7280" />
+                                    <span style={{ color: '#374151' }}>{detailClient.address}</span>
+                                </div>
+                            )}
+                            {detailClient.cities?.name && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem' }}>
+                                    <MapPin size={16} color="#6b7280" />
+                                    <span style={{ color: '#374151' }}>Ciudad: {detailClient.cities.name}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Motivo Llamada */}
+                        {detailClient.call_reason && (
+                            <div style={{ backgroundColor: '#f9fafb', padding: '0.75rem 1rem', borderRadius: '0.5rem', borderLeft: '3px solid #000' }}>
+                                <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 700, color: '#6b7280', marginBottom: '0.25rem' }}>Motivo de Llamada</div>
+                                <div style={{ fontSize: '0.875rem', color: '#000' }}>{detailClient.call_reason}</div>
+                            </div>
+                        )}
+
+                        {/* Observaciones */}
+                        {detailClient.observations && (
+                            <div style={{ backgroundColor: '#f9fafb', padding: '0.75rem 1rem', borderRadius: '0.5rem', borderLeft: '3px solid #9ca3af' }}>
+                                <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 700, color: '#6b7280', marginBottom: '0.25rem' }}>Observaciones</div>
+                                <div style={{ fontSize: '0.875rem', color: '#374151', fontStyle: 'italic' }}>{detailClient.observations}</div>
+                            </div>
+                        )}
+
+                        {/* Action buttons */}
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', paddingTop: '0.5rem', borderTop: '1px solid #f3f4f6' }}>
+                            {detailClient.phone && (
+                                <a
+                                    href={`https://wa.me/${detailClient.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${detailClient.name}, soy ${profile?.full_name || 'tu adiestrador'} de la Escuela Canina Fran Estévez. Te llamo para concertar una cita de evaluación.`)}`}
+                                    target="_blank" rel="noopener noreferrer"
+                                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', padding: '0.625rem', borderRadius: '0.375rem', backgroundColor: '#dcfce7', color: '#166534', border: 'none', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none', cursor: 'pointer', minWidth: '120px' }}
+                                >
+                                    <MessageCircle size={15} /> WhatsApp
+                                </a>
+                            )}
+                            {detailClient.phone && (
+                                <a
+                                    href={`tel:${detailClient.phone}`}
+                                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', padding: '0.625rem', borderRadius: '0.375rem', backgroundColor: '#f3f4f6', color: '#000', border: 'none', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none', cursor: 'pointer', minWidth: '120px' }}
+                                >
+                                    <Phone size={15} /> Llamar
+                                </a>
+                            )}
+                            <button
+                                onClick={() => { setDetailClient(null); setSchedulingClient(detailClient); setEvalDate(new Date().toISOString().split('T')[0]) }}
+                                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem', padding: '0.625rem', borderRadius: '0.375rem', backgroundColor: '#000', color: 'white', border: 'none', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', minWidth: '120px' }}
+                            >
+                                <CalendarClock size={15} /> Agendar Evaluación
+                            </button>
+                        </div>
+
+                        {/* NO CONTESTA button */}
+                        <button
+                            onClick={() => handleNoContesta(detailClient)}
+                            disabled={savingNoContesta}
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                padding: '0.75rem', borderRadius: '0.375rem',
+                                backgroundColor: '#fef2f2', color: '#dc2626',
+                                border: '1px solid #fecaca', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                                width: '100%', opacity: savingNoContesta ? 0.6 : 1
+                            }}
+                        >
+                            <PhoneOff size={16} />
+                            {savingNoContesta ? 'Procesando...' : 'No contesta'}
+                        </button>
+                    </div>
+                )}
+            </Modal>
 
             {/* Schedule Modal */}
             <Modal isOpen={!!schedulingClient} onClose={() => setSchedulingClient(null)} title="Agendar Evaluación">
