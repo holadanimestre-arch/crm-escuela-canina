@@ -12,8 +12,7 @@ import {
     MapPin,
     Calendar,
     Settings,
-    FileText,
-    Dog
+    FileText
 } from 'lucide-react'
 
 export function AppLayout() {
@@ -68,8 +67,6 @@ export function AppLayout() {
             return [
                 ...common,
                 { name: 'Mis Clientes', href: '/clientes', icon: UserCheck },
-                { name: 'Evaluaciones', href: '/evaluaciones', icon: Dog },
-                { name: 'Sesiones', href: '/sesiones', icon: Calendar },
             ]
         }
 
