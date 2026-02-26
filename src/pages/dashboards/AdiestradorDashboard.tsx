@@ -31,6 +31,11 @@ interface SessionClient {
     completed_sessions: number
     next_session_number: number
     existing_session_numbers: number[]
+    upcoming_session?: {
+        id: string
+        date: string
+        session_number: number
+    } | null
 }
 
 // ─── Main Component ─────────────────────────────────────────────────
@@ -46,16 +51,39 @@ export function AdiestradorDashboard() {
     }, [cityId])
 
     async function fetchCounts() {
-        // Llamadas pendientes: clients sin evaluation_done_at, sin no_contesta_at, y sin evaluación agendada
+        if (!profile) return
+
+        // 1. Llamadas pendientes: clients sin evaluation_done_at, sin no_contesta_at, y sin evaluación agendada
         let pendingQuery = supabase
             .from('clients')
             .select('id', { count: 'exact', head: true })
             .is('evaluation_done_at', null)
             .is('no_contesta_at', null)
+
         if (cityId !== 'all') pendingQuery = pendingQuery.eq('city_id', cityId)
         const { count: pendingCount } = await pendingQuery
 
-        // Evaluaciones con fecha agendada pero sin resultado
+        // Pero hay que restar los que ya tienen cita en evaluations
+        let finalPendingCount = pendingCount || 0
+        if (finalPendingCount > 0) {
+            const { data: clientsData } = await supabase
+                .from('clients')
+                .select('id')
+                .is('evaluation_done_at', null)
+                .is('no_contesta_at', null)
+
+            if (clientsData && clientsData.length > 0) {
+                const clientIds = clientsData.map(c => c.id)
+                const { data: evals } = await supabase
+                    .from('evaluations')
+                    .select('client_id')
+                    .in('client_id', clientIds)
+                const scheduledIds = new Set((evals || []).map(e => e.client_id))
+                finalPendingCount = clientsData.filter(c => !scheduledIds.has(c.id)).length
+            }
+        }
+
+        // 2. Resultado evaluación: evaluations con result NULL
         let evalQuery = supabase
             .from('evaluations')
             .select('id', { count: 'exact', head: true })
@@ -63,18 +91,18 @@ export function AdiestradorDashboard() {
         if (cityId !== 'all') evalQuery = evalQuery.eq('city_id', cityId)
         const { count: evalCount } = await evalQuery
 
-        // Clients con evaluacion aprobada que tienen resultado + sin completar 8 sesiones
-        let sessionsQuery = supabase
+        // 3. Agendar sesiones: clients activos (status='activo')
+        let sessionQuery = supabase
             .from('clients')
             .select('id', { count: 'exact', head: true })
             .eq('status', 'activo')
-        if (cityId !== 'all') sessionsQuery = sessionsQuery.eq('city_id', cityId)
-        const { count: sessionsCount } = await sessionsQuery
+        if (cityId !== 'all') sessionQuery = sessionQuery.eq('city_id', cityId)
+        const { count: sessionCount } = await sessionQuery
 
         setCounts({
-            llamadas: pendingCount || 0,
+            llamadas: finalPendingCount,
             evaluaciones: evalCount || 0,
-            sesiones: sessionsCount || 0
+            sesiones: sessionCount || 0
         })
     }
 
@@ -844,7 +872,6 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
     const [sessionComments, setSessionComments] = useState('')
     const [saving, setSaving] = useState(false)
 
-
     const { cityId } = useFilters()
 
     useEffect(() => { fetchClients() }, [cityId])
@@ -868,12 +895,22 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
                 const evals = Array.isArray(c.evaluations) ? c.evaluations : []
                 const sessions = Array.isArray(c.sessions) ? c.sessions : []
                 const totalSessions = evals[0]?.total_sessions || 8
-                const completedCount = sessions.filter((s: any) => s.completed).length
+                const completedSessions = sessions.filter((s: any) => s.completed)
+                const completedCount = completedSessions.length
                 const existingNumbers = sessions.map((s: any) => s.session_number)
 
-                let nextSession = 1
+                // Find the upcoming session (not completed)
+                const upcoming = sessions
+                    .filter((s: any) => !s.completed)
+                    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]
+
+                // Find the next session number to schedule
+                let nextToSchedule = 1
                 for (let i = 1; i <= totalSessions; i++) {
-                    if (!existingNumbers.includes(i)) { nextSession = i; break }
+                    if (!existingNumbers.includes(i)) {
+                        nextToSchedule = i
+                        break
+                    }
                 }
 
                 return {
@@ -882,8 +919,13 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
                     dog_breed: c.dog_breed,
                     total_sessions: totalSessions,
                     completed_sessions: completedCount,
-                    next_session_number: nextSession,
-                    existing_session_numbers: existingNumbers
+                    next_session_number: upcoming ? upcoming.session_number : nextToSchedule,
+                    existing_session_numbers: existingNumbers,
+                    upcoming_session: upcoming ? {
+                        id: upcoming.id,
+                        date: upcoming.date,
+                        session_number: upcoming.session_number
+                    } : null
                 }
             })
             setClients(mapped)
@@ -892,32 +934,40 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
     }
 
     async function handleFinishSession(client: SessionClient) {
-        // Find the latest non-completed session
-        const { data: sessions } = await supabase
-            .from('sessions')
-            .select('id, session_number')
-            .eq('client_id', client.id)
-            .eq('completed', false)
-            .order('session_number', { ascending: true })
-            .limit(1)
+        if (!client.upcoming_session) return
 
-        if (sessions && sessions.length > 0) {
+        setSaving(true)
+        try {
             // Mark it complete
-            await supabase.from('sessions').update({ completed: true }).eq('id', sessions[0].id)
+            const { error: updateError } = await supabase
+                .from('sessions')
+                .update({ completed: true })
+                .eq('id', client.upcoming_session.id)
+
+            if (updateError) throw updateError
 
             // Check if all sessions closed
-            if (sessions[0].session_number >= client.total_sessions) {
+            if (client.upcoming_session.session_number >= client.total_sessions) {
                 await supabase.from('clients').update({ status: 'finalizado' }).eq('id', client.id)
                 fetchClients()
                 return
             }
-        }
 
-        // Then prompt to schedule the next one
-        setSchedulingClient(client)
-        setSessionDate(new Date().toISOString().split('T')[0])
-        setSessionTime('10:00')
-        setSessionComments('')
+            // Immediately prompt to schedule the next one
+            const updatedClient = {
+                ...client,
+                completed_sessions: client.completed_sessions + 1,
+                next_session_number: client.upcoming_session.session_number + 1
+            }
+            setSchedulingClient(updatedClient)
+            setSessionDate(new Date().toISOString().split('T')[0])
+            setSessionTime('10:00')
+            setSessionComments('')
+        } catch (err: any) {
+            alert('Error: ' + err.message)
+        } finally {
+            setSaving(false)
+        }
     }
 
     async function handleScheduleNext() {
@@ -926,21 +976,9 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
         try {
             const fullDate = new Date(`${sessionDate}T${sessionTime}:00`).toISOString()
 
-            // Determine the next available session number
-            const { data: existingSessions } = await supabase
-                .from('sessions')
-                .select('session_number')
-                .eq('client_id', schedulingClient.id)
-
-            const existingNums = (existingSessions || []).map((s: any) => s.session_number)
-            let nextNum = 1
-            for (let i = 1; i <= schedulingClient.total_sessions; i++) {
-                if (!existingNums.includes(i)) { nextNum = i; break }
-            }
-
             const { error } = await supabase.from('sessions').insert({
                 client_id: schedulingClient.id,
-                session_number: nextNum,
+                session_number: schedulingClient.next_session_number,
                 date: fullDate,
                 comments: sessionComments || null,
                 completed: false
@@ -1012,21 +1050,64 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
                                     </div>
                                 </div>
 
-                                {client.completed_sessions < client.total_sessions && (
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                {/* Next Session Info */}
+                                {client.upcoming_session ? (
+                                    <div style={{
+                                        backgroundColor: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem',
+                                        fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                    }}>
+                                        <div>
+                                            <span style={{ color: '#6b7280' }}>Próxima (Sesión {client.upcoming_session.session_number}):</span>
+                                            <div style={{ fontWeight: 600, color: '#000' }}>
+                                                {new Date(client.upcoming_session.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+                                        <CalendarClock size={16} color="#9ca3af" />
+                                    </div>
+                                ) : (
+                                    client.completed_sessions < client.total_sessions && (
+                                        <div style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: 500, backgroundColor: '#fef2f2', padding: '0.5rem', borderRadius: '0.375rem', textAlign: 'center' }}>
+                                            ⚠️ Sesión {client.next_session_number} pendiente de agendar
+                                        </div>
+                                    )
+                                )}
+
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    {client.upcoming_session ? (
                                         <button
                                             onClick={() => handleFinishSession(client)}
+                                            disabled={saving}
                                             style={{
-                                                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
-                                                padding: '0.625rem', borderRadius: '0.375rem',
+                                                flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
+                                                padding: '0.75rem', borderRadius: '0.375rem',
                                                 backgroundColor: '#000', color: 'white',
-                                                border: 'none', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
+                                                border: 'none', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                                                opacity: saving ? 0.6 : 1
                                             }}
                                         >
-                                            <CheckCircle size={15} /> Finalizar Sesión {client.completed_sessions + 1} y Agendar Siguiente
+                                            <CheckCircle size={16} /> Finalizar Sesión {client.upcoming_session.session_number} y Agendar Siguiente
                                         </button>
-                                    </div>
-                                )}
+                                    ) : (
+                                        client.completed_sessions < client.total_sessions && (
+                                            <button
+                                                onClick={() => {
+                                                    setSchedulingClient(client)
+                                                    setSessionDate(new Date().toISOString().split('T')[0])
+                                                    setSessionTime('10:00')
+                                                    setSessionComments('')
+                                                }}
+                                                style={{
+                                                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
+                                                    padding: '0.75rem', borderRadius: '0.375rem',
+                                                    backgroundColor: '#000', color: 'white',
+                                                    border: 'none', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer'
+                                                }}
+                                            >
+                                                <CalendarClock size={16} /> Agendar Sesión {client.next_session_number}
+                                            </button>
+                                        )
+                                    )}
+                                </div>
 
                                 {client.completed_sessions >= client.total_sessions && (
                                     <div style={{
@@ -1045,7 +1126,7 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
             )}
 
             {/* Schedule Next Session Modal */}
-            <Modal isOpen={!!schedulingClient} onClose={() => setSchedulingClient(null)} title="Agendar siguiente Sesión">
+            <Modal isOpen={!!schedulingClient} onClose={() => setSchedulingClient(null)} title={`Agendar Sesión ${schedulingClient?.next_session_number}`}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                         Agendar sesión para <strong>{schedulingClient?.name}</strong>
@@ -1100,7 +1181,7 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
                                 opacity: (saving || !sessionDate) ? 0.6 : 1
                             }}
                         >
-                            {saving ? 'Guardando...' : 'Agendar Sesión'}
+                            {saving ? 'Guardando...' : `Confirmar Sesión ${schedulingClient?.next_session_number}`}
                         </button>
                     </div>
                 </div>
