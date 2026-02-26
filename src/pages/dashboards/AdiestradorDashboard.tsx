@@ -644,6 +644,8 @@ function ResultadoEvaluacion({ onBack }: { onBack: () => void }) {
     const [activeEval, setActiveEval] = useState<any | null>(null)
     const [comments, setComments] = useState('')
     const [totalSessions, setTotalSessions] = useState(8)
+    const [firstSessionDate, setFirstSessionDate] = useState('')
+    const [firstSessionTime, setFirstSessionTime] = useState('10:00')
     const [saving, setSaving] = useState(false)
 
     const { cityId } = useFilters()
@@ -675,10 +677,18 @@ function ResultadoEvaluacion({ onBack }: { onBack: () => void }) {
         setActiveEval({ ...evalItem, selectedResult: result })
         setComments('')
         setTotalSessions(8)
+        setFirstSessionDate('')
+        setFirstSessionTime('10:00')
     }
 
     async function confirmResult() {
         if (!activeEval) return
+        
+        if (activeEval.selectedResult === 'aprobada' && !firstSessionDate) {
+            alert('Debes indicar la fecha de la primera sesión')
+            return
+        }
+
         setSaving(true)
         try {
             // Update evaluation with result
@@ -698,12 +708,21 @@ function ResultadoEvaluacion({ onBack }: { onBack: () => void }) {
                 .update({ evaluation_done_at: new Date().toISOString() })
                 .eq('id', activeEval.client_id)
 
-            // If accepted, update client status to activo
+            // If accepted, update client status to activo and create 1st session
             if (activeEval.selectedResult === 'aprobada') {
                 await supabase
                     .from('clients')
                     .update({ status: 'activo' })
                     .eq('id', activeEval.client_id)
+                
+                const sessionDate = new Date(`${firstSessionDate}T${firstSessionTime}:00`).toISOString()
+                const { error: sessionError } = await supabase.from('sessions').insert({
+                    client_id: activeEval.client_id,
+                    session_number: 1,
+                    date: sessionDate,
+                    completed: false
+                })
+                if (sessionError) throw sessionError
             }
 
             setActiveEval(null)
@@ -808,25 +827,53 @@ function ResultadoEvaluacion({ onBack }: { onBack: () => void }) {
                     </div>
 
                     {activeEval?.selectedResult === 'aprobada' && (
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>Nº de Sesiones</label>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                {[8, 10, 12].map(n => (
-                                    <button
-                                        key={n}
-                                        type="button"
-                                        onClick={() => setTotalSessions(n)}
-                                        style={{
-                                            flex: 1, padding: '0.625rem', borderRadius: '0.375rem',
-                                            border: totalSessions === n ? '2px solid #000' : '1px solid #e5e7eb',
-                                            backgroundColor: totalSessions === n ? '#000' : 'white',
-                                            color: totalSessions === n ? 'white' : '#374151',
-                                            fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer'
-                                        }}
-                                    >
-                                        {n}
-                                    </button>
-                                ))}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>Nº de Sesiones Recomendadas</label>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    {[8, 10, 12].map(n => (
+                                        <button
+                                            key={n}
+                                            type="button"
+                                            onClick={() => setTotalSessions(n)}
+                                            style={{
+                                                flex: 1, padding: '0.625rem', borderRadius: '0.375rem',
+                                                border: totalSessions === n ? '2px solid #000' : '1px solid #e5e7eb',
+                                                backgroundColor: totalSessions === n ? '#000' : 'white',
+                                                color: totalSessions === n ? 'white' : '#374151',
+                                                fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer'
+                                            }}
+                                        >
+                                            {n}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div style={{ padding: '1rem', backgroundColor: '#f3f4f6', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.75rem', color: '#111827', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                    <CalendarClock size={16} /> Agendar Primera Sesión
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>Fecha</label>
+                                        <input
+                                            type="date"
+                                            value={firstSessionDate}
+                                            onChange={e => setFirstSessionDate(e.target.value)}
+                                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>Hora</label>
+                                        <input
+                                            type="time"
+                                            value={firstSessionTime}
+                                            onChange={e => setFirstSessionTime(e.target.value)}
+                                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
