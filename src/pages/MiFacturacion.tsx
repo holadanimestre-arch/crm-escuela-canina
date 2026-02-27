@@ -29,7 +29,8 @@ export function MiFacturacion() {
         evaluationsDeducted: 0,
         baseReducida: 0,
         iva: 0,
-        total: 0
+        total: 0,
+        pendingSessions: [] as { clientName: string, count: number }[]
     })
     const [settlementStatus, setSettlementStatus] = useState<'pending' | 'pagado' | 'none'>('none')
 
@@ -49,7 +50,7 @@ export function MiFacturacion() {
         setSettlementStatus('none')
 
         try {
-            // 1. Check if there's an existing settlement for this month
+            // 1. Check for settlement
             const { data: settlementData } = await supabase
                 .from('trainer_settlements')
                 .select('*')
@@ -61,152 +62,95 @@ export function MiFacturacion() {
                 setSettlementStatus(settlementData.status)
             }
 
-            // 2. We need to fetch evaluations and sessions to calculate the current month
-            // or display the settled month.
-
-            // For now, let's calculate based on the dates of the events for the selected month.
-            // In a fully robust system, if a settlement exists, we might want to just show the settled items.
-            // But calculating on the fly works if we assume the status comes from the settlement.
-
-            const year = parseInt(selectedMonth.split('-')[0])
-            const month = parseInt(selectedMonth.split('-')[1]) - 1 // JS months are 0-indexed
-
-            const startDate = new Date(year, month, 1).toISOString()
-            const endDate = new Date(year, month + 1, 0, 23, 59, 59).toISOString()
-
-            // Fetch Evaluations for this month
-            // They are billable as soon as they are completed (created_at basically, or scheduled_date)
+            // 2. Fetch Evaluations
             const { data: evalsData } = await supabase
                 .from('evaluations')
-                .select(`
-                    id, 
-                    created_at, 
-                    result,
-                    clients ( name )
-                `)
+                .select(`id, created_at, result, clients ( name )`)
                 .eq('adiestrador_id', profile.id)
-                .gte('created_at', startDate)
-                .lte('created_at', endDate)
 
-            // Fetch Sessions to find completed blocks
-            // A block is completed when session 4, 8, 12, etc., is completed.
-            // We need to look at sessions completed in this month.
-            // Note: the logic here is simplified. We look for session_number % 4 === 0 that were completed this month.
-            // In reality, we might want to check the date the 4th session was completed.
-            // Since we only have 'date' (which is scheduled date) and 'completed' boolean, 
-            // we will use the 'date' of the 4th session as the completion date of the block.
+            const monthEvals = (evalsData || []).filter(e => e.created_at.substring(0, 7) === selectedMonth)
 
-            const { data: clientsData } = await supabase
+            // 3. Fetch Clients and Sessions
+            const { data: clientsData, error: clientError } = await supabase
                 .from('clients')
                 .select(`
                     id, 
                     name,
-                    sessions ( id, session_number, date, completed )
+                    sessions ( id, session_number, date, completed ),
+                    evaluations ( adiestrador_id, result )
                 `)
 
-            // Process blocks
+            if (clientError) throw clientError
+
+            const myClients = (clientsData || []).filter((c: any) => {
+                const evalArr = Array.isArray(c.evaluations) ? c.evaluations : [c.evaluations].filter(Boolean)
+                return evalArr.some((e: any) => e.adiestrador_id === profile.id && e.result === 'aprobada')
+            })
+
             const blocks: BillingConcept[] = []
+            const pendingSessions: { clientName: string, count: number }[] = []
 
-            if (clientsData && profile.id) {
-                // To properly assign blocks, we technically need to ensure the trainer did them.
-                // Our schema doesn't link session -> trainer directly. 
-                // But for 'mis clientes' (adiestrador role), we assume the trainer did them if they are the assigned trainer.
-                // Or if they did the evaluation. Let's assume for now adiestradors only see their own stuff.
-                // To be perfectly accurate, we need to filter clients by those belonging to this trainer.
-                // Since there is no explicit 'trainer_id' on clients (unless auth handles it via RLS, which it doesn't strictly),
-                // we will rely on the evaluations linking them, or just process all clients if RLS restricts it.
-                // Assuming RLS restricts 'clients' to only those the adiestrador has access to.
+            myClients.forEach((client: any) => {
+                const completed = (client.sessions || [])
+                    .filter((s: any) => s.completed)
+                    .sort((a: any, b: any) => a.session_number - b.session_number)
 
-                clientsData.forEach((client: any) => {
-                    const completedSessions = (client.sessions || [])
-                        .filter((s: any) => s.completed)
-                        .sort((a: any, b: any) => a.session_number - b.session_number)
-
-                    // Group by 4
-                    let count = 0;
-                    let lastSessionDate = '';
-
-                    completedSessions.forEach((session: any) => {
-                        count++;
-                        lastSessionDate = session.date;
-
-                        // Every 4 sessions is a block
-                        if (count % 4 === 0) {
-                            // Check if this 4th session falls in the selected month
-                            if (lastSessionDate >= startDate && lastSessionDate <= endDate) {
-                                blocks.push({
-                                    id: `block-${client.id}-${count}`,
-                                    clientName: client.name,
-                                    type: 'bloque',
-                                    date: lastSessionDate,
-                                    amount: PRECIO_BLOQUE_ADIESTRADOR_IVA_INC
-                                })
-                            }
+                let count = 0
+                completed.forEach((session: any) => {
+                    count++
+                    if (count % 4 === 0) {
+                        const blockMonth = session.date.substring(0, 7)
+                        if (blockMonth === selectedMonth) {
+                            blocks.push({
+                                id: `block-${client.id}-${count}`,
+                                clientName: client.name,
+                                type: 'bloque',
+                                date: session.date,
+                                amount: PRECIO_BLOQUE_ADIESTRADOR_IVA_INC
+                            })
                         }
-                    })
+                    }
                 })
-            }
 
-            // Process Evaluations
-            const evalConcepts: BillingConcept[] = (evalsData || []).map((ev: any) => ({
+                if (completed.length % 4 > 0) {
+                    pendingSessions.push({
+                        clientName: client.name,
+                        count: completed.length % 4
+                    })
+                }
+            })
+
+            const evalConcepts: BillingConcept[] = monthEvals.map((ev: any) => ({
                 id: `ev-${ev.id}`,
                 clientName: ev.clients?.name || 'Cliente Desconocido',
                 type: 'evaluacion',
                 date: ev.created_at,
-                amount: 0, // No suma a la base imponible
-                deduction: PRECIO_EVALUACION_ADIESTRADOR // Resta de la base
+                amount: 0,
+                deduction: PRECIO_EVALUACION_ADIESTRADOR
             }))
 
             const allConcepts = [...blocks, ...evalConcepts].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
             setConcepts(allConcepts)
 
-            // CALCULAR MATES
             const numBlocks = blocks.length
             const numEvals = evalConcepts.length
-
-            // Base Imponible de Bloques = (120 * numBlocks) / 1.21
-            // Usamos 120 IVA INCL, calculamos base imponible y luego restamos.
-            // O mejor:
-            // 120 IVA Incluido = 99.17 Base + 20.83 IVA
             const baseBloques = (numBlocks * PRECIO_BLOQUE_ADIESTRADOR_IVA_INC) / 1.21
-
-            // Deducciones en B
             const deduccionesEvals = numEvals * PRECIO_EVALUACION_ADIESTRADOR
-
-            // Base final para calcular IVA
             const baseReducida = Math.max(0, baseBloques - deduccionesEvals)
-
-            // IVA
             const iva = baseReducida * 0.21
-
-            // Total = Base Reducida + IVA
             const total = baseReducida + iva
 
-            setSummary({
+            const summaryData = {
                 completedBlocks: numBlocks,
                 evaluations: numEvals,
-                baseImponible: baseBloques,
-                evaluationsDeducted: deduccionesEvals,
-                baseReducida: baseReducida,
-                iva: iva,
-                total: total
-            })
-
-            // If we fetched an existing settlement, we could optionally override these calculations
-            // with `settlementData.total_amount` etc., ensuring historical accuracy even if prices change.
-            if (settlementData) {
-                setSummary({
-                    completedBlocks: numBlocks, // these counts might still be dynamic
-                    evaluations: numEvals,
-                    baseImponible: settlementData.base_imponible,
-                    evaluationsDeducted: settlementData.evaluations_deducted_amount,
-                    baseReducida: settlementData.base_imponible - settlementData.evaluations_deducted_amount,
-                    iva: settlementData.iva_amount,
-                    total: settlementData.total_amount
-                })
+                baseImponible: settlementData?.base_imponible || baseBloques,
+                evaluationsDeducted: settlementData?.evaluations_deducted_amount || deduccionesEvals,
+                baseReducida: settlementData ? (settlementData.base_imponible - settlementData.evaluations_deducted_amount) : baseReducida,
+                iva: settlementData?.iva_amount || iva,
+                total: settlementData?.total_amount || total,
+                pendingSessions
             }
-
+            setSummary(summaryData)
 
         } catch (error) {
             console.error("Error fetching billing:", error)
@@ -370,6 +314,22 @@ export function MiFacturacion() {
                             <span style={{ fontWeight: 600 }}>Total Factura:</span>
                             <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#10b981' }}>{formatCurrency(summary.total)}</span>
                         </div>
+
+                        {summary.pendingSessions.length > 0 && (
+                            <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #374151' }}>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                                    Sesiones en progreso (No facturables)
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {summary.pendingSessions.map((ps, idx) => (
+                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                                            <span style={{ color: '#d1d5db' }}>{ps.clientName}</span>
+                                            <span style={{ color: '#6b7280' }}>{ps.count} ses.</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#6b7280', textAlign: 'center' }}>
                             Esta es la cantidad total por la que debes emitir la factura a la escuela por tus servicios de este mes.
