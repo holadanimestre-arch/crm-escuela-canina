@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { useFilters } from '../../context/FilterContext'
-import { Phone, ClipboardCheck, CalendarClock, ArrowLeft, Search, CheckCircle, XCircle, MessageCircle, PhoneOff, MapPin, Mail, User } from 'lucide-react'
+import { Phone, ClipboardCheck, CalendarClock, ArrowLeft, Search, CheckCircle, XCircle, MessageCircle, PhoneOff, MapPin, Mail, User, Edit } from 'lucide-react'
 import { Modal } from '../../components/Modal'
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ interface SessionClient {
 // ─── Main Component ─────────────────────────────────────────────────
 
 export function AdiestradorDashboard() {
-    const [activeView, setActiveView] = useState<'home' | 'llamadas' | 'resultado' | 'sesiones'>('home')
+    const [activeView, setActiveView] = useState<'home' | 'llamadas' | 'resultado' | 'sesiones' | 'modificar'>('home')
     const [counts, setCounts] = useState({ llamadas: 0, evaluaciones: 0, sesiones: 0 })
     const { profile } = useAuth()
     const { cityId } = useFilters()
@@ -109,6 +109,7 @@ export function AdiestradorDashboard() {
     if (activeView === 'llamadas') return <LlamadasPendientes onBack={() => { setActiveView('home'); fetchCounts() }} />
     if (activeView === 'resultado') return <ResultadoEvaluacion onBack={() => { setActiveView('home'); fetchCounts() }} />
     if (activeView === 'sesiones') return <AgendarSesion onBack={() => { setActiveView('home'); fetchCounts() }} />
+    if (activeView === 'modificar') return <ModificarSesion onBack={() => { setActiveView('home'); fetchCounts() }} />
 
     // ─── HOME: 3 Big Buttons ────────────────────────────────────────
     return (
@@ -220,6 +221,29 @@ export function AdiestradorDashboard() {
                         {counts.sesiones}
                     </div>
                 )}
+            </button>
+            {/* Card 4: Modificar Fecha Sesión */}
+            <button
+                id="btn-modificar-sesion"
+                onClick={() => setActiveView('modificar')}
+                style={{
+                    display: 'flex', alignItems: 'center', gap: '1.25rem',
+                    padding: '1.75rem 1.5rem',
+                    backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '0.75rem',
+                    cursor: 'pointer', textAlign: 'left', width: '100%',
+                    transition: 'all 0.15s ease',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#000'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)' }}
+            >
+                <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Edit size={24} color="#000" />
+                </div>
+                <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '1.125rem', fontWeight: 600, color: '#000' }}>Modificar Fecha Sesión</div>
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>Cambiar fecha de sesiones agendadas</div>
+                </div>
             </button>
         </div>
     )
@@ -1268,3 +1292,242 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
         </div>
     )
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// 4. MODIFICAR FECHA SESIÓN
+// ═══════════════════════════════════════════════════════════════════
+
+function ModificarSesion({ onBack }: { onBack: () => void }) {
+    const [clients, setClients] = useState<any[]>([])
+    const [search, setSearch] = useState('')
+    const [loading, setLoading] = useState(true)
+    const [selectedClient, setSelectedClient] = useState<any | null>(null)
+    const [editingSession, setEditingSession] = useState<any | null>(null)
+    const [newDate, setNewDate] = useState('')
+    const [newTime, setNewTime] = useState('10:00')
+    const [saving, setSaving] = useState(false)
+
+    const { cityId } = useFilters()
+
+    useEffect(() => { fetchClients() }, [cityId])
+
+    async function fetchClients() {
+        setLoading(true)
+        // Fetch clients that have at least one session
+        let query = supabase
+            .from('clients')
+            .select(`
+            id, name, dog_breed,
+            sessions ( id, session_number, date, completed, comments )
+            `)
+
+        if (cityId !== 'all') query = query.eq('city_id', cityId)
+
+        const { data } = await query.order('name')
+
+        if (data) {
+            // Filter out clients with truly 0 sessions (if any)
+            const filtered = data.filter((c: any) => c.sessions && c.sessions.length > 0)
+            setClients(filtered)
+
+            // If a client was already selected, update its data
+            if (selectedClient) {
+                const refreshed = filtered.find(c => c.id === selectedClient.id)
+                if (refreshed) setSelectedClient(refreshed)
+            }
+        }
+        setLoading(false)
+    }
+
+    async function handleUpdateSession() {
+        if (!editingSession || !newDate) return
+        setSaving(true)
+        try {
+            const fullDate = new Date(`${newDate}T${newTime}:00`).toISOString()
+            const { error } = await supabase
+                .from('sessions')
+                .update({ date: fullDate })
+                .eq('id', editingSession.id)
+
+            if (error) throw error
+
+            setEditingSession(null)
+            fetchClients() // Refresh data
+        } catch (err: any) {
+            alert('Error al actualizar: ' + err.message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const filteredClients = clients.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase())
+    )
+
+    if (loading && clients.length === 0) return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</div>
+
+    return (
+        <div>
+            <BackHeader title="Modificar Fecha Sesión" onBack={onBack} />
+
+            {!selectedClient ? (
+                <>
+                    <SearchBar value={search} onChange={setSearch} placeholder="Buscar cliente..." />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {filteredClients.map(client => (
+                            <div
+                                key={client.id}
+                                onClick={() => setSelectedClient(client)}
+                                style={{
+                                    backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '0.75rem',
+                                    padding: '1.25rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    transition: 'all 0.15s ease'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = '#000'}
+                                onMouseLeave={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            >
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: '1.05rem' }}>{client.name}</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                                        {client.sessions.length} sesión{client.sessions.length !== 1 ? 'es' : ''} registrada{client.sessions.length !== 1 ? 's' : ''}
+                                    </div>
+                                </div>
+                                <div style={{ backgroundColor: '#f3f4f6', padding: '0.5rem', borderRadius: '50%' }}>
+                                    <CalendarClock size={20} color="#000" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            ) : (
+                <div>
+                    <button
+                        onClick={() => setSelectedClient(null)}
+                        style={{
+                            background: 'none', border: 'none', color: '#6b7280',
+                            fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                            marginBottom: '1.25rem', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem'
+                        }}
+                    >
+                        <ArrowLeft size={16} /> Volver a la lista
+                    </button>
+
+                    <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '0.75rem', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                        <div style={{ marginBottom: '1.25rem' }}>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827' }}>{selectedClient.name}</h2>
+                            <p style={{ fontSize: '0.9rem', color: '#6b7280', marginTop: '0.25rem' }}>{selectedClient.dog_breed || 'Sin raza'}</p>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.025em' }}>
+                                Historial de Sesiones
+                            </div>
+                            {selectedClient.sessions
+                                .sort((a: any, b: any) => b.session_number - a.session_number)
+                                .map((session: any) => (
+                                    <div
+                                        key={session.id}
+                                        style={{
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                            padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.6rem',
+                                            border: '1px solid #f3f4f6'
+                                        }}
+                                    >
+                                        <div>
+                                            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                Sesión {session.session_number}
+                                                {session.completed && (
+                                                    <span style={{ fontSize: '0.7rem', backgroundColor: '#dcfce7', color: '#15803d', padding: '0.15rem 0.5rem', borderRadius: '1rem', fontWeight: 700 }}>
+                                                        COMPLETADA
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div style={{ fontSize: '0.850rem', color: '#4b5563', marginTop: '0.25rem' }}>
+                                                {new Date(session.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                            </div>
+                                            <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '0.125rem' }}>
+                                                ⏰ {new Date(session.date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setEditingSession(session)
+                                                const d = new Date(session.date)
+                                                setNewDate(d.toISOString().split('T')[0])
+                                                setNewTime(d.toTimeString().slice(0, 5))
+                                            }}
+                                            style={{
+                                                padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb',
+                                                backgroundColor: 'white', color: '#111827', fontSize: '0.8rem',
+                                                fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s ease'
+                                            }}
+                                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f9fafb'; e.currentTarget.style.borderColor = '#d1d5db' }}
+                                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.borderColor = '#e5e7eb' }}
+                                        >
+                                            Editar
+                                        </button>
+                                    </div>
+                                ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <Modal isOpen={!!editingSession} onClose={() => setEditingSession(null)} title={`Editar Sesión ${editingSession?.session_number}`}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        <div style={{ flex: 1 }}>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', color: '#374151' }}>Fecha</label>
+                            <input
+                                type="date"
+                                value={newDate}
+                                onChange={e => setNewDate(e.target.value)}
+                                style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', boxSizing: 'border-box', fontSize: '1rem' }}
+                            />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', color: '#374151' }}>Hora</label>
+                            <input
+                                type="time"
+                                value={newTime}
+                                onChange={e => setNewTime(e.target.value)}
+                                style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', boxSizing: 'border-box', fontSize: '1rem' }}
+                            />
+                        </div>
+                    </div>
+
+                    {editingSession?.completed && (
+                        <div style={{ fontSize: '0.8rem', color: '#92400e', backgroundColor: '#fffbeb', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #fde68a', display: 'flex', gap: '0.75rem' }}>
+                            <div style={{ fontSize: '1.25rem' }}>💡</div>
+                            <div>
+                                <strong>Nota sobre facturación:</strong> Al cambiar la fecha de una sesión ya completada, el sistema la moverá al mes correspondiente en tu panel de facturación.
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                        <button
+                            onClick={() => setEditingSession(null)}
+                            style={{ padding: '0.625rem 1.25rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', background: 'white', color: '#374151', fontWeight: 600, cursor: 'pointer' }}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleUpdateSession}
+                            disabled={saving || !newDate}
+                            style={{
+                                padding: '0.625rem 1.25rem', borderRadius: '0.5rem', border: 'none',
+                                background: '#000', color: 'white', fontWeight: 600, cursor: 'pointer',
+                                opacity: (saving || !newDate) ? 0.6 : 1
+                            }}
+                        >
+                            {saving ? 'Guardando...' : 'Guardar Cambios'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+        </div>
+    )
+}
+
