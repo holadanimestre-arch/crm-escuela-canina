@@ -683,7 +683,7 @@ function ResultadoEvaluacion({ onBack }: { onBack: () => void }) {
 
     async function confirmResult() {
         if (!activeEval) return
-        
+
         if (activeEval.selectedResult === 'aprobada' && !firstSessionDate) {
             alert('Debes indicar la fecha de la primera sesión')
             return
@@ -714,7 +714,7 @@ function ResultadoEvaluacion({ onBack }: { onBack: () => void }) {
                     .from('clients')
                     .update({ status: 'activo' })
                     .eq('id', activeEval.client_id)
-                
+
                 const sessionDate = new Date(`${firstSessionDate}T${firstSessionTime}:00`).toISOString()
                 const { error: sessionError } = await supabase.from('sessions').insert({
                     client_id: activeEval.client_id,
@@ -918,6 +918,7 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
     const [sessionTime, setSessionTime] = useState('10:00')
     const [sessionComments, setSessionComments] = useState('')
     const [saving, setSaving] = useState(false)
+    const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
 
     const { cityId } = useFilters()
 
@@ -1023,16 +1024,27 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
         try {
             const fullDate = new Date(`${sessionDate}T${sessionTime}:00`).toISOString()
 
-            const { error } = await supabase.from('sessions').insert({
-                client_id: schedulingClient.id,
-                session_number: schedulingClient.next_session_number,
-                date: fullDate,
-                comments: sessionComments || null,
-                completed: false
-            })
-            if (error) throw error
+            if (editingSessionId) {
+                const { error } = await supabase.from('sessions')
+                    .update({
+                        date: fullDate,
+                        comments: sessionComments || null,
+                    })
+                    .eq('id', editingSessionId)
+                if (error) throw error
+            } else {
+                const { error } = await supabase.from('sessions').insert({
+                    client_id: schedulingClient.id,
+                    session_number: schedulingClient.next_session_number,
+                    date: fullDate,
+                    comments: sessionComments || null,
+                    completed: false
+                })
+                if (error) throw error
+            }
 
             setSchedulingClient(null)
+            setEditingSessionId(null)
             fetchClients()
         } catch (err: any) {
             alert('Error: ' + err.message)
@@ -1109,7 +1121,27 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
                                                 {new Date(client.upcoming_session.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
                                             </div>
                                         </div>
-                                        <CalendarClock size={16} color="#9ca3af" />
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                            <CalendarClock size={16} color="#9ca3af" />
+                                            <button
+                                                onClick={() => {
+                                                    setSchedulingClient(client)
+                                                    setEditingSessionId(client.upcoming_session!.id)
+
+                                                    const dateObj = new Date(client.upcoming_session!.date)
+                                                    setSessionDate(dateObj.toISOString().split('T')[0])
+                                                    setSessionTime(dateObj.toTimeString().slice(0, 5))
+                                                    setSessionComments('')
+                                                }}
+                                                style={{
+                                                    background: 'none', border: 'none', cursor: 'pointer',
+                                                    color: '#2563eb', fontSize: '0.75rem', fontWeight: 600,
+                                                    textDecoration: 'none', padding: 0
+                                                }}
+                                            >
+                                                ✏️ Modificar
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
                                     client.completed_sessions < client.total_sessions && (
@@ -1172,11 +1204,11 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
                 </div>
             )}
 
-            {/* Schedule Next Session Modal */}
-            <Modal isOpen={!!schedulingClient} onClose={() => setSchedulingClient(null)} title={`Agendar Sesión ${schedulingClient?.next_session_number}`}>
+            {/* Schedule / Edit Next Session Modal */}
+            <Modal isOpen={!!schedulingClient} onClose={() => { setSchedulingClient(null); setEditingSessionId(null); }} title={editingSessionId ? `Modificar Sesión ${schedulingClient?.next_session_number}` : `Agendar Sesión ${schedulingClient?.next_session_number}`}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                        Agendar sesión para <strong>{schedulingClient?.name}</strong>
+                        {editingSessionId ? 'Modificando' : 'Agendar'} sesión para <strong>{schedulingClient?.name}</strong>
                     </p>
                     <div style={{ display: 'flex', gap: '1rem' }}>
                         <div style={{ flex: 1 }}>
@@ -1214,7 +1246,7 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                         <button
-                            onClick={() => setSchedulingClient(null)}
+                            onClick={() => { setSchedulingClient(null); setEditingSessionId(null); }}
                             style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', background: 'white', cursor: 'pointer' }}
                         >
                             Cancelar
@@ -1228,7 +1260,7 @@ function AgendarSesion({ onBack }: { onBack: () => void }) {
                                 opacity: (saving || !sessionDate) ? 0.6 : 1
                             }}
                         >
-                            {saving ? 'Guardando...' : `Confirmar Sesión ${schedulingClient?.next_session_number}`}
+                            {saving ? 'Guardando...' : (editingSessionId ? `Guardar Cambios` : `Confirmar Sesión ${schedulingClient?.next_session_number}`)}
                         </button>
                     </div>
                 </div>
