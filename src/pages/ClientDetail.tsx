@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { Database } from '../types/database.types'
 import { generateInvoicePDF } from '../utils/invoiceGenerator'
 import { ArrowLeft, Mail, Phone, MapPin, Dog, ClipboardCheck, CalendarClock, CheckCircle2, Clock, Circle, FileText } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 type Client = Database['public']['Tables']['clients']['Row'] & {
     cities: { name: string } | null
@@ -14,6 +15,7 @@ type Session = Database['public']['Tables']['sessions']['Row']
 export function ClientDetail() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
+    const { profile } = useAuth()
     const [client, setClient] = useState<Client | null>(null)
     const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
     const [sessions, setSessions] = useState<Session[]>([])
@@ -474,153 +476,154 @@ export function ClientDetail() {
                             </div>
 
                             {/* Add Payment Form */}
-                            {!showPaymentForm ? (
-                                <button
-                                    onClick={() => setShowPaymentForm(true)}
-                                    style={{
-                                        marginBottom: '1.5rem',
-                                        padding: '0.5rem 1.25rem',
-                                        backgroundColor: '#2563eb',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '0.375rem',
-                                        fontWeight: 600,
-                                        fontSize: '0.875rem',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    + Registrar Pago
-                                </button>
-                            ) : (
-                                <div style={{ marginBottom: '1.5rem', padding: '1.25rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                                    <h4 style={{ fontWeight: 600, marginBottom: '1rem' }}>Nuevo Pago</h4>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#374151', marginBottom: '0.25rem' }}>Importe (€)</label>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                value={newPayment.amount}
-                                                onChange={e => setNewPayment({ ...newPayment, amount: e.target.value })}
-                                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem' }}
-                                                placeholder="0.00"
-                                            />
+                            {profile?.role !== 'adiestrador' && (
+                                !showPaymentForm ? (
+                                    <button
+                                        onClick={() => setShowPaymentForm(true)}
+                                        style={{
+                                            marginBottom: '1.5rem',
+                                            padding: '0.5rem 1.25rem',
+                                            backgroundColor: '#2563eb',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '0.375rem',
+                                            fontWeight: 600,
+                                            fontSize: '0.875rem',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        + Registrar Pago
+                                    </button>
+                                ) : (
+                                    <div style={{ marginBottom: '1.5rem', padding: '1.25rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                                        <h4 style={{ fontWeight: 600, marginBottom: '1rem' }}>Nuevo Pago</h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                            <div>
+                                                <label style={{ display: 'block', fontSize: '0.8rem', color: '#374151', marginBottom: '0.25rem' }}>Importe (€)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={newPayment.amount}
+                                                    onChange={e => setNewPayment({ ...newPayment, amount: e.target.value })}
+                                                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem' }}
+                                                    placeholder="0.00"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ display: 'block', fontSize: '0.8rem', color: '#374151', marginBottom: '0.25rem' }}>Método</label>
+                                                <select
+                                                    value={newPayment.method}
+                                                    onChange={e => setNewPayment({ ...newPayment, method: e.target.value })}
+                                                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem' }}
+                                                >
+                                                    <option value="transferencia">Transferencia</option>
+                                                    <option value="efectivo">Efectivo</option>
+                                                </select>
+                                            </div>
+                                            <div style={{ gridColumn: '1 / -1' }}>
+                                                <label style={{ display: 'block', fontSize: '0.8rem', color: '#374151', marginBottom: '0.25rem' }}>Notas (opcional)</label>
+                                                <input
+                                                    type="text"
+                                                    value={newPayment.notes}
+                                                    onChange={e => setNewPayment({ ...newPayment, notes: e.target.value })}
+                                                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem' }}
+                                                    placeholder="Ej: Pago de sesiones 1-4"
+                                                />
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#374151', marginBottom: '0.25rem' }}>Método</label>
-                                            <select
-                                                value={newPayment.method}
-                                                onChange={e => setNewPayment({ ...newPayment, method: e.target.value })}
-                                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem' }}
+                                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
+                                            <button
+                                                onClick={() => { setShowPaymentForm(false); setNewPayment({ amount: '', method: 'transferencia', notes: '' }) }}
+                                                style={{ padding: '0.5rem 1rem', backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.875rem' }}
                                             >
-                                                <option value="transferencia">Transferencia</option>
-                                                <option value="efectivo">Efectivo</option>
-                                            </select>
-                                        </div>
-                                        <div style={{ gridColumn: '1 / -1' }}>
-                                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#374151', marginBottom: '0.25rem' }}>Notas (opcional)</label>
-                                            <input
-                                                type="text"
-                                                value={newPayment.notes}
-                                                onChange={e => setNewPayment({ ...newPayment, notes: e.target.value })}
-                                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontSize: '0.875rem' }}
-                                                placeholder="Ej: Pago de sesiones 1-4"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
-                                        <button
-                                            onClick={() => { setShowPaymentForm(false); setNewPayment({ amount: '', method: 'transferencia', notes: '' }) }}
-                                            style={{ padding: '0.5rem 1rem', backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.875rem' }}
-                                        >
-                                            Cancelar
-                                        </button>
-                                        <button
-                                            onClick={async (e) => {
-                                                if (!newPayment.amount || parseFloat(newPayment.amount) <= 0) {
-                                                    alert('Introduce un importe válido')
-                                                    return
-                                                }
-                                                const btn = e.currentTarget as HTMLButtonElement
-                                                if (btn) btn.disabled = true
-
-                                                try {
-                                                    const nextNumber = payments.length > 0
-                                                        ? Math.max(...payments.map(p => p.payment_number)) + 1
-                                                        : 1
-
-                                                    // 1. Insert Payment (Trigger will create Invoice record)
-                                                    const { data: pData, error } = await supabase.from('payments').insert({
-                                                        client_id: client.id,
-                                                        amount: parseFloat(newPayment.amount),
-                                                        payment_number: nextNumber,
-                                                        received: true,
-                                                        received_at: new Date().toISOString(),
-                                                        method: newPayment.method as 'efectivo' | 'transferencia',
-                                                        notes: newPayment.notes || null
-                                                    }).select().single()
-
-                                                    if (error) throw error
-
-                                                    // 2. Wait a moment for trigger and fetch invoice
-                                                    let invoice = null
-                                                    for (let i = 0; i < 5; i++) {
-                                                        const { data: invData } = await supabase
-                                                            .from('invoices')
-                                                            .select('*')
-                                                            .eq('payment_id', pData.id)
-                                                            .maybeSingle()
-
-                                                        if (invData) {
-                                                            invoice = invData
-                                                            break
-                                                        }
-                                                        await new Promise(r => setTimeout(r, 500))
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                onClick={async (e) => {
+                                                    if (!newPayment.amount || parseFloat(newPayment.amount) <= 0) {
+                                                        alert('Introduce un importe válido')
+                                                        return
                                                     }
+                                                    const btn = e.currentTarget as HTMLButtonElement
+                                                    if (btn) btn.disabled = true
 
-                                                    if (invoice) {
-                                                        // 3. Generate PDF
-                                                        const pdfBlob = generateInvoicePDF({
-                                                            invoiceNumber: invoice.invoice_number,
-                                                            date: new Date(),
-                                                            clientName: client.name,
-                                                            clientAddress: client.address || '',
-                                                            clientCity: client.cities?.name || '',
-                                                            concept: 'Adiestramiento a Domicilio',
+                                                    try {
+                                                        const nextNumber = payments.length > 0
+                                                            ? Math.max(...payments.map(p => p.payment_number)) + 1
+                                                            : 1
+
+                                                        // 1. Insert Payment (Trigger will create Invoice record)
+                                                        const { data: pData, error } = await supabase.from('payments').insert({
+                                                            client_id: client.id,
                                                             amount: parseFloat(newPayment.amount),
-                                                            paymentMethod: newPayment.method,
-                                                            settings: settings
-                                                        })
+                                                            payment_number: nextNumber,
+                                                            received: true,
+                                                            received_at: new Date().toISOString(),
+                                                            method: newPayment.method as 'efectivo' | 'transferencia',
+                                                            notes: newPayment.notes || null
+                                                        }).select().single()
 
-                                                        // 4. Upload PDF
-                                                        const fileName = `factura_${invoice.invoice_number}_${client.id}.pdf`
-                                                        const { error: uploadError } = await supabase.storage
-                                                            .from('invoices')
-                                                            .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true })
+                                                        if (error) throw error
 
-                                                        if (!uploadError) {
-                                                            const { data: urlData } = supabase.storage.from('invoices').getPublicUrl(fileName)
-                                                            await supabase.from('invoices').update({ pdf_url: urlData.publicUrl }).eq('id', invoice.id)
+                                                        // 2. Wait a moment for trigger and fetch invoice
+                                                        let invoice = null
+                                                        for (let i = 0; i < 5; i++) {
+                                                            const { data: invData } = await supabase
+                                                                .from('invoices')
+                                                                .select('*')
+                                                                .eq('payment_id', pData.id)
+                                                                .maybeSingle()
+
+                                                            if (invData) {
+                                                                invoice = invData
+                                                                break
+                                                            }
+                                                            await new Promise(r => setTimeout(r, 500))
                                                         }
-                                                    }
 
-                                                    setShowPaymentForm(false)
-                                                    setNewPayment({ amount: '', method: 'transferencia', notes: '' })
-                                                    fetchPayments(client.id)
-                                                } catch (err: any) {
-                                                    console.error('Payment error:', err)
-                                                    alert('Error al registrar pago: ' + (err.message || 'Error desconocido'))
-                                                } finally {
-                                                    if (btn) btn.disabled = false
-                                                }
-                                            }}
-                                            style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}
-                                        >
-                                            Guardar Pago
-                                        </button>
+                                                        if (invoice) {
+                                                            // 3. Generate PDF
+                                                            const pdfBlob = generateInvoicePDF({
+                                                                invoiceNumber: invoice.invoice_number,
+                                                                date: new Date(),
+                                                                clientName: client.name,
+                                                                clientAddress: client.address || '',
+                                                                clientCity: client.cities?.name || '',
+                                                                concept: 'Adiestramiento a Domicilio',
+                                                                amount: parseFloat(newPayment.amount),
+                                                                paymentMethod: newPayment.method,
+                                                                settings: settings
+                                                            })
+
+                                                            // 4. Upload PDF
+                                                            const fileName = `factura_${invoice.invoice_number}_${client.id}.pdf`
+                                                            const { error: uploadError } = await supabase.storage
+                                                                .from('invoices')
+                                                                .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true })
+
+                                                            if (!uploadError) {
+                                                                const { data: urlData } = supabase.storage.from('invoices').getPublicUrl(fileName)
+                                                                await supabase.from('invoices').update({ pdf_url: urlData.publicUrl }).eq('id', invoice.id)
+                                                            }
+                                                        }
+
+                                                        setShowPaymentForm(false)
+                                                        setNewPayment({ amount: '', method: 'transferencia', notes: '' })
+                                                        fetchPayments(client.id)
+                                                    } catch (err: any) {
+                                                        console.error('Payment error:', err)
+                                                        alert('Error al registrar pago: ' + (err.message || 'Error desconocido'))
+                                                    } finally {
+                                                        if (btn) btn.disabled = false
+                                                    }
+                                                }}
+                                                style={{ padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}
+                                            >
+                                                Guardar Pago
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                ))}
 
                             {/* Payments List */}
                             {payments.length === 0 ? (
