@@ -17,6 +17,8 @@ import { Evaluaciones } from './pages/Evaluaciones'
 import { EvaluationForm } from './pages/Evaluations/EvaluationForm'
 import { EvaluationDetail } from './pages/Evaluations/EvaluationDetail'
 import { Sesiones } from './pages/Sesiones'
+import { MiFacturacion } from './pages/MiFacturacion'
+import { PagoAdiestradores } from './pages/admin/PagoAdiestradores'
 
 import './index.css'
 
@@ -77,11 +79,21 @@ function AppRoutes() {
                         <Sesiones />
                     </RoleRoute>
                 } />
+                <Route path="mi-facturacion" element={
+                    <RoleRoute allowedRoles={['admin', 'adiestrador']}>
+                        <MiFacturacion />
+                    </RoleRoute>
+                } />
 
                 {/* Admin Only */}
                 <Route path="facturacion" element={
                     <RoleRoute allowedRoles={['admin']}>
                         <Facturacion />
+                    </RoleRoute>
+                } />
+                <Route path="pagos-adiestradores" element={
+                    <RoleRoute allowedRoles={['admin']}>
+                        <PagoAdiestradores />
                     </RoleRoute>
                 } />
                 <Route path="usuarios" element={

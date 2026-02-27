@@ -12,7 +12,9 @@ import {
     MapPin,
     Calendar,
     Settings,
-    FileText
+    FileText,
+    Receipt,
+    Wallet
 } from 'lucide-react'
 
 export function AppLayout() {
@@ -50,6 +52,7 @@ export function AppLayout() {
                 { name: 'Leads', href: '/leads', icon: Users },
                 { name: 'Clientes', href: '/clientes', icon: UserCheck },
                 { name: 'Facturación', href: '/facturacion', icon: FileText },
+                { name: 'Pagos Adiestradores', href: '/pagos-adiestradores', icon: Wallet },
                 { name: 'Usuarios', href: '/usuarios', icon: Users },
                 { name: 'Configuración', href: '/ajustes', icon: Settings },
             ]
@@ -67,6 +70,7 @@ export function AppLayout() {
             return [
                 ...common,
                 { name: 'Mis Clientes', href: '/clientes', icon: UserCheck },
+                { name: 'Mi Facturación', href: '/mi-facturacion', icon: Receipt },
             ]
         }
 

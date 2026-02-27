@@ -146,6 +146,8 @@ export interface Database {
                     comments: string | null
                     scheduled_date: string | null
                     total_sessions: number | null
+                    trainer_settlement_id: string | null
+                    paid_to_trainer: boolean
                     created_at: string
                 }
                 Insert: {
@@ -157,6 +159,8 @@ export interface Database {
                     comments?: string | null
                     scheduled_date?: string | null
                     total_sessions?: number | null
+                    trainer_settlement_id?: string | null
+                    paid_to_trainer?: boolean
                     created_at?: string
                 }
             }
@@ -188,6 +192,8 @@ export interface Database {
                     date: string
                     completed: boolean
                     comments: string | null
+                    trainer_settlement_id: string | null
+                    paid_to_trainer: boolean
                     created_at: string
                 }
                 Insert: {
@@ -197,6 +203,8 @@ export interface Database {
                     date: string
                     completed?: boolean
                     comments?: string | null
+                    trainer_settlement_id?: string | null
+                    paid_to_trainer?: boolean
                     created_at?: string
                 }
                 Update: {
@@ -206,6 +214,8 @@ export interface Database {
                     date?: string
                     completed?: boolean
                     comments?: string | null
+                    trainer_settlement_id?: string | null
+                    paid_to_trainer?: boolean
                     created_at?: string
                 }
             }
@@ -242,6 +252,44 @@ export interface Database {
                     method?: 'efectivo' | 'transferencia' | 'tarjeta' | null
                     notes?: string | null
                     created_at?: string
+                }
+            }
+            trainer_settlements: {
+                Row: {
+                    id: string
+                    adiestrador_id: string
+                    month: string
+                    base_imponible: number
+                    evaluations_deducted_amount: number
+                    iva_amount: number
+                    total_amount: number
+                    status: 'pendiente' | 'pagado'
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    adiestrador_id: string
+                    month: string
+                    base_imponible?: number
+                    evaluations_deducted_amount?: number
+                    iva_amount?: number
+                    total_amount?: number
+                    status?: 'pendiente' | 'pagado'
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    adiestrador_id?: string
+                    month?: string
+                    base_imponible?: number
+                    evaluations_deducted_amount?: number
+                    iva_amount?: number
+                    total_amount?: number
+                    status?: 'pendiente' | 'pagado'
+                    created_at?: string
+                    updated_at?: string
                 }
             }
             invoices: {

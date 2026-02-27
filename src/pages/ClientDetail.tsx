@@ -269,6 +269,20 @@ export function ClientDetail() {
                                     }}>
                                         {evaluation.result === 'aprobada' ? '✅ Aceptada' : '❌ Rechazada'}
                                     </span>
+                                    {evaluation.paid_to_trainer && (
+                                        <span style={{
+                                            marginLeft: '0.5rem',
+                                            padding: '0.5rem 1rem',
+                                            borderRadius: '9999px',
+                                            fontSize: '0.875rem',
+                                            fontWeight: 600,
+                                            backgroundColor: '#eff6ff',
+                                            color: '#1e40af',
+                                            border: '1px solid #bfdbfe'
+                                        }}>
+                                            💰 Liquidado
+                                        </span>
+                                    )}
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Fecha Evaluación</label>
@@ -440,6 +454,19 @@ export function ClientDetail() {
                                                     }}>
                                                         {statusText}
                                                     </span>
+                                                    {(session as any).paid_to_trainer && (
+                                                        <span style={{
+                                                            padding: '0.2rem 0.6rem',
+                                                            borderRadius: '9999px',
+                                                            fontSize: '0.7rem',
+                                                            fontWeight: 600,
+                                                            backgroundColor: '#eff6ff',
+                                                            color: '#1e40af',
+                                                            border: '1px solid #bfdbfe'
+                                                        }}>
+                                                            💰 Liquidado
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         )
