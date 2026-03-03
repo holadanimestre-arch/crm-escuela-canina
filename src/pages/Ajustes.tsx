@@ -439,32 +439,109 @@ export function Ajustes() {
             )}
 
             {activeTab === 'integraciones' && (
-                <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', maxWidth: '600px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '0.75rem' }}>
-                        <Share2 size={20} color="#166534" />
-                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Integraciones de Terceros</h2>
-                    </div>
-                    <p style={{ color: '#6b7280', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-                        Conecta el CRM con otras herramientas para automatizar tu flujo de trabajo. (Próximamente)
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid #f3f4f6', borderRadius: '0.5rem', backgroundColor: '#f9fafb' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ backgroundColor: '#1877F2', padding: '0.5rem', borderRadius: '0.375rem', display: 'flex' }}>
-                                    <Share2 size={16} color="white" />
-                                </div>
-                                <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>Facebook Lead Ads</div>
-                            </div>
-                            <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '9999px', fontWeight: 500 }}>Conectado</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1000px' }}>
+                    <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '0.75rem' }}>
+                            <Share2 size={24} color="#2563eb" />
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Integración con Web (Divi + Make)</h2>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid #f3f4f6', borderRadius: '0.5rem', backgroundColor: '#f9fafb' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ backgroundColor: '#25D366', padding: '0.5rem', borderRadius: '0.375rem', display: 'flex' }}>
-                                    <Share2 size={16} color="white" />
+
+                        <div style={{ backgroundColor: '#f0f9ff', border: '1px solid #bae6fd', padding: '1.5rem', borderRadius: '0.5rem', marginBottom: '2rem' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#0369a1', marginBottom: '0.75rem' }}>Paso 1: Configuración en Make</h3>
+                            <p style={{ fontSize: '0.875rem', color: '#0c4a6e', lineHeight: '1.5' }}>
+                                Crea un escenario en Make con los siguientes módulos:
+                            </p>
+                            <ol style={{ fontSize: '0.875rem', color: '#0c4a6e', marginTop: '0.5rem', paddingLeft: '1.5rem', lineHeight: '1.6' }}>
+                                <li><strong>Webhook:</strong> Crea un "Custom Webhook" y copia la URL en tu formulario de Divi.</li>
+                                <li><strong>Supabase (Search Row):</strong> Opcional, para buscar el <code>city_id</code> si el formulario envía el nombre de la ciudad.</li>
+                                <li><strong>Supabase (Create Row):</strong> Selecciona la tabla <code>leads</code> y mapea los campos.</li>
+                            </ol>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div>
+                                <h3 style={{ fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '1rem' }}>Configuración de Supabase</h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <div style={{ backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb' }}>
+                                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>API URL</div>
+                                        <code style={{ fontSize: '0.75rem', wordBreak: 'break-all' }}>{import.meta.env.VITE_SUPABASE_URL}</code>
+                                    </div>
+                                    <div style={{ backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb' }}>
+                                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>Tabla Destino</div>
+                                        <code style={{ fontSize: '0.75rem' }}>leads</code>
+                                    </div>
+                                    <div style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 500, padding: '0.5rem' }}>
+                                        ⚠️ Necesitarás la <strong>Service Role Key</strong> de Supabase para poder insertar datos desde Make. Pídela al administrador de IT.
+                                    </div>
                                 </div>
-                                <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>WhatsApp Business API</div>
                             </div>
-                            <button disabled style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem', backgroundColor: '#f3f4f6', color: '#6b7280', borderRadius: '0.375rem', border: '1px solid #d1d5db', cursor: 'not-allowed' }}>Configurar</button>
+
+                            <div>
+                                <h3 style={{ fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '1rem' }}>Mapeo de Campos</h3>
+                                <table style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '2px solid #f3f4f6' }}>
+                                            <th style={{ textAlign: 'left', padding: '0.5rem' }}>Campo CRM</th>
+                                            <th style={{ textAlign: 'left', padding: '0.5rem' }}>Valor Recomendado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                            <td style={{ padding: '0.5rem' }}><code>name</code></td>
+                                            <td style={{ padding: '0.5rem', color: '#6b7280' }}>Nombre del formulario</td>
+                                        </tr>
+                                        <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                            <td style={{ padding: '0.5rem' }}><code>email</code></td>
+                                            <td style={{ padding: '0.5rem', color: '#6b7280' }}>Email del formulario</td>
+                                        </tr>
+                                        <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                            <td style={{ padding: '0.5rem' }}><code>phone</code></td>
+                                            <td style={{ padding: '0.5rem', color: '#6b7280' }}>Teléfono del formulario</td>
+                                        </tr>
+                                        <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                            <td style={{ padding: '0.5rem' }}><code>source</code></td>
+                                            <td style={{ padding: '0.5rem', color: '#6b7280' }}><code>web</code></td>
+                                        </tr>
+                                        <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                            <td style={{ padding: '0.5rem' }}><code>status</code></td>
+                                            <td style={{ padding: '0.5rem', color: '#6b7280' }}><code>nuevo</code></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#fefce8', border: '1px solid #fef08a', borderRadius: '0.5rem' }}>
+                            <p style={{ fontSize: '0.875rem', color: '#854d0e' }}>
+                                <strong>Nota sobre Ciudades:</strong> Si tu formulario envía el nombre de la ciudad (ej: "Madrid"), Make deberá buscar primero el <code>id</code> de esa ciudad en la tabla <code>cities</code> antes de crear el lead, ya que el campo <code>city_id</code> requiere un identificador único (UUID).
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '0.75rem' }}>
+                            <FileText size={20} color="#6b7280" />
+                            <h2 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Otras Integraciones</h2>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid #f3f4f6', borderRadius: '0.5rem', backgroundColor: '#f9fafb' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ backgroundColor: '#1877F2', padding: '0.5rem', borderRadius: '0.375rem', display: 'flex' }}>
+                                        <Share2 size={16} color="white" />
+                                    </div>
+                                    <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>Facebook Lead Ads</div>
+                                </div>
+                                <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '9999px', fontWeight: 500 }}>Conectado</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid #f3f4f6', borderRadius: '0.5rem', backgroundColor: '#f9fafb' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ backgroundColor: '#25D366', padding: '0.5rem', borderRadius: '0.375rem', display: 'flex' }}>
+                                        <Share2 size={16} color="white" />
+                                    </div>
+                                    <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>WhatsApp Business API</div>
+                                </div>
+                                <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>Próximamente</span>
+                            </div>
                         </div>
                     </div>
                 </div>
