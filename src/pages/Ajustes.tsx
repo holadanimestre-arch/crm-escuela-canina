@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { MapPin, Plus, Trash2, Settings as SettingsIcon, Building2, CreditCard, FileText, Bell, Share2, Save, Image as ImageIcon, Upload } from 'lucide-react'
 
 export function Ajustes() {
-    const [activeTab, setActiveTab] = useState<'general' | 'ciudades' | 'notificaciones' | 'integraciones' | 'comerciales'>('general')
+    const [activeTab, setActiveTab] = useState<'general' | 'ciudades' | 'notificaciones' | 'integraciones' | 'comerciales' | 'whatsapp'>('general')
     const [comerciales, setComerciales] = useState<any[]>([])
     const [cities, setCities] = useState<any[]>([])
     const [newCityName, setNewCityName] = useState('')
@@ -253,6 +253,20 @@ export function Ajustes() {
                 >
                     Comerciales
                 </button>
+                <button
+                    onClick={() => setActiveTab('whatsapp')}
+                    style={{
+                        padding: '0.75rem 1rem',
+                        border: 'none',
+                        background: 'none',
+                        borderBottom: activeTab === 'whatsapp' ? '2px solid #000' : 'none',
+                        color: activeTab === 'whatsapp' ? '#000' : '#6b7280',
+                        fontWeight: activeTab === 'whatsapp' ? 600 : 500,
+                        cursor: 'pointer'
+                    }}
+                >
+                    WhatsApp
+                </button>
             </div>
 
             {/* Content */}
@@ -311,26 +325,6 @@ export function Ajustes() {
                                     style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db' }}
                                 />
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Sección WhatsApp Templates */}
-                    <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '0.75rem' }}>
-                            <Share2 size={20} color="#25D366" />
-                            <h2 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Plantillas de WhatsApp (Wazend)</h2>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Mensaje para "No contesta"</label>
-                            <textarea
-                                value={settings.whatsapp_no_contesta_template}
-                                onChange={(e) => setSettings({ ...settings, whatsapp_no_contesta_template: e.target.value })}
-                                placeholder="Escribe el mensaje..."
-                                style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', height: '100px', outline: 'none', fontFamily: 'inherit' }}
-                            />
-                            <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                                Puedes usar etiquetas: <strong>[NOMBRE]</strong> (nombre del cliente), <strong>[ADIESTRADOR]</strong> (nombre del adiestrador).
-                            </p>
                         </div>
                     </div>
 
@@ -715,6 +709,65 @@ export function Ajustes() {
                         </div>
                     )}
                 </div>
+            )}
+
+            {activeTab === 'whatsapp' && (
+                <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px' }}>
+                    <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '0.75rem' }}>
+                            <Share2 size={24} color="#25D366" />
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Configuración de WhatsApp</h2>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '1rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>
+                                    Mensaje automático "No contesta"
+                                </label>
+                                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
+                                    Este mensaje se enviará automáticamente a través de Wazend cuando marques a un cliente como "No contesta".
+                                </p>
+                                <textarea
+                                    value={settings.whatsapp_no_contesta_template}
+                                    onChange={(e) => setSettings({ ...settings, whatsapp_no_contesta_template: e.target.value })}
+                                    placeholder="Escribe el mensaje aquí..."
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem',
+                                        borderRadius: '0.5rem',
+                                        border: '1px solid #d1d5db',
+                                        height: '150px',
+                                        outline: 'none',
+                                        fontFamily: 'inherit',
+                                        fontSize: '1rem'
+                                    }}
+                                />
+                                <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                                    <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.5rem' }}>Etiquetas disponibles:</h4>
+                                    <ul style={{ fontSize: '0.875rem', color: '#4b5563', paddingLeft: '1.25rem' }}>
+                                        <li><strong>[NOMBRE]</strong>: Se sustituirá por el nombre del cliente.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                padding: '0.75rem 2rem', backgroundColor: '#000', color: 'white',
+                                borderRadius: '0.5rem', border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
+                                fontWeight: 600, fontSize: '1rem'
+                            }}
+                        >
+                            {saving ? 'Guardando...' : 'Guardar Configuración'}
+                            <Save size={18} />
+                        </button>
+                    </div>
+                </form>
             )}
 
             {/* Delete Confirmation Modal */}

@@ -32,30 +32,26 @@ serve(async (req) => {
             throw new Error('Client not found')
         }
 
-        // 2. Get Adiestrador Name
-        const { data: adiestrador } = await supabaseClient
-            .from('profiles')
-            .select('full_name')
-            .eq('id', client.adiestrador_id)
-            .single()
-
-        const adiestradorName = adiestrador?.full_name?.split(' ')[0] || 'tu adiestrador'
-
-        // 3. Get Template and Wazend Config from settings
+        // 2. Get Template from settings
         const { data: settings } = await supabaseClient
             .from('crm_settings')
-            .select('whatsapp_no_contesta_template, integration_settings')
+            .select('whatsapp_no_contesta_template')
             .single()
 
-        const template = settings?.whatsapp_no_contesta_template || 'Hola [NOMBRE], soy [ADIESTRADOR] de la Escuela Canina Fran Estévez. No hemos podido contactar contigo por teléfono.'
+        const template = settings?.whatsapp_no_contesta_template || 'Hola [NOMBRE], soy de la Escuela Canina Fran Estévez. No hemos podido contactar contigo por teléfono.'
 
-        // 4. Parse Message
-        const message = template
-            .replace('[NOMBRE]', client.name)
-            .replace('[ADIESTRADOR]', adiestradorName)
+        // 3. Parse Message (Only name substitution)
+        const message = template.replace('[NOMBRE]', client.name)
+
+        // 4. Format Phone Number (Ensure +34 prefix)
+        let rawPhone = client.phone.replace(/\D/g, '')
+        // Si no empieza por 34 y tiene 9 dígitos (formato español), le añadimos el 34
+        if (!rawPhone.startsWith('34') && rawPhone.length === 9) {
+            rawPhone = '34' + rawPhone
+        }
+        const formattedPhone = rawPhone
 
         // 5. Wazend API Config
-        // These should be set in Supabase project secrets
         const apiToken = Deno.env.get('WAZEND_API_TOKEN')
         const instanceName = Deno.env.get('WAZEND_INSTANCE_NAME')
 
@@ -71,7 +67,7 @@ serve(async (req) => {
                 'Authorization': `Bearer ${apiToken}`
             },
             body: JSON.stringify({
-                number: client.phone.replace(/\D/g, ''),
+                number: formattedPhone,
                 message: message
             })
         })
