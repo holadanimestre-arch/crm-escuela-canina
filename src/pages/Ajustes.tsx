@@ -24,7 +24,8 @@ export function Ajustes() {
         default_evaluation_price: 0,
         default_session_price: 0,
         notification_settings: {},
-        integration_settings: {}
+        integration_settings: {},
+        whatsapp_no_contesta_template: ''
     })
 
     useEffect(() => {
@@ -310,6 +311,26 @@ export function Ajustes() {
                                     style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db' }}
                                 />
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Sección WhatsApp Templates */}
+                    <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '0.75rem' }}>
+                            <Share2 size={20} color="#25D366" />
+                            <h2 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Plantillas de WhatsApp (Wazend)</h2>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Mensaje para "No contesta"</label>
+                            <textarea
+                                value={settings.whatsapp_no_contesta_template}
+                                onChange={(e) => setSettings({ ...settings, whatsapp_no_contesta_template: e.target.value })}
+                                placeholder="Escribe el mensaje..."
+                                style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', height: '100px', outline: 'none', fontFamily: 'inherit' }}
+                            />
+                            <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                Puedes usar etiquetas: <strong>[NOMBRE]</strong> (nombre del cliente), <strong>[ADIESTRADOR]</strong> (nombre del adiestrador).
+                            </p>
                         </div>
                     </div>
 

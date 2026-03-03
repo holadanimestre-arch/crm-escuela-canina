@@ -383,6 +383,17 @@ function LlamadasPendientes({ onBack }: { onBack: () => void }) {
                 .update({ no_contesta_at: new Date().toISOString() })
                 .eq('id', client.id)
             if (error) throw error
+
+            // Trigger WhatsApp via Edge Function
+            try {
+                const { error: fnError } = await supabase.functions.invoke('send-whatsapp-wazend', {
+                    body: { clientId: client.id }
+                })
+                if (fnError) console.error('Error sending WhatsApp:', fnError)
+            } catch (fnErr) {
+                console.error('Failed to trigger WhatsApp function:', fnErr)
+            }
+
             setDetailClient(null)
             fetchClients()
         } catch (err: any) {
