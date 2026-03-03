@@ -37,6 +37,7 @@ export function Leads() {
     const [isConvertModalOpen, setIsConvertModalOpen] = useState(false)
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
     const [convertData, setConvertData] = useState({
+        city_id: '',
         dog_breed: '',
         dog_age: '',
         address: '',
@@ -104,7 +105,15 @@ export function Leads() {
 
     function openConvertModal(lead: Lead) {
         setSelectedLead(lead)
-        setConvertData({ dog_breed: '', dog_age: '', address: '', call_reason: '', observations: '', converted_by: '' })
+        setConvertData({
+            city_id: lead.city_id || '',
+            dog_breed: '',
+            dog_age: '',
+            address: '',
+            call_reason: '',
+            observations: '',
+            converted_by: ''
+        })
         setIsConvertModalOpen(true)
     }
 
@@ -121,7 +130,7 @@ export function Leads() {
         try {
             const { error: clientError } = await supabase.from('clients').insert({
                 lead_id: selectedLead.id,
-                city_id: selectedLead.city_id || cities[0]?.id,
+                city_id: convertData.city_id || selectedLead.city_id,
                 name: selectedLead.name,
                 email: selectedLead.email,
                 phone: selectedLead.phone,
@@ -400,8 +409,33 @@ export function Leads() {
                 <form onSubmit={handleConvert} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                         Estás convirtiendo a <strong>{selectedLead?.name}</strong> en cliente.
-                        Por favor, añade los datos del perro.
                     </p>
+
+                    <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb', marginBottom: '0.5rem' }}>
+                        <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Asignar a Ciudad / Adiestrador</label>
+                        <select
+                            required
+                            value={convertData.city_id}
+                            onChange={e => setConvertData({ ...convertData, city_id: e.target.value })}
+                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white' }}
+                        >
+                            <option value="">Selecciona destino...</option>
+                            {cities
+                                .filter(city => {
+                                    // @ts-ignore
+                                    const leadCityName = selectedLead?.cities?.name || '';
+                                    if (!leadCityName) return true;
+                                    const baseName = leadCityName.split(' ')[0].toLowerCase();
+                                    return city.name.toLowerCase().startsWith(baseName);
+                                })
+                                .map(city => (
+                                    <option key={city.id} value={city.id}>{city.name}</option>
+                                ))}
+                        </select>
+                        <p style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.5rem' }}>
+                            * Solo se muestran opciones relacionadas con la ciudad del lead.
+                        </p>
+                    </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
