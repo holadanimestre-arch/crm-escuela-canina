@@ -65,17 +65,11 @@ export const generateInvoicePDF = async (data: InvoiceData): Promise<Blob> => {
 
         // Try to get base64 data to ensure it's loaded
         const logoData = await getImageData(logoUrl);
-        doc.addImage(logoData, 'PNG', 10, 8, 25, 25)
+        doc.addImage(logoData, 'PNG', 10, 5, 30, 30)
 
     } catch (e) {
-        console.warn('Could not add logo to PDF, using text fallback:', e)
+        console.warn('Could not add logo to PDF:', e)
     }
-
-    // Business Name next to logo (Always visible)
-    doc.setTextColor(255, 255, 255)
-    doc.setFontSize(14)
-    doc.setFont("helvetica", "bold")
-    doc.text('ESCUELA CANINA FRAN ESTÉVEZ', 40, 22)
 
     // White text in header (Centered)
     doc.setTextColor(255, 255, 255)
