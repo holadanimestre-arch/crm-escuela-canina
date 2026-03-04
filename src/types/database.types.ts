@@ -70,6 +70,7 @@ export interface Database {
                     effective_contact_at: string | null
                     contact_attempts: number | null
                     send_whatsapp: boolean | null
+                    last_whatsapp_sent_at: string | null
                 }
                 Insert: {
                     id?: string
@@ -98,6 +99,11 @@ export interface Database {
                     external_source_id?: string | null
                     created_at?: string
                     evaluation_accepted_at?: string | null
+                    first_contact_at?: string | null
+                    effective_contact_at?: string | null
+                    contact_attempts?: number | null
+                    send_whatsapp?: boolean | null
+                    last_whatsapp_sent_at?: string | null
                 }
             }
             clients: {

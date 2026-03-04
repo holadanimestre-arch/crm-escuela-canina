@@ -7,92 +7,70 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-    // Handle CORS
-    if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders })
-    }
+    if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
     try {
-        const { clientId } = await req.json()
-
-        // Initialize Supabase Client
-        const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        )
-
-        // 1. Get Client Info
-        const { data: client, error: clientError } = await supabaseClient
-            .from('clients')
-            .select('name, phone, adiestrador_id')
-            .eq('id', clientId)
-            .single()
-
-        if (clientError || !client) {
-            throw new Error('Client not found')
-        }
-
-        // 2. Get Template from settings
-        const { data: settings } = await supabaseClient
-            .from('crm_settings')
-            .select('whatsapp_no_contesta_template')
-            .single()
-
-        const template = settings?.whatsapp_no_contesta_template || 'Hola [NOMBRE], soy de la Escuela Canina Fran Estévez. No hemos podido contactar contigo por teléfono.'
-
-        // 3. Parse Message (Only name substitution)
-        const message = template.replace('[NOMBRE]', client.name)
-
-        // 4. Format Phone Number (Ensure +34 prefix)
-        let rawPhone = client.phone.replace(/\D/g, '')
-        // Si no empieza por 34 y tiene 9 dígitos (formato español), le añadimos el 34
-        if (!rawPhone.startsWith('34') && rawPhone.length === 9) {
-            rawPhone = '34' + rawPhone
-        }
-        const formattedPhone = rawPhone
-
-        // 5. Wazend API Config
+        const { clientId, leadId } = await req.json()
         const apiToken = Deno.env.get('WAZEND_API_TOKEN')
         const instanceName = Deno.env.get('WAZEND_INSTANCE_NAME')
+        const baseUrl = Deno.env.get('WAZEND_BASE_URL') || 'https://api1.wazend.net'
 
-        if (!apiToken || !instanceName) {
-            throw new Error('Wazend configuration missing (API Token or Instance Name)')
-        }
+        if (!apiToken || !instanceName) throw new Error('Faltan secretos en Supabase (TOKEN o INSTANCIA)')
 
-        // 6. Call Wazend
-        const response = await fetch(`https://api2.wazend.net/message/sendText/${instanceName}`, {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+        const supabaseClient = createClient(supabaseUrl, supabaseKey)
+
+        let table = clientId ? 'clients' : 'leads'
+        let id = clientId || leadId
+
+        if (!id) throw new Error('No se proporcionó ID de cliente o lead')
+
+        const { data: entity, error: entityError } = await supabaseClient.from(table).select('name, phone').eq('id', id).single()
+        if (entityError || !entity || !entity.phone) throw new Error(`No se encontró el teléfono del ${table}`)
+
+        const { data: settings } = await supabaseClient.from('crm_settings').select('whatsapp_no_contesta_template').single()
+        const template = settings?.whatsapp_no_contesta_template || 'Hola [NOMBRE], no hemos podido contactar contigo por teléfono.'
+        const text = template.replace('[NOMBRE]', entity.name)
+
+        let phone = entity.phone.replace(/\D/g, '')
+        if (!phone.startsWith('34') && phone.length === 9) phone = '34' + phone
+
+        console.log(`[WA-SEND] Intentando enviar a ${phone} a través de ${baseUrl}`)
+
+        const response = await fetch(`${baseUrl}/message/sendText/${instanceName}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiToken}`
+                'apiKey': apiToken
             },
-            body: JSON.stringify({
-                number: formattedPhone,
-                message: message
-            })
+            body: JSON.stringify({ number: phone, text: text })
         })
 
         const result = await response.json()
 
         if (!response.ok) {
-            throw new Error(`Wazend API error: ${JSON.stringify(result)}`)
+            return new Response(JSON.stringify({ error: `Wazend devolvió error: ${JSON.stringify(result)}` }), {
+                status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
         }
 
-        // 7. Update client log
-        await supabaseClient
-            .from('clients')
-            .update({ last_whatsapp_sent_at: new Date().toISOString() })
-            .eq('id', clientId)
+        // Marcar como enviado y resetear flag de envío automático
+        const updatePayload: any = { last_whatsapp_sent_at: new Date().toISOString() }
+        if (table === 'leads') {
+            updatePayload.send_whatsapp = false
+        }
 
-        return new Response(
-            JSON.stringify({ success: true, result }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        await supabaseClient.from(table).update(updatePayload).eq('id', id)
 
-    } catch (error) {
-        return new Response(
-            JSON.stringify({ error: error.message }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        return new Response(JSON.stringify({ success: true, result }), {
+            status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+
+    } catch (err: any) {
+        console.error('[WA-SEND] Error:', err.message)
+        return new Response(JSON.stringify({ error: err.message }), {
+            status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
     }
 })

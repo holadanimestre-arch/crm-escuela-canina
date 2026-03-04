@@ -132,7 +132,7 @@ export function Facturacion() {
 
             if (invoice) {
                 // 3. Generate PDF
-                const pdfBlob = generateInvoicePDF({
+                const pdfBlob = await generateInvoicePDF({
                     invoiceNumber: invoice.invoice_number,
                     date: new Date(),
                     clientName: client.name,

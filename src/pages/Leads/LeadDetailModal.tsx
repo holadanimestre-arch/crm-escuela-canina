@@ -14,18 +14,19 @@ interface LeadDetailModalProps {
 
 export function LeadDetailModal({ lead, isOpen, onClose, onUpdate }: LeadDetailModalProps) {
     const [formData, setFormData] = useState<Partial<Lead>>({})
+    const [sendWA, setSendWA] = useState(false) // Nueva variable dedicada
     const [saving, setSaving] = useState(false)
 
     useEffect(() => {
-        if (lead) {
+        if (lead && isOpen) {
             setFormData({
                 notes: lead.notes || '',
                 source: lead.source || 'Orgánico',
                 contact_attempts: lead.contact_attempts || 0,
                 first_contact_at: lead.first_contact_at ? new Date(lead.first_contact_at).toISOString().slice(0, 16) : '',
-                effective_contact_at: lead.effective_contact_at ? new Date(lead.effective_contact_at).toISOString().slice(0, 16) : '',
-                send_whatsapp: lead.send_whatsapp || false
+                effective_contact_at: lead.effective_contact_at ? new Date(lead.effective_contact_at).toISOString().slice(0, 16) : ''
             })
+            setSendWA(lead.send_whatsapp || false)
         }
     }, [lead])
 
@@ -42,16 +43,29 @@ export function LeadDetailModal({ lead, isOpen, onClose, onUpdate }: LeadDetailM
                     contact_attempts: Number(formData.contact_attempts),
                     first_contact_at: formData.first_contact_at || null,
                     effective_contact_at: formData.effective_contact_at || null,
-                    send_whatsapp: formData.send_whatsapp
+                    send_whatsapp: sendWA // Usamos la nueva variable
                 })
                 .eq('id', lead!.id)
 
             if (error) throw error
+
+            if (sendWA) {
+                const { data: fnData, error: fnError } = await supabase.functions.invoke('send-whatsapp-wazend', {
+                    body: { leadId: lead!.id }
+                })
+
+                if (fnError) {
+                    alert('Error en el servicio de WhatsApp: ' + fnError.message)
+                } else if (fnData?.error) {
+                    alert('Nota de Wazend: ' + fnData.error)
+                }
+            }
+
             onUpdate()
             onClose()
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating lead:', error)
-            alert('Error al guardar cambios')
+            alert('Error al guardar los cambios. Por favor, revisa tu conexión.');
         } finally {
             setSaving(false)
         }
@@ -140,19 +154,30 @@ export function LeadDetailModal({ lead, isOpen, onClose, onUpdate }: LeadDetailM
                     />
                 </div>
 
-                {/* Whatsapp Checkbox */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', backgroundColor: '#f0fdf4', borderRadius: '0.5rem', border: '1px solid #bbf7d0' }}>
-                    <input
-                        type="checkbox"
-                        id="whatsapp-check"
-                        checked={formData.send_whatsapp || false}
-                        onChange={e => setFormData({ ...formData, send_whatsapp: e.target.checked })}
-                        style={{ width: '1.25rem', height: '1.25rem' }}
-                    />
-                    <label htmlFor="whatsapp-check" style={{ fontWeight: 500, color: '#166534' }}>
-                        Enviar Whatsapp (Automático)
-                    </label>
-                </div>
+                {/* Whatsapp Section */}
+                {!lead.last_whatsapp_sent_at ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', backgroundColor: '#f0fdf4', borderRadius: '0.5rem', border: '1px solid #bbf7d0' }}>
+                        <input
+                            type="checkbox"
+                            id="whatsapp-check"
+                            checked={sendWA}
+                            onChange={e => setSendWA(e.target.checked)}
+                            style={{ width: '1.25rem', height: '1.25rem' }}
+                        />
+                        <label htmlFor="whatsapp-check" style={{ fontWeight: 500, color: '#166534' }}>
+                            Enviar Whatsapp (Automático)
+                        </label>
+                    </div>
+                ) : (
+                    <div style={{ padding: '0.75rem 1rem', backgroundColor: '#f3f4f6', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.875rem', color: '#4b5563' }}>WhatsApp enviado correctamente:</span>
+                        <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#1f2937' }}>
+                            {new Date(lead.last_whatsapp_sent_at).toLocaleString('es-ES', {
+                                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                            })}
+                        </span>
+                    </div>
+                )}
 
                 {/* Actions */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
