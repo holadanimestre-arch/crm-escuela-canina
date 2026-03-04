@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { format } from 'date-fns'
+import logo from '../assets/logo.png'
 
 interface InvoiceData {
     invoiceNumber: string | number
@@ -25,6 +26,28 @@ interface InvoiceData {
     }
 }
 
+// Helper to ensure image is loaded before adding to PDF
+const getImageData = (url: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            } else {
+                reject(new Error('Could not get canvas context'));
+            }
+        };
+        img.onerror = () => reject(new Error(`Could not load image at ${url}`));
+        img.src = url;
+    });
+};
+
 export const generateInvoicePDF = async (data: InvoiceData): Promise<Blob> => {
     const doc = new jsPDF()
     const pageWidth = doc.internal.pageSize.width
@@ -37,34 +60,22 @@ export const generateInvoicePDF = async (data: InvoiceData): Promise<Blob> => {
 
     // Logo embedding (Top Left)
     try {
-        // Draw white background for logo area to ensure visibility
+        const logoStatic = logo as string;
+        const logoUrl = s.invoice_logo_url || logoStatic;
 
-
-        if (s.invoice_logo_url) {
-            const format = s.invoice_logo_url.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-            doc.addImage(s.invoice_logo_url, format, 11, 9, 23, 23)
-        } else {
-            // Real Logo from public/logo.png (Hardcoded base64)
-            const logoBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAYAAAA+s9J6AAAQAElEQVR4AezdC9BuU/0H8NU/E1E6iRyMIpc5kUuNS1NIlGuXQ+ggTLlHF0bRaNSgEFJyiZhpGEZyKYNCE2Gky4RIyq1S0SRMmu5N//NZWa99nvM+593P8+7neffzPr933u9el73Wb/3Wb6/v/q299uX5v5TSfwNhgxgDMzcGkHCh/eM/LBAWmCmLBAlnyvLRbljgOQsECZ8zRARhgZmyQJBwpiw//HajxZZaIEjY0gMTao2PBYKE43Oso6cttUCQsKUHJtQaHwsECcfnWEdPW2qBAZCwpT0NtcICLbVAkLClBybUGh8LBAnH51hHT1tqgSBhSw9MqDU+FggSjs+xHkBPQ2QTFggSNmHFkBEWmIYFgoTTMF5UDQs0YYEgYRNWDBlhgWlYIEg4DeNF1bBAExYYDRI20dOQERZoqQWChC09MKHW+FggSDg+xzp62lILBAlbemBCrfGxQJBwfI71aPR0DLUMEo7hQY8ut8sCQcJ2HY/QZgwtECQcw4MeXW6XBYKE7Toeoc0YWmBsSTiGxzq63FILBAlbemBCrfGxQJBwfI71RE+XWmqpBMsss0wO7ZAuYYnPmzcvHXXUUemss85KBx10UHrJS16iSKBhCwQJGzboKIn797//nUmYyCWUB/vss0+6+uqr08knn5wOO+ywdPrpp6f99ttvlLo3MroGCUfmUDWnKJIVaX//+9/TX/7ylyRPuMIKK6Srr7wynXPOOYknVO4///lP9oI77rii5Mih7QoHCdt+hAaoH+LxfpowBeXx7r777rTrrrtm0v3zn/9ML3zhC+1O4quttlqaO3duTsemOQsECZuzZWskIdSSlKnu5/1e//rX+p+uvvz6deuqpafXVV89VeT8EFMKLXvSi9IpXvCKtssoqeX9smrNAkLA5W7ZCUpVgyyxceCmQLy4EXpDCvN/Xv/719Pa3vz29+MUvlpWBgICAwpwZm4FYIEg4ELPOnFAE03qZZiIbyHP9Jy7cbrvt0l133ZW++MUvprXWWishmzJLginpr3/96yUViX19WCBI2IfRulRpRTaSgWkmsokXUBD5zj333HTppZemDTbYIJMPuZZEwuIJn3zyyfTUU08RE2jQAkHCBo3ZBlEIRw8rm3vssUe+z+c2wwUXXJA9n2u/Qw45JM2ZM2eCgMq75hNOBiSVz3MKA81aIEjYrD2HKs3Us6A0jHA///nP03333ZcuvPDC9JnPfCYdffTRaf/9908bb7zxxGqn8jycaauQ55TXCR4SCSFI2GmdZtJBwmbsODQpVdLxetJCns/9PYQTRywE6+bh7AeKC5UV74R98u6///50zTXXiAYatkCQsGGDDlocwoF23Fh33bfLLrvkp1vc35PfFHjBQuKTTjopPfHEE/kJm6bkj7CcRlUPEjZqzsEJ4/Gg2oJFkn333Td99rOfTbxftylltU4vcV7wb3/7W/aAl19+eSZgOQH0IifKLtkCQcIl26dVezsJYOHluOOOywR0zVa9z9eE4ghoFfW0005rQlzI6GKBIGEXw7QtGwHLzXa6bbHFFunMM8/M9/iky7RRvF+YflbreoD7gAMOyKuq8ukgLKjqU/Ii7N0CQcLebTZjNZAAXAuagq644oqL6GL6uEhGDwkEBB714YcfTocffnjae++9F5Ewd+7ctNlmmyXXoO3Zrv8AHTZsc10RtoSAAAAAElFTkSuQmCC';
-            doc.addImage('data:image/png;base64,' + logoBase64, 'PNG', 11, 9, 23, 23)
-        }
-
-        // Business Name next to logo
-        doc.setTextColor(255, 255, 255)
-        doc.setFontSize(14)
-        doc.setFont("helvetica", "bold")
-        doc.text('ESCUELA CANINA FRAN ESTÉVEZ', 40, 22)
+        // Try to get base64 data to ensure it's loaded
+        const logoData = await getImageData(logoUrl);
+        doc.addImage(logoData, 'PNG', 10, 8, 25, 25)
 
     } catch (e) {
-        console.warn('Could not add logo to PDF:', e)
-        // Fallback text if logo fails
-        doc.setTextColor(255, 255, 255)
-        doc.setFontSize(12)
-        doc.setFont("helvetica", "bold")
-        doc.text('ESCUELA CANINA', 40, 18)
-        doc.setFontSize(10)
-        doc.text('FRAN ESTÉVEZ', 40, 24)
+        console.warn('Could not add logo to PDF, using text fallback:', e)
     }
+
+    // Business Name next to logo (Always visible)
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(14)
+    doc.setFont("helvetica", "bold")
+    doc.text('ESCUELA CANINA FRAN ESTÉVEZ', 40, 22)
 
     // White text in header (Centered)
     doc.setTextColor(255, 255, 255)
@@ -110,11 +121,11 @@ export const generateInvoicePDF = async (data: InvoiceData): Promise<Blob> => {
         body: [
             [
                 { content: data.concept, styles: { fontStyle: 'bold' } },
-                `${subtotal.toFixed(2)}\u00A0€`,
+                `${subtotal.toFixed(2)} €`,
                 '1',
-                `${subtotal.toFixed(2)}\u00A0€`,
-                '21\u00A0%',
-                `${total.toFixed(2)}\u00A0€`
+                `${subtotal.toFixed(2)} €`,
+                '21 %',
+                `${total.toFixed(2)} €`
             ]
         ],
         theme: 'plain',
