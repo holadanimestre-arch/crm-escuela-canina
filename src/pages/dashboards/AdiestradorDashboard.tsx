@@ -10,17 +10,32 @@ export default function AdiestradorDashboard() {
     const [counts, setCounts] = useState({ llamadas: 0, resultado: 0, sesiones: 0 })
     const [activeView, setActiveView] = useState<'home' | 'llamadas' | 'resultado' | 'sesiones' | 'modificar'>('home')
     const { profile } = useAuth()
+    const { cityId } = useFilters()
 
     useEffect(() => {
-        fetchCounts()
-    }, [])
+        if (profile) fetchCounts()
+    }, [profile, cityId])
 
     async function fetchCounts() {
         if (!profile) return
 
-        const { count: llamadas } = await supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'pendiente_llamada').eq('adiestrador_id', profile.id)
-        const { count: resultado } = await supabase.from('evaluations').select('*', { count: 'exact', head: true }).is('result', null).eq('adiestrador_id', profile.id)
-        const { count: sesiones } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'activo').eq('adiestrador_id', profile.id)
+        let llamadasQ = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'pendiente_llamada')
+        let resultadoQ = supabase.from('evaluations').select('*', { count: 'exact', head: true }).is('result', null)
+        let sesionesQ = supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'activo')
+
+        if (profile.role === 'admin' && cityId !== 'all') {
+            llamadasQ = llamadasQ.eq('city_id', cityId)
+            resultadoQ = resultadoQ.eq('city_id', cityId)
+            sesionesQ = sesionesQ.eq('city_id', cityId)
+        } else if (profile.role !== 'admin') {
+            llamadasQ = llamadasQ.eq('adiestrador_id', profile.id)
+            resultadoQ = resultadoQ.eq('adiestrador_id', profile.id)
+            sesionesQ = sesionesQ.eq('adiestrador_id', profile.id)
+        }
+
+        const { count: llamadas } = await llamadasQ
+        const { count: resultado } = await resultadoQ
+        const { count: sesiones } = await sesionesQ
 
         setCounts({
             llamadas: llamadas || 0,
@@ -125,6 +140,7 @@ function DashboardButton({ icon: Icon, title, count, onClick, color }: any) {
 // ─── 1. LLAMADAS PENDIENTES ─────────────────────────────────────────
 function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
     const { profile } = useAuth()
+    const { cityId } = useFilters()
     const [clients, setClients] = useState<any[]>([])
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(true)
@@ -135,16 +151,20 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
     const [saving, setSaving] = useState(false)
     const [savingNoContesta, setSavingNoContesta] = useState(false)
 
-    useEffect(() => { fetchClients() }, [])
+    useEffect(() => { if (profile) fetchClients() }, [profile, cityId])
 
     async function fetchClients() {
         if (!profile) return
         setLoading(true)
-        const { data } = await supabase
-            .from('leads')
-            .select('*')
-            .eq('status', 'pendiente_llamada')
-            .eq('adiestrador_id', profile.id)
+        let query = supabase.from('leads').select('*').eq('status', 'pendiente_llamada')
+
+        if (profile.role === 'admin' && cityId !== 'all') {
+            query = query.eq('city_id', cityId)
+        } else if (profile.role !== 'admin') {
+            query = query.eq('adiestrador_id', profile.id)
+        }
+
+        const { data } = await query
         setClients(data || [])
         setLoading(false)
     }
@@ -283,13 +303,19 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
     const [firstSessionTime, setFirstSessionTime] = useState('')
     const [saving, setSaving] = useState(false)
 
-    useEffect(() => { fetchEvaluations() }, [cityId])
+    useEffect(() => { if (profile) fetchEvaluations() }, [profile, cityId])
 
     async function fetchEvaluations() {
         if (!profile) return
         setLoading(true)
-        let query = supabase.from('evaluations').select('*, clients(*)').is('result', null).eq('adiestrador_id', profile.id)
-        if (cityId !== 'all') query = query.eq('city_id', cityId)
+        let query = supabase.from('evaluations').select('*, clients(*)').is('result', null)
+
+        if (profile.role === 'admin' && cityId !== 'all') {
+            query = query.eq('city_id', cityId)
+        } else if (profile.role !== 'admin') {
+            query = query.eq('adiestrador_id', profile.id)
+        }
+
         const { data } = await query
         setEvaluations(data || [])
         setLoading(false)
@@ -370,6 +396,7 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
 // ─── 3. AGENDAR SIGUIENTE SESIÓN ────────────────────────────────────
 function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
     const { profile } = useAuth()
+    const { cityId } = useFilters()
     const [clients, setClients] = useState<any[]>([])
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(true)
@@ -378,12 +405,20 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
     const [sessionTime, setSessionTime] = useState('')
     const [saving, setSaving] = useState(false)
 
-    useEffect(() => { fetchClients() }, [])
+    useEffect(() => { if (profile) fetchClients() }, [profile, cityId])
 
     async function fetchClients() {
         if (!profile) return
         setLoading(true)
-        const { data } = await supabase.from('clients').select('*').eq('status', 'activo').eq('adiestrador_id', profile.id)
+        let query = supabase.from('clients').select('*').eq('status', 'activo')
+
+        if (profile.role === 'admin' && cityId !== 'all') {
+            query = query.eq('city_id', cityId)
+        } else if (profile.role !== 'admin') {
+            query = query.eq('adiestrador_id', profile.id)
+        }
+
+        const { data } = await query
         setClients(data || [])
         setLoading(false)
     }
@@ -412,12 +447,12 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
     }
 
     return (
-        <div style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
                     <ArrowLeft size={20} /> Volver
                 </button>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Agendar Sesión</h1>
+                <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700 }}>Agendar Sesión</h1>
             </div>
 
             <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
@@ -425,8 +460,8 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
                 <input type="text" placeholder="Buscar cliente..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: '100%', padding: '0.75rem 3rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }} />
             </div>
 
-            {loading ? <p>Cargando...</p> : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+            {loading ? <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>Cargando clientes...</p> : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                     {clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).map(client => (
                         <div key={client.id} style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white' }}>
                             <h3 style={{ fontWeight: 600 }}>{client.name}</h3>
@@ -454,19 +489,29 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
 // ─── 4. MODIFICAR FECHA SESIÓN ──────────────────────────────────────
 function ModificarSesion({ onBack, syncGoogleCalendar }: any) {
     const { profile } = useAuth()
+    const { cityId } = useFilters()
     const [clients, setClients] = useState<any[]>([])
-    const [, setLoading] = useState(true)
+    const [loading, setLoading] = useState(true)
     const [modifyingSession, setModifyingSession] = useState<any>(null)
     const [newDate, setNewDate] = useState('')
     const [newTime, setNewTime] = useState('')
     const [saving, setSaving] = useState(false)
 
-    useEffect(() => { fetchSessions() }, [])
+    useEffect(() => { if (profile) fetchSessions() }, [profile, cityId])
 
     async function fetchSessions() {
         if (!profile) return
         setLoading(true)
-        const { data } = await supabase.from('sessions').select('*, clients(name)').eq('completed', false).eq('adiestrador_id', profile.id).order('date', { ascending: true })
+        let query = supabase.from('sessions').select('*, clients!inner(*)').eq('completed', false).order('date', { ascending: true })
+
+        if (profile.role === 'admin' && cityId !== 'all') {
+            query = query.eq('clients.city_id', cityId)
+        } else if (profile.role !== 'admin') {
+            query = query.eq('adiestrador_id', profile.id)
+        }
+
+        const { data, error } = await query
+        if (error) console.error("Error fetching sessions:", error)
         setClients(data || [])
         setLoading(false)
     }
@@ -488,27 +533,29 @@ function ModificarSesion({ onBack, syncGoogleCalendar }: any) {
     }
 
     return (
-        <div style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
                     <ArrowLeft size={20} /> Volver
                 </button>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Modificar Próxima Sesión</h1>
+                <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700 }}>Modificar Próxima Sesión</h1>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
-                {clients.map(sess => (
-                    <div key={sess.id} style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white' }}>
-                        <h3 style={{ fontWeight: 600 }}>{sess.clients.name}</h3>
-                        <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: '0.5rem 0' }}>
-                            Actual: {new Date(sess.date).toLocaleDateString()} {new Date(sess.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                        <button onClick={() => { setModifyingSession(sess); setNewDate(''); setNewTime('') }} style={{ width: '100%', padding: '0.5rem', background: '#fff', border: '1px solid #000', borderRadius: '0.5rem', cursor: 'pointer' }}>
-                            Modificar Fecha
-                        </button>
-                    </div>
-                ))}
-            </div>
+            {loading ? <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>Cargando sesiones...</p> : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                    {clients.map(sess => (
+                        <div key={sess.id} style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white' }}>
+                            <h3 style={{ fontWeight: 600 }}>{/* @ts-ignore */ sess.clients?.name || 'Cliente'}</h3>
+                            <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: '0.5rem 0' }}>
+                                Actual: {new Date(sess.date).toLocaleDateString()} {new Date(sess.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                            <button onClick={() => { setModifyingSession(sess); setNewDate(''); setNewTime('') }} style={{ width: '100%', padding: '0.5rem', background: '#fff', border: '1px solid #000', borderRadius: '0.5rem', cursor: 'pointer' }}>
+                                Modificar Fecha
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             <Modal isOpen={!!modifyingSession} onClose={() => setModifyingSession(null)} title="Cambiar Fecha/Hora">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
