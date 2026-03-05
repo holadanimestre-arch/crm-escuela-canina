@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../hooks/useAuth'
 import { useFilters } from '../context/FilterContext'
 import { CheckCircle, MessageCircle, ArrowLeft } from 'lucide-react'
 import { Modal } from '../components/Modal'
@@ -28,7 +29,9 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
     const [selectedEvent, setSelectedEvent] = useState<any | null>(null)
     const [view, setView] = useState<View>(window.innerWidth < 768 ? 'agenda' : 'month')
     const [date, setDate] = useState(new Date())
+    const [isLinked, setIsLinked] = useState(false)
     const { cityId } = useFilters()
+    const { profile } = useAuth()
 
     const handleBack = () => {
         if (onBack) onBack()
@@ -47,7 +50,23 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
 
     useEffect(() => {
         fetchAgenda()
+        checkCalendarLink()
     }, [cityId])
+
+    async function checkCalendarLink() {
+        if (!profile) return
+        const { data } = await supabase
+            .from('adiestrador_calendar_tokens')
+            .select('user_id')
+            .eq('user_id', profile.id)
+            .single()
+        setIsLinked(!!data)
+    }
+
+    const handleLinkGoogle = () => {
+        if (!profile) return
+        window.location.href = `https://gufbkrzpalsrizkqusyr.supabase.co/functions/v1/google-calendar-auth?userId=${profile.id}`
+    }
 
     async function fetchAgenda() {
         setLoading(true)
@@ -179,6 +198,30 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
                         <ArrowLeft size={18} color="#000" />
                     </button>
                     <h1 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Agenda</h1>
+
+                    <div style={{ marginLeft: 'auto' }}>
+                        {isLinked ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#166534', backgroundColor: '#dcfce7', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 600 }}>
+                                <CheckCircle size={16} /> Google Calendar Vinculado
+                            </div>
+                        ) : (
+                            <button
+                                onClick={handleLinkGoogle}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                    padding: '0.5rem 1rem', borderRadius: '0.5rem',
+                                    backgroundColor: '#fff', border: '1px solid #e5e7eb',
+                                    color: '#374151', fontSize: '0.875rem', fontWeight: 600,
+                                    cursor: 'pointer', transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = '#000'}
+                                onMouseLeave={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            >
+                                <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: '16px', height: '16px' }} />
+                                Vincular Google Calendar
+                            </button>
+                        )}
+                    </div>
                 </div>
             ) : null}
 
