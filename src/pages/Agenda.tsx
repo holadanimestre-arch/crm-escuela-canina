@@ -185,38 +185,39 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
 
     return (
         <div style={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                {onBack && (
-                    <button
-                        onClick={handleBack}
-                        style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            width: '36px', height: '36px', borderRadius: '50%',
-                            border: '1px solid #e5e7eb', backgroundColor: 'white', cursor: 'pointer'
-                        }}
-                    >
-                        <ArrowLeft size={18} color="#000" />
-                    </button>
-                )}
-                <h1 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Agenda</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    {onBack && (
+                        <button
+                            onClick={handleBack}
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                width: '36px', height: '36px', borderRadius: '50%',
+                                border: '1px solid #e5e7eb', backgroundColor: 'white', cursor: 'pointer'
+                            }}
+                        >
+                            <ArrowLeft size={18} color="#000" />
+                        </button>
+                    )}
+                    <h1 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Agenda</h1>
+                </div>
 
-                <div style={{ marginLeft: 'auto' }}>
+                <div style={{ marginLeft: window.innerWidth < 640 ? '0' : 'auto', width: window.innerWidth < 640 ? '100%' : 'auto' }}>
                     {isLinked ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#166534', backgroundColor: '#dcfce7', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 600 }}>
-                            <CheckCircle size={16} /> Google Calendar Vinculado
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#166534', backgroundColor: '#dcfce7', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: 600, width: 'fit-content' }}>
+                            <CheckCircle size={16} /> <span style={{ whiteSpace: 'nowrap' }}>Google Calendar Vinculado</span>
                         </div>
                     ) : (
                         <button
                             onClick={handleLinkGoogle}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                padding: '0.5rem 1rem', borderRadius: '0.5rem',
+                                padding: '0.5rem 0.75rem', borderRadius: '0.5rem',
                                 backgroundColor: '#fff', border: '1px solid #e5e7eb',
-                                color: '#374151', fontSize: '0.875rem', fontWeight: 600,
-                                cursor: 'pointer', transition: 'all 0.2s'
+                                color: '#374151', fontSize: '0.8rem', fontWeight: 600,
+                                cursor: 'pointer', transition: 'all 0.2s', width: window.innerWidth < 640 ? '100%' : 'auto',
+                                justifyContent: 'center'
                             }}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = '#000'}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = '#e5e7eb'}
                         >
                             <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: '16px', height: '16px' }} />
                             Vincular Google Calendar
@@ -378,6 +379,23 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
                 }
                 .rbc-toolbar button:hover {
                     background-color: #f3f4f6;
+                }
+                .rbc-toolbar {
+                    flex-wrap: wrap;
+                    gap: 0.5rem;
+                }
+                .rbc-toolbar-label {
+                    width: 100%;
+                    order: -1;
+                    margin-bottom: 5px;
+                    font-weight: 700;
+                    font-size: 1rem;
+                }
+                @media (max-width: 768px) {
+                    .rbc-toolbar button {
+                        padding: 4px 8px;
+                        font-size: 0.75rem;
+                    }
                 }
             `}</style>
         </div>

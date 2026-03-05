@@ -6,6 +6,10 @@
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -19,7 +23,26 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-/* Metric Tooltips */
+/* ─── GLOBAL RESPONSIVE TABLE ───────────────────────────────── */
+.responsive-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+table {
+  min-width: 600px;
+}
+
+/* ─── GLOBAL INPUT SIZING ───────────────────────────────────── */
+input, select, textarea {
+  max-width: 100%;
+  font-size: 16px; /* Prevents iOS zoom on focus */
+}
+
+/* ─── METRIC TOOLTIPS ───────────────────────────────────────── */
 .metric-tooltip-trigger {
   position: relative;
 }
@@ -59,5 +82,72 @@ code {
 .metric-tooltip-trigger:hover .metric-tooltip {
   visibility: visible;
   opacity: 1;
-  transition-delay: 1s; /* The 1 second delay requested */
+  transition-delay: 1s;
+}
+
+/* ─── MOBILE RESPONSIVE ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* KPI Cards stack vertically */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Tables: make them scrollable */
+  table {
+    font-size: 0.8rem;
+  }
+  
+  th, td {
+    padding: 0.5rem 0.75rem !important;
+    white-space: nowrap;
+  }
+
+  /* Make modals full-width on mobile */
+  .modal-content {
+    max-width: 100% !important;
+    margin: 0.5rem !important;
+    border-radius: 0.75rem !important;
+  }
+
+  /* Hide tooltip on mobile (no hover) */
+  .metric-tooltip-trigger:hover .metric-tooltip {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── SMOOTH SCROLLBAR ──────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ─── ANIMATIONS ────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
 }

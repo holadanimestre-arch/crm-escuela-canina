@@ -291,7 +291,7 @@ export function PagoAdiestradores() {
                 marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem'
             }}>
                 <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem' }}>Pago a Adiestradores</h1>
+                    <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem' }}>Pago a Adiestradores</h1>
                     <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Gestiona las facturas y liquidaciones mensuales de los entrenadores.</p>
                 </div>
 
@@ -319,11 +319,11 @@ export function PagoAdiestradores() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                         <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', borderLeft: '4px solid #3b82f6' }}>
                             <p style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: 500, marginBottom: '0.5rem' }}>Total a Pagar (Mes)</p>
-                            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827' }}>{formatCurrency(totalMesAdmin)}</p>
+                            <p style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700, color: '#111827' }}>{formatCurrency(totalMesAdmin)}</p>
                         </div>
                         <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', borderLeft: '4px solid #f59e0b' }}>
                             <p style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: 500, marginBottom: '0.5rem' }}>Adiestradores Pendientes</p>
-                            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827' }}>{pendientesCount}</p>
+                            <p style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700, color: '#111827' }}>{pendientesCount}</p>
                         </div>
                     </div>
 
@@ -336,7 +336,7 @@ export function PagoAdiestradores() {
                                 opacity: trainer.total === 0 ? 0.6 : 1
                             }}>
                                 <div>
-                                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                                         {trainer.trainerName}
                                         {trainer.status === 'pagado' ? (
                                             <span style={{ fontSize: '0.75rem', backgroundColor: '#dcfce7', color: '#166534', padding: '0.125rem 0.5rem', borderRadius: '9999px', fontWeight: 600 }}>Liquidad0</span>
@@ -344,14 +344,14 @@ export function PagoAdiestradores() {
                                             <span style={{ fontSize: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c', padding: '0.125rem 0.5rem', borderRadius: '9999px', fontWeight: 600 }}>Pendiente</span>
                                         ) : null}
                                     </h3>
-                                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.375rem', display: 'flex', gap: '1rem' }}>
+                                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.375rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                                         <span>Bloques: {trainer.completedBlocks}</span>
                                         <span>Evaluaciones: {trainer.evaluations}</span>
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                                    <div style={{ textAlign: 'right' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', width: window.innerWidth < 640 ? '100%' : 'auto', justifyContent: window.innerWidth < 640 ? 'space-between' : 'flex-end', marginTop: window.innerWidth < 640 ? '1rem' : 0 }}>
+                                    <div style={{ textAlign: window.innerWidth < 640 ? 'left' : 'right' }}>
                                         <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Total Factura (IVA inc)</div>
                                         <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#10b981' }}>{formatCurrency(trainer.total)}</div>
                                     </div>
@@ -364,7 +364,9 @@ export function PagoAdiestradores() {
                                             padding: '0.5rem 1rem', borderRadius: '0.5rem',
                                             backgroundColor: '#f3f4f6', border: '1px solid #e5e7eb',
                                             color: '#374151', fontWeight: 500, cursor: trainer.total > 0 ? 'pointer' : 'not-allowed',
-                                            opacity: trainer.total > 0 ? 1 : 0.5
+                                            opacity: trainer.total > 0 ? 1 : 0.5,
+                                            width: window.innerWidth < 640 ? '100%' : 'auto',
+                                            justifyContent: 'center'
                                         }}
                                     >
                                         <Eye size={16} /> Ver Detalle
@@ -383,7 +385,7 @@ export function PagoAdiestradores() {
                     onClose={() => setViewingTrainer(null)}
                     title={`Detalle Facturación: ${viewingTrainer.trainerName}`}
                 >
-                    <div style={{ minWidth: '500px' }}>
+                    <div style={{ minWidth: window.innerWidth < 640 ? '100%' : '500px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1.5rem', marginBottom: '1.5rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
                                 <span style={{ color: '#6b7280' }}>Base Imponible Bloques</span>

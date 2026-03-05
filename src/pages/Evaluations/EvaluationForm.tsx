@@ -152,25 +152,28 @@ export function EvaluationForm() {
             </div>
 
             {/* Category Tabs */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>
-                {EVALUATION_CATEGORIES.map(cat => (
-                    <button
-                        key={cat.id}
-                        onClick={() => setActiveCategory(cat.id)}
-                        style={{
-                            padding: '0.5rem 1rem',
-                            borderRadius: '0.375rem',
-                            border: 'none',
-                            background: activeCategory === cat.id ? '#000' : 'transparent',
-                            color: activeCategory === cat.id ? '#fff' : '#6b7280',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            fontSize: '0.875rem'
-                        }}
-                    >
-                        {cat.name}
-                    </button>
-                ))}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', minWidth: 'max-content' }}>
+                    {EVALUATION_CATEGORIES.map(cat => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setActiveCategory(cat.id)}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '0.375rem',
+                                border: 'none',
+                                background: activeCategory === cat.id ? '#000' : 'transparent',
+                                color: activeCategory === cat.id ? '#fff' : '#6b7280',
+                                fontWeight: 500,
+                                cursor: 'pointer',
+                                fontSize: '0.875rem',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            {cat.name}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Scoring Form */}
@@ -182,23 +185,25 @@ export function EvaluationForm() {
                         <label style={{ display: 'block', fontWeight: 500, marginBottom: '0.75rem' }}>{item}</label>
 
                         {/* Score Buttons */}
-                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                             {[1, 2, 3, 4, 5].map(score => (
                                 <button
                                     key={score}
                                     onClick={() => handleScoreChange(activeCategory, item, score)}
                                     style={{
-                                        width: '70px',
-                                        padding: '0.5rem',
+                                        flex: 1,
+                                        minWidth: window.innerWidth < 640 ? '60px' : '70px',
+                                        padding: '0.5rem 0.25rem',
                                         borderRadius: '0.375rem',
                                         border: scores[activeCategory]?.[item]?.score === score ? '2px solid #000' : '1px solid #e5e7eb',
                                         backgroundColor: scores[activeCategory]?.[item]?.score === score ? '#f3f4f6' : 'white',
                                         cursor: 'pointer',
-                                        fontSize: '0.75rem',
+                                        fontSize: '0.7rem',
                                         fontWeight: scores[activeCategory]?.[item]?.score === score ? 600 : 400
                                     }}
                                 >
-                                    {score} - {SCORE_LABELS[score]}
+                                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{score}</div>
+                                    <div style={{ fontSize: '0.65rem', opacity: 0.8 }}>{SCORE_LABELS[score]}</div>
                                 </button>
                             ))}
                         </div>
@@ -228,7 +233,7 @@ export function EvaluationForm() {
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                 <button
                     onClick={() => handleSubmit('rechazada')}
                     disabled={saving}
@@ -242,10 +247,13 @@ export function EvaluationForm() {
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem'
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        flex: window.innerWidth < 640 ? 1 : 'none',
+                        minWidth: window.innerWidth < 640 ? '100%' : 'auto'
                     }}
                 >
-                    Rechazar Evaluación
+                    Rechazar
                 </button>
                 <button
                     onClick={() => handleSubmit('aprobada')}
@@ -256,11 +264,14 @@ export function EvaluationForm() {
                         border: 'none',
                         backgroundColor: '#16a34a',
                         color: 'white',
-                        fontWeight: 500,
+                        fontWeight: 600,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem'
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        flex: window.innerWidth < 640 ? 1 : 'none',
+                        minWidth: window.innerWidth < 640 ? '100%' : 'auto'
                     }}
                 >
                     <CheckCircle size={18} />

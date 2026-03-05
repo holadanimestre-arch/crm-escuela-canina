@@ -221,41 +221,42 @@ export function Leads() {
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '1.875rem', fontWeight: 600 }}>Leads</h1>
-                <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 600 }}>Leads</h1>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => setIsCityModalOpen(true)}
                         style={{
                             backgroundColor: '#000',
                             color: 'white',
-                            padding: '0.5rem 1rem',
+                            padding: '0.5rem 0.75rem',
                             borderRadius: '0.375rem',
                             border: 'none',
                             cursor: 'pointer',
                             fontWeight: 500,
-                            marginRight: '1rem'
+                            fontSize: '0.8rem'
                         }}>
-                        + Nueva Ciudad
+                        + Ciudad
                     </button>
                     <button
                         onClick={() => setIsModalOpen(true)}
                         style={{
                             backgroundColor: '#000',
                             color: 'white',
-                            padding: '0.5rem 1rem',
+                            padding: '0.5rem 0.75rem',
                             borderRadius: '0.375rem',
                             border: 'none',
                             cursor: 'pointer',
-                            fontWeight: 500
+                            fontWeight: 500,
+                            fontSize: '0.8rem'
                         }}>
-                        + Nuevo Lead
+                        + Lead
                     </button>
                 </div>
             </div>
 
-            <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
                     <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                         <tr>
                             <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Nombre</th>
@@ -350,7 +351,7 @@ export function Leads() {
                         />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                         <div>
                             <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Email</label>
                             <input
@@ -437,7 +438,7 @@ export function Leads() {
                         </p>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                 <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Raza</label>

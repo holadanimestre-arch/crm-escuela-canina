@@ -178,95 +178,37 @@ export function Ajustes() {
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Configuración</h1>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Configuración</h1>
 
             {/* Tabs */}
-            <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #e5e7eb' }}>
-                <button
-                    onClick={() => setActiveTab('general')}
-                    style={{
-                        padding: '0.75rem 1rem',
-                        border: 'none',
-                        background: 'none',
-                        borderBottom: activeTab === 'general' ? '2px solid #000' : 'none',
-                        color: activeTab === 'general' ? '#000' : '#6b7280',
-                        fontWeight: activeTab === 'general' ? 600 : 500,
-                        cursor: 'pointer'
-                    }}
-                >
-                    General
-                </button>
-                <button
-                    onClick={() => setActiveTab('ciudades')}
-                    style={{
-                        padding: '0.75rem 1rem',
-                        border: 'none',
-                        background: 'none',
-                        borderBottom: activeTab === 'ciudades' ? '2px solid #000' : 'none',
-                        color: activeTab === 'ciudades' ? '#000' : '#6b7280',
-                        fontWeight: activeTab === 'ciudades' ? 600 : 500,
-                        cursor: 'pointer'
-                    }}
-                >
-                    Ciudades
-                </button>
-                <button
-                    onClick={() => setActiveTab('notificaciones')}
-                    style={{
-                        padding: '0.75rem 1rem',
-                        border: 'none',
-                        background: 'none',
-                        borderBottom: activeTab === 'notificaciones' ? '2px solid #000' : 'none',
-                        color: activeTab === 'notificaciones' ? '#000' : '#6b7280',
-                        fontWeight: activeTab === 'notificaciones' ? 600 : 500,
-                        cursor: 'pointer'
-                    }}
-                >
-                    Notificaciones
-                </button>
-                <button
-                    onClick={() => setActiveTab('integraciones')}
-                    style={{
-                        padding: '0.75rem 1rem',
-                        border: 'none',
-                        background: 'none',
-                        borderBottom: activeTab === 'integraciones' ? '2px solid #000' : 'none',
-                        color: activeTab === 'integraciones' ? '#000' : '#6b7280',
-                        fontWeight: activeTab === 'integraciones' ? 600 : 500,
-                        cursor: 'pointer'
-                    }}
-                >
-                    Integraciones
-                </button>
-                <button
-                    onClick={() => setActiveTab('comerciales')}
-                    style={{
-                        padding: '0.75rem 1rem',
-                        border: 'none',
-                        background: 'none',
-                        borderBottom: activeTab === 'comerciales' ? '2px solid #000' : 'none',
-                        color: activeTab === 'comerciales' ? '#000' : '#6b7280',
-                        fontWeight: activeTab === 'comerciales' ? 600 : 500,
-                        cursor: 'pointer'
-                    }}
-                >
-                    Comerciales
-                </button>
-                <button
-                    onClick={() => setActiveTab('whatsapp')}
-                    style={{
-                        padding: '0.75rem 1rem',
-                        border: 'none',
-                        background: 'none',
-                        borderBottom: activeTab === 'whatsapp' ? '2px solid #000' : 'none',
-                        color: activeTab === 'whatsapp' ? '#000' : '#6b7280',
-                        fontWeight: activeTab === 'whatsapp' ? 600 : 500,
-                        cursor: 'pointer'
-                    }}
-                >
-                    WhatsApp
-                </button>
+            <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #e5e7eb', overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
+                {[
+                    { id: 'general', label: 'General' },
+                    { id: 'ciudades', label: 'Ciudades' },
+                    { id: 'notificaciones', label: 'Notificaciones' },
+                    { id: 'integraciones', label: 'Integraciones' },
+                    { id: 'comerciales', label: 'Comerciales' },
+                    { id: 'whatsapp', label: 'WhatsApp' }
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)}
+                        style={{
+                            padding: '0.75rem 1rem',
+                            border: 'none',
+                            background: 'none',
+                            borderBottom: activeTab === tab.id ? '2px solid #000' : 'none',
+                            color: activeTab === tab.id ? '#000' : '#6b7280',
+                            fontWeight: activeTab === tab.id ? 600 : 500,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                            fontSize: '0.875rem'
+                        }}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
             {/* Content */}
@@ -274,12 +216,12 @@ export function Ajustes() {
                 <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1000px' }}>
 
                     {/* Sección 1: Datos de Facturación */}
-                    <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                    <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '0.75rem' }}>
                             <Building2 size={20} color="#2563eb" />
-                            <h2 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Datos de Facturación (Cabecera)</h2>
+                            <h2 style={{ fontSize: '1rem', fontWeight: 600 }}>Datos de Facturación (Cabecera)</h2>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>Nombre Comercial / Fiscal</label>
                                 <input
@@ -298,7 +240,7 @@ export function Ajustes() {
                                     style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db' }}
                                 />
                             </div>
-                            <div style={{ gridColumn: 'span 2' }}>
+                            <div style={{ gridColumn: window.innerWidth < 640 ? 'span 1' : 'span 2' }}>
                                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>Dirección Fiscal</label>
                                 <input
                                     type="text"
@@ -329,7 +271,7 @@ export function Ajustes() {
                     </div>
 
                     {/* Sección 2: Pagos y Documentos */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
                         <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '0.75rem' }}>
                                 <FileText size={20} color="#166534" />
@@ -473,7 +415,7 @@ export function Ajustes() {
                             </ol>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
                             <div>
                                 <h3 style={{ fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: '1rem' }}>Configuración de Supabase</h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -598,7 +540,7 @@ export function Ajustes() {
                         {loading ? (
                             <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Cargando ciudades...</div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', padding: '1.5rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem', padding: '1.25rem' }}>
                                 {cities.map(city => (
                                     <div
                                         key={city.id}

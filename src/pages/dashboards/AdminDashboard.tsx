@@ -227,11 +227,11 @@ export function AdminDashboard() {
     if (loading) return <div>Calculando métricas...</div>
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Panel de Dirección</h1>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <h1 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Panel de Dirección</h1>
 
-                <div style={{ display: 'flex', backgroundColor: '#f3f4f6', padding: '0.25rem', borderRadius: '0.5rem' }}>
+                <div style={{ display: 'flex', backgroundColor: '#f3f4f6', padding: '0.2rem', borderRadius: '0.5rem', overflowX: 'auto', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
                     {[
                         { id: 'direccion', label: 'Dirección' },
                         { id: 'marketing', label: 'Marketing' },
@@ -242,7 +242,7 @@ export function AdminDashboard() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             style={{
-                                padding: '0.5rem 1rem',
+                                padding: '0.4rem 0.75rem',
                                 border: 'none',
                                 background: activeTab === tab.id ? 'white' : 'transparent',
                                 borderRadius: '0.375rem',
@@ -250,7 +250,9 @@ export function AdminDashboard() {
                                 fontWeight: activeTab === tab.id ? 600 : 500,
                                 boxShadow: activeTab === tab.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                fontSize: '0.8rem',
+                                whiteSpace: 'nowrap'
                             }}
                         >
                             {tab.label}
@@ -269,7 +271,7 @@ export function AdminDashboard() {
                         <KPICard title="Éxito Eval." value={`${kpiData.evalSuccess}%`} icon={TrendingUp} color="#10b981" trend="Aprobaron" trendUp description="Porcentaje de evaluaciones con resultado 'aprobada' sobre el total realizado." />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
                         {/* Operational Stats */}
                         <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
                             <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>Estado de Sesiones</h3>
@@ -352,30 +354,30 @@ export function AdminDashboard() {
                         <KPICard title="ROI" value={`${marketingStats.roi}%`} icon={TrendingUp} color="#10b981" trend="Retorno" trendUp description="Estimación del retorno de la inversión publicitaria." />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
                         {/* Funnel de Conversión */}
-                        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', gridColumn: '1 / -1' }}>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, textAlign: 'center', marginBottom: '2rem' }}>Funnel de Conversión</h3>
-                            <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', gridColumn: '1 / -1' }}>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, textAlign: 'center', marginBottom: '1.5rem' }}>Funnel de Conversión</h3>
+                            <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                 {marketingStats.funnel.map((item, i) => (
                                     <div key={item.stage} style={{ display: 'flex', alignItems: 'center' }}>
                                         <div style={{
-                                            width: `${100 - (i * 8)}%`,
-                                            height: '54px',
+                                            width: `${100 - (i * 6)}%`,
+                                            height: '48px',
                                             backgroundColor: item.color,
                                             margin: '0 auto',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'space-between',
-                                            padding: '0 1.5rem',
+                                            padding: '0 1rem',
                                             color: 'white',
                                             borderRadius: '4px',
                                             position: 'relative',
-                                            fontSize: '0.9rem',
-                                            clipPath: `polygon(2% 0%, 98% 0%, 97% 100%, 3% 100%)`
+                                            fontSize: '0.8rem',
+                                            clipPath: `polygon(1% 0%, 99% 0%, 98% 100%, 2% 100%)`
                                         }}>
                                             <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.stage}</span>
-                                            <span style={{ fontWeight: 700, flexShrink: 0 }}>{item.value} <small style={{ opacity: 0.9 }}>({item.percentage}%)</small></span>
+                                            <span style={{ fontWeight: 700, flexShrink: 0 }}>{item.value}</span>
                                         </div>
                                     </div>
                                 ))}
@@ -400,10 +402,10 @@ export function AdminDashboard() {
                         </div>
 
                         {/* Rendimiento por Ciudad */}
-                        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>Rendimiento por Ciudad</h3>
-                            <div style={{ overflowX: 'auto' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                        <div style={{ backgroundColor: 'white', padding: '1.25rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1.5rem' }}>Rendimiento por Ciudad</h3>
+                            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '600px' }}>
                                     <thead>
                                         <tr style={{ textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>
                                             <th style={{ padding: '0.75rem' }}>Ciudad</th>

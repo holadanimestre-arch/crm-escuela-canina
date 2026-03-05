@@ -160,31 +160,31 @@ export function AdiestradoresPanel() {
 
             {/* Search and Sort Toolbar */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'white', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                <div style={{ position: 'relative', flex: 1, minWidth: '300px' }}>
+                <div style={{ position: 'relative', flex: '1 1 300px' }}>
                     <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
                     <input
                         type="text"
-                        placeholder="Buscar adiestrador por nombre..."
+                        placeholder="Buscar adiestrador..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         style={{ width: '100%', padding: '0.625rem 1rem 0.625rem 2.75rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', fontSize: '0.9rem' }}
                     />
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => handleSort('activeClients')} style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', backgroundColor: sortBy === 'activeClients' ? '#f3f4f6' : 'white', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button onClick={() => handleSort('activeClients')} style={{ padding: '0.5rem 0.75rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', backgroundColor: sortBy === 'activeClients' ? '#f3f4f6' : 'white', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                         Alumnos {sortBy === 'activeClients' && (sortOrder === 'desc' ? '↓' : '↑')}
                     </button>
-                    <button onClick={() => handleSort('revenue')} style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', backgroundColor: sortBy === 'revenue' ? '#f3f4f6' : 'white', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        Ingresos {sortBy === 'revenue' && (sortOrder === 'desc' ? '↓' : '↑')}
+                    <button onClick={() => handleSort('revenue')} style={{ padding: '0.5rem 0.75rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', backgroundColor: sortBy === 'revenue' ? '#f3f4f6' : 'white', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        € {sortBy === 'revenue' && (sortOrder === 'desc' ? '↓' : '↑')}
                     </button>
-                    <button onClick={() => handleSort('successRatio')} style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', backgroundColor: sortBy === 'successRatio' ? '#f3f4f6' : 'white', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        Éxito {sortBy === 'successRatio' && (sortOrder === 'desc' ? '↓' : '↑')}
+                    <button onClick={() => handleSort('successRatio')} style={{ padding: '0.5rem 0.75rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', backgroundColor: sortBy === 'successRatio' ? '#f3f4f6' : 'white', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        % {sortBy === 'successRatio' && (sortOrder === 'desc' ? '↓' : '↑')}
                     </button>
                 </div>
             </div>
 
             {/* Individual Trainer Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
                 {trainerStats.map(s => (
                     <div key={s.id} style={{
                         backgroundColor: 'white',
@@ -281,8 +281,8 @@ export function AdiestradoresPanel() {
                     <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0 }}>Tabla Resumen</h3>
                     <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{trainerStats.length} adiestradores encontrados</span>
                 </div>
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8rem', minWidth: '600px' }}>
                         <thead>
                             <tr style={{ backgroundColor: '#f8fafc', color: '#64748b' }}>
                                 <th style={{ padding: '0.75rem 1rem' }}>Adiestrador</th>

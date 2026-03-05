@@ -206,21 +206,21 @@ export function ComercialesPanel() {
 
 
             {/* Comerciales Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                 {metrics.stats.map(s => (
-                    <div key={s.id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <div style={{ width: '80px', height: '80px', borderRadius: '0.5rem', backgroundColor: '#e5e7eb', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div key={s.id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ width: '60px', height: '60px', borderRadius: '0.5rem', backgroundColor: '#e5e7eb', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {s.avatarUrl ? (
                                 <img src={s.avatarUrl} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
-                                <Users size={32} color="#9ca3af" />
+                                <Users size={24} color="#9ca3af" />
                             )}
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#1f2937' }}>{s.name}</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
-                                <span style={{ fontSize: '2rem', fontWeight: 800, color: '#3b82f6', lineHeight: 1 }}>{s.totalAssigned}</span>
-                                <span style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: 500 }}>Leads Asignados</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#1f2937', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', marginTop: '0.25rem' }}>
+                                <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#3b82f6', lineHeight: 1 }}>{s.totalAssigned}</span>
+                                <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 500 }}>Leads Asignados</span>
                             </div>
                         </div>
                     </div>
@@ -238,7 +238,7 @@ export function ComercialesPanel() {
             </div>
 
             {/* Charts Area */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
 
                 {/* Ratio Contacto Chart */}
                 <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '350px' }}>
@@ -431,26 +431,26 @@ export function ComercialesPanel() {
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0, color: '#1f2937' }}>Ranking Comercial</h3>
                 </div>
                 <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '900px' }}>
                         <thead>
                             <tr style={{ backgroundColor: '#e0e7ff', color: '#3730a3' }}>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>Comercial</th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                <th style={{ padding: '0.75rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe', fontSize: '0.8rem' }}>Comercial</th>
+                                <th style={{ padding: '0.75rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe', fontSize: '0.8rem' }}>
                                     <MetricInfo label="Leads" description="Total de prospectos asignados a este comercial." />
                                 </th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                <th style={{ padding: '0.75rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe', fontSize: '0.8rem' }}>
                                     <MetricInfo label="Contactados" description="Número y porcentaje de leads que el comercial ha logrado contactar." />
                                 </th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                <th style={{ padding: '0.75rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe', fontSize: '0.8rem' }}>
                                     <MetricInfo label="% Eval. Aprobada" description="Grado de acierto del comercial al filtrar leads que luego aprueban la evaluación técnica." />
                                 </th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                <th style={{ padding: '0.75rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe', fontSize: '0.8rem' }}>
                                     <MetricInfo label="Eval. (#)" description="Número total de evaluaciones realizadas a sus leads." />
                                 </th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                <th style={{ padding: '0.75rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe', fontSize: '0.8rem' }}>
                                     <MetricInfo label="Ingresos" description="Facturación total aportada por sus clientes." />
                                 </th>
-                                <th style={{ padding: '1rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe' }}>
+                                <th style={{ padding: '0.75rem', fontWeight: 600, borderBottom: '2px solid #c7d2fe', fontSize: '0.8rem' }}>
                                     <MetricInfo label="Conversión" description="Eficacia final: porcentaje de sus leads que acaban siendo clientes de pago." />
                                 </th>
                             </tr>

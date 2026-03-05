@@ -116,14 +116,14 @@ export function ClientDetail() {
             </Link>
 
             {/* Header */}
-            <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                        <h1 style={{ fontSize: '1.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>{client.name}</h1>
-                        <div style={{ display: 'flex', gap: '1rem', color: '#6b7280', fontSize: '0.875rem' }}>
+            <div style={{ backgroundColor: 'white', padding: window.innerWidth < 640 ? '1.25rem' : '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div style={{ flex: 1, minWidth: '240px' }}>
+                        <h1 style={{ fontSize: window.innerWidth < 640 ? '1.5rem' : '1.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>{client.name}</h1>
+                        <div style={{ display: 'flex', gap: '0.75rem 1rem', color: '#6b7280', fontSize: '0.875rem', flexWrap: 'wrap' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <Mail size={16} />
-                                {client.email}
+                                <span style={{ wordBreak: 'break-all' }}>{client.email}</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <Phone size={16} />
@@ -135,7 +135,7 @@ export function ClientDetail() {
                             </div>
                         </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
+                    <div style={{ textAlign: window.innerWidth < 640 ? 'left' : 'right' }}>
                         <span style={{
                             padding: '0.25rem 0.75rem',
                             borderRadius: '9999px',
@@ -152,8 +152,8 @@ export function ClientDetail() {
             </div>
 
             {/* Tabs */}
-            <div style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', gap: '2rem' }}>
+            <div style={{ borderBottom: '1px solid #e5e7eb', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <div style={{ display: 'flex', gap: '1.5rem', minWidth: 'max-content' }}>
                     {['info', 'evaluations', 'sessions', 'payments'].map((tab) => (
                         <button
                             key={tab}
@@ -166,7 +166,9 @@ export function ClientDetail() {
                                 fontWeight: activeTab === tab ? 600 : 400,
                                 color: activeTab === tab ? '#000' : '#6b7280',
                                 cursor: 'pointer',
-                                textTransform: 'capitalize'
+                                textTransform: 'capitalize',
+                                fontSize: '0.9rem',
+                                whiteSpace: 'nowrap'
                             }}
                         >
                             {tab === 'info' ? 'Información' :
@@ -178,14 +180,14 @@ export function ClientDetail() {
             </div>
 
             {/* Tab Content */}
-            <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+            <div style={{ backgroundColor: 'white', padding: window.innerWidth < 640 ? '1.25rem' : '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
                 {activeTab === 'info' && (
                     <div>
                         <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <Dog size={20} />
                             Información del Perro
                         </h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Raza</label>
                                 <p>{client.dog_breed || '-'}</p>
@@ -442,18 +444,20 @@ export function ClientDetail() {
                                                 </div>
 
                                                 {/* Status Badge */}
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                                                    {statusIcon}
-                                                    <span style={{
-                                                        padding: '0.2rem 0.6rem',
-                                                        borderRadius: '9999px',
-                                                        fontSize: '0.7rem',
-                                                        fontWeight: 600,
-                                                        backgroundColor: statusBg,
-                                                        color: statusColor
-                                                    }}>
-                                                        {statusText}
-                                                    </span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                                        {statusIcon}
+                                                        <span style={{
+                                                            padding: '0.2rem 0.6rem',
+                                                            borderRadius: '9999px',
+                                                            fontSize: '0.7rem',
+                                                            fontWeight: 600,
+                                                            backgroundColor: statusBg,
+                                                            color: statusColor
+                                                        }}>
+                                                            {statusText}
+                                                        </span>
+                                                    </div>
                                                     {(session as any).paid_to_trainer && (
                                                         <span style={{
                                                             padding: '0.2rem 0.6rem',
@@ -462,7 +466,8 @@ export function ClientDetail() {
                                                             fontWeight: 600,
                                                             backgroundColor: '#eff6ff',
                                                             color: '#1e40af',
-                                                            border: '1px solid #bfdbfe'
+                                                            border: '1px solid #bfdbfe',
+                                                            whiteSpace: 'nowrap'
                                                         }}>
                                                             💰 Liquidado
                                                         </span>
@@ -487,18 +492,18 @@ export function ClientDetail() {
                             </h3>
 
                             {/* Summary */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-                                <div style={{ padding: '1rem', backgroundColor: '#f0fdf4', borderRadius: '0.5rem', border: '1px solid #bbf7d0' }}>
-                                    <div style={{ fontSize: '0.75rem', color: '#166534', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Total Cobrado</div>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#166534' }}>{totalPaid.toFixed(2)}€</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                                <div style={{ padding: '0.75rem 1rem', backgroundColor: '#f0fdf4', borderRadius: '0.5rem', border: '1px solid #bbf7d0' }}>
+                                    <div style={{ fontSize: '0.7rem', color: '#166534', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Total Cobrado</div>
+                                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#166534' }}>{totalPaid.toFixed(2)}€</div>
                                 </div>
-                                <div style={{ padding: '1rem', backgroundColor: '#fefce8', borderRadius: '0.5rem', border: '1px solid #fde68a' }}>
-                                    <div style={{ fontSize: '0.75rem', color: '#854d0e', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Pendiente</div>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#854d0e' }}>{totalPending.toFixed(2)}€</div>
+                                <div style={{ padding: '0.75rem 1rem', backgroundColor: '#fefce8', borderRadius: '0.5rem', border: '1px solid #fde68a' }}>
+                                    <div style={{ fontSize: '0.7rem', color: '#854d0e', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Pendiente</div>
+                                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#854d0e' }}>{totalPending.toFixed(2)}€</div>
                                 </div>
-                                <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                                    <div style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Nº Pagos</div>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{payments.length}</div>
+                                <div style={{ padding: '0.75rem 1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                                    <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Nº Pagos</div>
+                                    <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{payments.length}</div>
                                 </div>
                             </div>
 
@@ -667,87 +672,90 @@ export function ClientDetail() {
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: '1rem',
-                                                padding: '1rem 1.25rem',
+                                                padding: '1rem',
                                                 borderRadius: '0.5rem',
                                                 border: `1px solid ${payment.received ? '#bbf7d0' : '#fde68a'}`,
-                                                backgroundColor: payment.received ? '#fafff9' : '#fffef5'
+                                                backgroundColor: payment.received ? '#fafff9' : '#fffef5',
+                                                flexWrap: 'wrap'
                                             }}
                                         >
-                                            {/* Number */}
-                                            <div style={{
-                                                width: '2.25rem',
-                                                height: '2.25rem',
-                                                borderRadius: '50%',
-                                                backgroundColor: payment.received ? '#dcfce7' : '#fef9c3',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontWeight: 700,
-                                                fontSize: '0.875rem',
-                                                color: payment.received ? '#166534' : '#854d0e',
-                                                flexShrink: 0
-                                            }}>
-                                                {payment.payment_number}
+                                            {/* Left Part: Number + Amount */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '200px' }}>
+                                                <div style={{
+                                                    width: '2.25rem',
+                                                    height: '2.25rem',
+                                                    borderRadius: '50%',
+                                                    backgroundColor: payment.received ? '#dcfce7' : '#fef9c3',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.875rem',
+                                                    color: payment.received ? '#166534' : '#854d0e',
+                                                    flexShrink: 0
+                                                }}>
+                                                    {payment.payment_number}
+                                                </div>
+
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontWeight: 600, fontSize: '1rem', display: 'center', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                                        {payment.amount.toFixed(2)}€
+                                                        {payment.invoices && (payment.invoices as any).pdf_url && (
+                                                            <a
+                                                                href={(payment.invoices as any).pdf_url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{
+                                                                    color: '#2563eb',
+                                                                    fontSize: '0.75rem',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '0.25rem',
+                                                                    textDecoration: 'none',
+                                                                    fontWeight: 500,
+                                                                    padding: '0.25rem 0.5rem',
+                                                                    backgroundColor: '#eff6ff',
+                                                                    borderRadius: '0.25rem'
+                                                                }}
+                                                            >
+                                                                <FileText size={14} />
+                                                                Factura #{(payment.invoices as any).invoice_number}
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '0.125rem' }}>
+                                                        {payment.received_at
+                                                            ? new Date(payment.received_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+                                                            : 'Sin fecha'}
+                                                        {payment.notes && ` · ${payment.notes}`}
+                                                    </div>
+                                                </div>
                                             </div>
 
-                                            {/* Info */}
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontWeight: 600, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                    {payment.amount.toFixed(2)}€
-                                                    {payment.invoices && (payment.invoices as any).pdf_url && (
-                                                        <a
-                                                            href={(payment.invoices as any).pdf_url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            style={{
-                                                                color: '#2563eb',
-                                                                fontSize: '0.75rem',
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                gap: '0.25rem',
-                                                                textDecoration: 'none',
-                                                                fontWeight: 500,
-                                                                padding: '0.25rem 0.5rem',
-                                                                backgroundColor: '#eff6ff',
-                                                                borderRadius: '0.25rem'
-                                                            }}
-                                                        >
-                                                            <FileText size={14} />
-                                                            Ver Factura #{(payment.invoices as any).invoice_number}
-                                                        </a>
-                                                    )}
-                                                </div>
-                                                <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '0.125rem' }}>
-                                                    {payment.received_at
-                                                        ? new Date(payment.received_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
-                                                        : 'Sin fecha'}
-                                                    {payment.notes && ` · ${payment.notes}`}
-                                                </div>
+                                            {/* Right Part: Badges */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                <span style={{
+                                                    padding: '0.2rem 0.6rem',
+                                                    borderRadius: '9999px',
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 600,
+                                                    backgroundColor: payment.method === 'transferencia' ? '#dbeafe' : '#f3e8ff',
+                                                    color: payment.method === 'transferencia' ? '#1e40af' : '#6b21a8'
+                                                }}>
+                                                    {payment.method === 'transferencia' ? '🏦 Transf.' : '💵 Efec.'}
+                                                </span>
+
+                                                <span style={{
+                                                    padding: '0.2rem 0.6rem',
+                                                    borderRadius: '9999px',
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 600,
+                                                    backgroundColor: payment.received ? '#dcfce7' : '#fef9c3',
+                                                    color: payment.received ? '#166534' : '#854d0e'
+                                                }}>
+                                                    {payment.received ? '✅ Cobrado' : '⏳ Pend.'}
+                                                </span>
                                             </div>
-
-                                            {/* Method Badge */}
-                                            <span style={{
-                                                padding: '0.2rem 0.6rem',
-                                                borderRadius: '9999px',
-                                                fontSize: '0.7rem',
-                                                fontWeight: 600,
-                                                backgroundColor: payment.method === 'transferencia' ? '#dbeafe' : '#f3e8ff',
-                                                color: payment.method === 'transferencia' ? '#1e40af' : '#6b21a8'
-                                            }}>
-                                                {payment.method === 'transferencia' ? '🏦 Transferencia' : '💵 Efectivo'}
-                                            </span>
-
-                                            {/* Status */}
-                                            <span style={{
-                                                padding: '0.2rem 0.6rem',
-                                                borderRadius: '9999px',
-                                                fontSize: '0.7rem',
-                                                fontWeight: 600,
-                                                backgroundColor: payment.received ? '#dcfce7' : '#fef9c3',
-                                                color: payment.received ? '#166534' : '#854d0e'
-                                            }}>
-                                                {payment.received ? '✅ Cobrado' : '⏳ Pendiente'}
-                                            </span>
                                         </div>
                                     ))}
                                 </div>

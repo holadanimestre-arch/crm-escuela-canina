@@ -14,7 +14,9 @@ import {
     Settings,
     FileText,
     Receipt,
-    Wallet
+    Wallet,
+    Menu,
+    X
 } from 'lucide-react'
 
 export function AppLayout() {
@@ -22,9 +24,18 @@ export function AppLayout() {
     const { cityId, setCityId, datePreset, setDatePreset, dateRange, setDateRange } = useFilters()
     const location = useLocation()
     const [cities, setCities] = useState<any[]>([])
+    const [sidebarOpen, setSidebarOpen] = useState(false)
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
     useEffect(() => {
         fetchCities()
+        const handleResize = () => {
+            const mobile = window.innerWidth < 768
+            setIsMobile(mobile)
+            if (!mobile) setSidebarOpen(false)
+        }
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
     }, [])
 
     useEffect(() => {
@@ -32,6 +43,11 @@ export function AppLayout() {
             setCityId(profile.assigned_city_id)
         }
     }, [profile, setCityId])
+
+    // Close sidebar on navigation (mobile)
+    useEffect(() => {
+        if (isMobile) setSidebarOpen(false)
+    }, [location.pathname])
 
     async function fetchCities() {
         const { data } = await supabase.from('cities').select('*').eq('active', true).order('name')
@@ -83,29 +99,48 @@ export function AppLayout() {
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+            {/* Mobile Overlay */}
+            {isMobile && sidebarOpen && (
+                <div
+                    onClick={() => setSidebarOpen(false)}
+                    style={{
+                        position: 'fixed', inset: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        zIndex: 30, transition: 'opacity 0.3s'
+                    }}
+                />
+            )}
+
             {/* Sidebar */}
             <div style={{
                 width: '260px',
-                backgroundColor: '#000000', // Pure Black
+                backgroundColor: '#000000',
                 borderRight: '1px solid #1f2937',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'fixed',
                 height: '100vh',
-                zIndex: 20,
-                color: 'white'
+                zIndex: 40,
+                color: 'white',
+                transition: 'transform 0.3s ease',
+                transform: isMobile ? (sidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
             }}>
-                <div style={{ padding: '2rem', borderBottom: '1px solid #1f2937' }}>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid #1f2937', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <img src="/logo.png" alt="Logo" style={{ width: '50px', height: 'auto' }} />
+                        <img src="/logo.png" alt="Logo" style={{ width: '40px', height: 'auto' }} />
                         <div>
-                            <h1 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'white', lineHeight: 1.2 }}>Escuela Canina<br />Fran Estévez</h1>
+                            <h1 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', lineHeight: 1.2 }}>Escuela Canina<br />Fran Estévez</h1>
                         </div>
                     </div>
+                    {isMobile && (
+                        <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '0.25rem' }}>
+                            <X size={20} />
+                        </button>
+                    )}
                 </div>
 
-                <nav style={{ flex: 1, padding: '1.5rem 1rem' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', marginBottom: '1rem', paddingLeft: '0.75rem' }}>Menu</p>
+                <nav style={{ flex: 1, padding: '1rem 0.75rem', overflowY: 'auto' }}>
+                    <p style={{ fontSize: '0.7rem', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', marginBottom: '0.75rem', paddingLeft: '0.75rem', letterSpacing: '0.05em' }}>Menu</p>
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                         {navigation.map((item) => {
                             const Icon = item.icon
@@ -118,7 +153,7 @@ export function AppLayout() {
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '0.75rem',
-                                            padding: '0.75rem 1rem',
+                                            padding: '0.7rem 1rem',
                                             borderRadius: '0.5rem',
                                             textDecoration: 'none',
                                             color: isActive ? 'white' : '#9ca3af',
@@ -137,34 +172,28 @@ export function AppLayout() {
                     </ul>
                 </nav>
 
-                <div style={{ padding: '1.5rem', borderTop: '1px solid #1f2937' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: 600, color: 'white', overflow: 'hidden' }}>
+                <div style={{ padding: '1rem 0.75rem', borderTop: '1px solid #1f2937' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 600, color: 'white', overflow: 'hidden', flexShrink: 0 }}>
                             {profile?.avatar_url ? (
                                 <img src={profile.avatar_url} alt={profile.full_name || 'U'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
                                 profile?.full_name?.[0] || 'U'
                             )}
                         </div>
-                        <div style={{ overflow: 'hidden' }}>
-                            <p style={{ fontSize: '0.875rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'white' }}>{profile?.full_name || 'Usuario'}</p>
-                            <p style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'capitalize' }}>{profile?.role}</p>
+                        <div style={{ overflow: 'hidden', minWidth: 0 }}>
+                            <p style={{ fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'white' }}>{profile?.full_name || 'Usuario'}</p>
+                            <p style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'capitalize' }}>{profile?.role}</p>
                         </div>
                     </div>
                     <button
                         onClick={signOut}
                         style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            width: '100%',
-                            padding: '0.5rem',
-                            border: 'none',
-                            background: 'transparent',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            fontSize: '0.875rem',
-                            fontWeight: 500
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            width: '100%', padding: '0.5rem',
+                            border: 'none', background: 'transparent',
+                            color: '#ef4444', cursor: 'pointer',
+                            fontSize: '0.8rem', fontWeight: 500
                         }}
                     >
                         <LogOut size={16} />
@@ -174,39 +203,58 @@ export function AppLayout() {
             </div>
 
             {/* Main Content Wrapper */}
-            <div style={{ flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <div style={{
+                flex: 1,
+                marginLeft: isMobile ? 0 : '260px',
+                display: 'flex',
+                flexDirection: 'column',
+                minWidth: 0,
+                transition: 'margin-left 0.3s ease'
+            }}>
                 {/* Top Bar for Filters */}
                 <header style={{
-                    height: '64px',
+                    minHeight: '56px',
                     backgroundColor: 'white',
                     borderBottom: '1px solid #e5e7eb',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0 2rem',
+                    padding: isMobile ? '0 1rem' : '0 2rem',
                     position: 'sticky',
                     top: 0,
-                    zIndex: 10
+                    zIndex: 10,
+                    gap: '0.75rem',
+                    flexWrap: 'wrap'
                 }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>
-                        {navigation.find(n => n.href === location.pathname)?.name || 'Panel'}
-                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        {isMobile && (
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', color: '#374151' }}
+                            >
+                                <Menu size={24} />
+                            </button>
+                        )}
+                        <h2 style={{ fontSize: isMobile ? '1rem' : '1.25rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                            {navigation.find(n => n.href === location.pathname)?.name || 'Panel'}
+                        </h2>
+                    </div>
 
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', padding: '0.5rem 0' }}>
                         {/* City Selector */}
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                            <MapPin size={16} style={{ position: 'absolute', left: '0.75rem', color: '#6b7280' }} />
+                            <MapPin size={14} style={{ position: 'absolute', left: '0.5rem', color: '#6b7280' }} />
                             <select
                                 value={cityId}
                                 onChange={(e) => setCityId(e.target.value)}
                                 disabled={profile?.role === 'adiestrador'}
                                 style={{
-                                    padding: '0.5rem 1rem 0.5rem 2.25rem',
+                                    padding: '0.4rem 0.75rem 0.4rem 1.75rem',
                                     borderRadius: '0.375rem',
                                     border: '1px solid #e5e7eb',
                                     backgroundColor: profile?.role === 'adiestrador' ? '#f3f4f6' : 'white',
-                                    fontSize: '0.875rem',
-                                    minWidth: '150px',
+                                    fontSize: '0.8rem',
+                                    minWidth: isMobile ? '120px' : '150px',
                                     cursor: profile?.role === 'adiestrador' ? 'not-allowed' : 'pointer'
                                 }}
                             >
@@ -219,17 +267,17 @@ export function AppLayout() {
 
                         {/* Date Preset Selector */}
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                            <Calendar size={16} style={{ position: 'absolute', left: '0.75rem', color: '#6b7280' }} />
+                            <Calendar size={14} style={{ position: 'absolute', left: '0.5rem', color: '#6b7280' }} />
                             <select
                                 value={datePreset}
                                 onChange={(e) => setDatePreset(e.target.value as DateRangePreset)}
                                 style={{
-                                    padding: '0.5rem 1rem 0.5rem 2.25rem',
+                                    padding: '0.4rem 0.75rem 0.4rem 1.75rem',
                                     borderRadius: '0.375rem',
                                     border: '1px solid #e5e7eb',
                                     backgroundColor: 'white',
-                                    fontSize: '0.875rem',
-                                    minWidth: '150px'
+                                    fontSize: '0.8rem',
+                                    minWidth: isMobile ? '120px' : '150px'
                                 }}
                             >
                                 <option value="today">Hoy</option>
@@ -242,32 +290,32 @@ export function AppLayout() {
                         </div>
 
                         {datePreset === 'custom' && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6b7280' }}>Desde:</span>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#6b7280' }}>Desde:</span>
                                     <input
                                         type="date"
                                         value={format(dateRange.from, 'yyyy-MM-dd')}
                                         onChange={(e) => setDateRange({ ...dateRange, from: parseISO(e.target.value) })}
                                         style={{
-                                            padding: '0.4rem 0.5rem',
+                                            padding: '0.35rem 0.4rem',
                                             borderRadius: '0.375rem',
                                             border: '1px solid #e5e7eb',
-                                            fontSize: '0.875rem'
+                                            fontSize: '0.8rem'
                                         }}
                                     />
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6b7280' }}>Hasta:</span>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#6b7280' }}>Hasta:</span>
                                     <input
                                         type="date"
                                         value={format(dateRange.to, 'yyyy-MM-dd')}
                                         onChange={(e) => setDateRange({ ...dateRange, to: parseISO(e.target.value) })}
                                         style={{
-                                            padding: '0.4rem 0.5rem',
+                                            padding: '0.35rem 0.4rem',
                                             borderRadius: '0.375rem',
                                             border: '1px solid #e5e7eb',
-                                            fontSize: '0.875rem'
+                                            fontSize: '0.8rem'
                                         }}
                                     />
                                 </div>
@@ -276,10 +324,10 @@ export function AppLayout() {
                     </div>
                 </header>
 
-                <main style={{ padding: '2rem', flex: 1, overflow: 'auto' }}>
+                <main style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflow: 'auto' }}>
                     <Outlet />
                 </main>
             </div>
-        </div >
+        </div>
     )
 }

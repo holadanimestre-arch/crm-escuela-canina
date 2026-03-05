@@ -88,7 +88,7 @@ export function Evaluaciones() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Evaluaciones</h1>
+                <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 600 }}>Evaluaciones</h1>
             </div>
 
             {/* Pending Evaluations */}
@@ -103,44 +103,46 @@ export function Evaluaciones() {
                         No hay clientes pendientes de evaluación.
                     </div>
                 ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead style={{ backgroundColor: '#f9fafb' }}>
-                            <tr>
-                                <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Cliente</th>
-                                <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Raza</th>
-                                <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Ciudad</th>
-                                <th style={{ padding: '0.75rem 1.5rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pendingClients.map(client => (
-                                <tr key={client.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                    <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{client.name}</td>
-                                    <td style={{ padding: '1rem 1.5rem', color: '#6b7280' }}>{client.dog_breed || '-'}</td>
-                                    <td style={{ padding: '1rem 1.5rem', color: '#6b7280' }}>{client.cities?.name || '-'}</td>
-                                    <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                                        <Link
-                                            to={`/evaluaciones/nueva/${client.id}`}
-                                            style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '0.5rem',
-                                                padding: '0.5rem 1rem',
-                                                backgroundColor: '#000',
-                                                color: 'white',
-                                                borderRadius: '0.375rem',
-                                                textDecoration: 'none',
-                                                fontSize: '0.875rem',
-                                                fontWeight: 500
-                                            }}
-                                        >
-                                            <Plus size={16} /> Evaluar
-                                        </Link>
-                                    </td>
+                    <div className="responsive-table-wrapper">
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                            <thead style={{ backgroundColor: '#f9fafb' }}>
+                                <tr>
+                                    <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Cliente</th>
+                                    <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Raza</th>
+                                    <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Ciudad</th>
+                                    <th style={{ padding: '0.75rem 1.5rem', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Acción</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {pendingClients.map(client => (
+                                    <tr key={client.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                        <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{client.name}</td>
+                                        <td style={{ padding: '1rem 1.5rem', color: '#6b7280' }}>{client.dog_breed || '-'}</td>
+                                        <td style={{ padding: '1rem 1.5rem', color: '#6b7280' }}>{client.cities?.name || '-'}</td>
+                                        <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                                            <Link
+                                                to={`/evaluaciones/nueva/${client.id}`}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5rem',
+                                                    padding: '0.5rem 1rem',
+                                                    backgroundColor: '#000',
+                                                    color: 'white',
+                                                    borderRadius: '0.375rem',
+                                                    textDecoration: 'none',
+                                                    fontSize: '0.875rem',
+                                                    fontWeight: 500
+                                                }}
+                                            >
+                                                <Plus size={16} /> Evaluar
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
 
@@ -155,44 +157,46 @@ export function Evaluaciones() {
                         No hay evaluaciones completadas aún.
                     </div>
                 ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead style={{ backgroundColor: '#f9fafb' }}>
-                            <tr>
-                                <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Cliente</th>
-                                <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Fecha</th>
-                                <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Resultado</th>
-                                <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Comentarios</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {completedEvaluations.map(ev => (
-                                <tr key={ev.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                    <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{ev.clients?.name || 'Cliente'}</td>
-                                    <td style={{ padding: '1rem 1.5rem', color: '#6b7280' }}>
-                                        {format(new Date(ev.created_at), 'dd MMM yyyy', { locale: es })}
-                                    </td>
-                                    <td style={{ padding: '1rem 1.5rem' }}>
-                                        <Link to={`/evaluaciones/${ev.id}`} style={{ textDecoration: 'none' }}>
-                                            {ev.result === 'aprobada' ? (
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#16a34a', fontWeight: 500 }}>
-                                                    <CheckCircle size={16} /> Aprobada
-                                                </span>
-                                            ) : (
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#dc2626', fontWeight: 500 }}>
-                                                    <XCircle size={16} /> Rechazada
-                                                </span>
-                                            )}
-                                        </Link>
-                                    </td>
-                                    <td style={{ padding: '1rem 1.5rem', color: '#6b7280', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        <Link to={`/evaluaciones/${ev.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-                                            {ev.comments || '-'}
-                                        </Link>
-                                    </td>
+                    <div className="responsive-table-wrapper">
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+                            <thead style={{ backgroundColor: '#f9fafb' }}>
+                                <tr>
+                                    <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Cliente</th>
+                                    <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Fecha</th>
+                                    <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Resultado</th>
+                                    <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Comentarios</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {completedEvaluations.map(ev => (
+                                    <tr key={ev.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                        <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{ev.clients?.name || 'Cliente'}</td>
+                                        <td style={{ padding: '1rem 1.5rem', color: '#6b7280' }}>
+                                            {format(new Date(ev.created_at), 'dd MMM yyyy', { locale: es })}
+                                        </td>
+                                        <td style={{ padding: '1rem 1.5rem' }}>
+                                            <Link to={`/evaluaciones/${ev.id}`} style={{ textDecoration: 'none' }}>
+                                                {ev.result === 'aprobada' ? (
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#16a34a', fontWeight: 500 }}>
+                                                        <CheckCircle size={16} /> Aprobada
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#dc2626', fontWeight: 500 }}>
+                                                        <XCircle size={16} /> Rechazada
+                                                    </span>
+                                                )}
+                                            </Link>
+                                        </td>
+                                        <td style={{ padding: '1rem 1.5rem', color: '#6b7280', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            <Link to={`/evaluaciones/${ev.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                                                {ev.comments || '-'}
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
         </div>

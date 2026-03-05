@@ -249,26 +249,26 @@ export function Facturacion() {
     if (loading) return <div>Cargando facturación...</div>
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Facturación y Pagos</h1>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Facturación y Pagos</h1>
 
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                <div style={{ padding: '1.5rem', backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                    <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Facturado (Histórico)</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '0.5rem', color: '#111827' }}>{stats.totalReceived.toFixed(2)} €</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                <div style={{ padding: '1.25rem', backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                    <div style={{ color: '#6b7280', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 600 }}>Total Facturado</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '0.5rem', color: '#111827' }}>{stats.totalReceived.toFixed(2)} €</div>
                 </div>
-                <div style={{ padding: '1.5rem', backgroundColor: '#f0f9ff', borderRadius: '0.5rem', border: '1px solid #bae6fd' }}>
-                    <div style={{ color: '#0369a1', fontSize: '0.875rem' }}>Total Filtrado</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 600, marginTop: '0.5rem', color: '#0c4a6e' }}>{stats.totalFiltered.toFixed(2)} €</div>
+                <div style={{ padding: '1.25rem', backgroundColor: '#f0f9ff', borderRadius: '0.5rem', border: '1px solid #bae6fd' }}>
+                    <div style={{ color: '#0369a1', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 600 }}>Total Filtrado</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '0.5rem', color: '#0c4a6e' }}>{stats.totalFiltered.toFixed(2)} €</div>
                 </div>
             </div>
 
             {/* Pending Payments */}
-            <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', padding: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Pagos Pendientes</h2>
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', padding: '1.25rem' }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>Pagos Pendientes</h2>
+                <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
                                 <th style={{ padding: '0.75rem', fontSize: '0.875rem', textTransform: 'uppercase', color: '#6b7280' }}>Cliente</th>
@@ -316,9 +316,9 @@ export function Facturacion() {
             </div>
 
             {/* Invoices History */}
-            <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', padding: '1.5rem' }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', padding: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                    <h2 style={{ fontSize: '1.125rem', fontWeight: 600 }}>Historial de Facturas</h2>
+                    <h2 style={{ fontSize: '1rem', fontWeight: 600 }}>Historial de Facturas</h2>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#f9fafb', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
@@ -362,40 +362,35 @@ export function Facturacion() {
                         </div>
                     ) : (
                         filteredInvoices.map(inv => (
-                            <div key={inv.id} style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '1rem', border: '1px solid #f3f4f6', borderRadius: '0.5rem',
-                                transition: 'all 0.2s',
-                                cursor: 'default'
-                            }}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid #f3f4f6', borderRadius: '0.5rem', transition: 'all 0.2s', cursor: 'default', flexWrap: 'wrap', gap: '1rem' }}
                                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
                                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '40px', height: '40px', backgroundColor: '#f3f4f6', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '1', minWidth: '200px' }}>
+                                    <div style={{ width: '40px', height: '40px', backgroundColor: '#f3f4f6', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0 }}>
                                         <FileText size={20} />
                                     </div>
                                     <div>
-                                        <div style={{ fontWeight: 600, color: '#111827' }}>
+                                        <div style={{ fontWeight: 600, color: '#111827', fontSize: '0.9rem' }}>
                                             Factura #{String(inv.invoice_number).padStart(3, '0')} - {inv.clients?.name}
                                         </div>
-                                        <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                                        <div style={{ color: '#6b7280', fontSize: '0.8rem' }}>
                                             {inv.invoice_date ? format(new Date(inv.invoice_date), 'dd/MM/yyyy') : '-'}
                                         </div>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                                    <div style={{ fontWeight: 600, fontSize: '1.125rem' }}>{inv.amount.toFixed(2)} €</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between', width: window.innerWidth < 640 ? '100%' : 'auto' }}>
+                                    <div style={{ fontWeight: 700, fontSize: '1rem' }}>{inv.amount.toFixed(2)} €</div>
                                     <button
                                         onClick={() => handleViewInvoice(inv)}
                                         style={{
                                             display: 'flex', alignItems: 'center', gap: '0.5rem',
                                             border: 'none', background: 'none', cursor: 'pointer',
-                                            color: '#2563eb', fontSize: '0.875rem', fontWeight: 600,
+                                            color: '#2563eb', fontSize: '0.8rem', fontWeight: 600,
                                             padding: '0.5rem 0.75rem', borderRadius: '0.375rem', backgroundColor: '#eff6ff'
                                         }}
                                     >
-                                        <Download size={16} /> Descargar / Ver
+                                        <Download size={16} /> Ver
                                     </button>
                                 </div>
                             </div>

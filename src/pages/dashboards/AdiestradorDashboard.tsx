@@ -45,8 +45,8 @@ export default function AdiestradorDashboard() {
     if (activeView === 'modificar') return <ModificarSesion onBack={() => { setActiveView('home'); fetchCounts() }} syncGoogleCalendar={syncGoogleCalendar} />
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-            <h1 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: '2rem' }}>Panel de Adiestrador</h1>
+        <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+            <h1 style={{ fontSize: window.innerWidth < 640 ? '1.5rem' : '1.875rem', fontWeight: 700, marginBottom: '2rem' }}>Panel de Adiestrador</h1>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 <DashboardButton
@@ -94,7 +94,7 @@ function DashboardButton({ icon: Icon, title, count, onClick, color }: any) {
             onClick={onClick}
             style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
-                padding: '2.5rem', borderRadius: '1rem', border: '1px solid #e5e7eb',
+                padding: window.innerWidth < 640 ? '1.5rem' : '2.5rem', borderRadius: '1rem', border: '1px solid #e5e7eb',
                 backgroundColor: 'white', cursor: 'pointer', transition: 'all 0.2s',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}
@@ -198,12 +198,12 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
     }
 
     return (
-        <div style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
                     <ArrowLeft size={20} /> Volver
                 </button>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Llamadas Pendientes</h1>
+                <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700 }}>Llamadas Pendientes</h1>
             </div>
 
             <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
@@ -218,24 +218,24 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
             </div>
 
             {loading ? <p>Cargando...</p> : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                     {clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).map(client => (
                         <div key={client.id} style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                                 <h3 style={{ fontWeight: 600 }}>{client.name}</h3>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem', fontSize: '0.875rem', color: '#4b5563' }}>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}><strong>Motivo:</strong> {client.obs_comercial || 'No especificado'}</div>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}><strong>Observaciones:</strong> {client.comments || '-'}</div>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}><strong>Motivo:</strong> {client.obs_comercial || 'No especificado'}</div>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}><strong>Observaciones:</strong> {client.comments || '-'}</div>
                             </div>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                 <button
                                     onClick={() => setDetailClient(client)}
-                                    style={{ flex: 1, padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', background: 'white', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                                    style={{ flex: 1, minWidth: '100px', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', background: 'white', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
                                 >Ver ficha</button>
                                 <button
                                     onClick={() => { setSchedulingClient(client); setEvalDate(''); setEvalTime('') }}
-                                    style={{ flex: 1, padding: '0.5rem', borderRadius: '0.5rem', background: '#000', color: 'white', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
+                                    style={{ flex: 1, minWidth: '100px', padding: '0.625rem', borderRadius: '0.5rem', background: '#000', color: 'white', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
                                 >
                                     <CalendarClock size={14} /> Agendar Eval.
                                 </button>
@@ -328,12 +328,12 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
     }
 
     return (
-        <div style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
                     <ArrowLeft size={20} /> Volver
                 </button>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Resultado de Evaluación</h1>
+                <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700 }}>Resultado de Evaluación</h1>
             </div>
 
             {loading ? <p>Cargando...</p> : (

@@ -122,7 +122,7 @@ export function Sesiones() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Sesiones de Adiestramiento</h1>
+                <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 600 }}>Sesiones de Adiestramiento</h1>
             </div>
 
             {/* Upcoming Sessions */}
@@ -136,9 +136,11 @@ export function Sesiones() {
                     <div style={{ display: 'grid', gap: '1rem' }}>
                         {upcomingSessions.map(session => (
                             <div key={session.id} style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                display: 'flex', justifyContent: 'space-between', alignItems: window.innerWidth < 640 ? 'flex-start' : 'center',
                                 padding: '1rem', border: '1px solid #f3f4f6', borderRadius: '0.5rem',
-                                backgroundColor: session.completed ? '#f9fafb' : 'white'
+                                backgroundColor: session.completed ? '#f9fafb' : 'white',
+                                flexDirection: window.innerWidth < 640 ? 'column' : 'row',
+                                gap: '1rem'
                             }}>
                                 <div>
                                     <div style={{ fontWeight: 600, fontSize: '1rem' }}>{session.clients?.name}</div>
@@ -181,50 +183,53 @@ export function Sesiones() {
                 {activeClients.length === 0 ? (
                     <p style={{ color: '#6b7280' }}>No hay clientes activos actualmente.</p>
                 ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                                <th style={{ textAlign: 'left', padding: '0.75rem', color: '#6b7280', fontSize: '0.875rem' }}>Cliente</th>
-                                <th style={{ textAlign: 'left', padding: '0.75rem', color: '#6b7280', fontSize: '0.875rem' }}>Raza</th>
-                                <th style={{ textAlign: 'left', padding: '0.75rem', color: '#6b7280', fontSize: '0.875rem' }}>Progreso</th>
-                                <th style={{ textAlign: 'right', padding: '0.75rem', color: '#6b7280', fontSize: '0.875rem' }}>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {activeClients.map(client => {
-                                const completedCount = client.sessions.filter(s => s.completed).length
-                                return (
-                                    <tr key={client.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                        <td style={{ padding: '1rem 0.75rem', fontWeight: 500 }}>{client.name}</td>
-                                        <td style={{ padding: '1rem 0.75rem', color: '#6b7280' }}>{client.dog_breed || '-'}</td>
-                                        <td style={{ padding: '1rem 0.75rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <div style={{ width: '100px', height: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px', overflow: 'hidden' }}>
-                                                    <div style={{
-                                                        width: `${(completedCount / 8) * 100}%`,
-                                                        height: '100%', backgroundColor: '#16a34a', borderRadius: '4px'
-                                                    }} />
+                    <div className="responsive-table-wrapper">
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                    <th style={{ textAlign: 'left', padding: '0.75rem', color: '#6b7280', fontSize: '0.875rem' }}>Cliente</th>
+                                    <th style={{ textAlign: 'left', padding: '0.75rem', color: '#6b7280', fontSize: '0.875rem' }}>Raza</th>
+                                    <th style={{ textAlign: 'left', padding: '0.75rem', color: '#6b7280', fontSize: '0.875rem' }}>Progreso</th>
+                                    <th style={{ textAlign: 'right', padding: '0.75rem', color: '#6b7280', fontSize: '0.875rem' }}>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {activeClients.map(client => {
+                                    const completedCount = client.sessions.filter(s => s.completed).length
+                                    return (
+                                        <tr key={client.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                            <td style={{ padding: '1rem 0.75rem', fontWeight: 500 }}>{client.name}</td>
+                                            <td style={{ padding: '1rem 0.75rem', color: '#6b7280' }}>{client.dog_breed || '-'}</td>
+                                            <td style={{ padding: '1rem 0.75rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <div style={{ width: '100px', height: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px', overflow: 'hidden' }}>
+                                                        <div style={{
+                                                            width: `${(completedCount / 8) * 100}%`,
+                                                            height: '100%', backgroundColor: '#16a34a', borderRadius: '4px'
+                                                        }} />
+                                                    </div>
+                                                    <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>{completedCount}/8</span>
                                                 </div>
-                                                <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>{completedCount}/8</span>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '1rem 0.75rem', textAlign: 'right' }}>
-                                            <button
-                                                onClick={() => handleScheduleClick(client)}
-                                                style={{
-                                                    padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none',
-                                                    backgroundColor: '#000', color: 'white', fontWeight: 500, cursor: 'pointer',
-                                                    display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem'
-                                                }}
-                                            >
-                                                <Plus size={16} /> Agendar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                )
-                            })}
-                        </tbody>
-                    </table>
+                                            </td>
+                                            <td style={{ padding: '1rem 0.75rem', textAlign: 'right' }}>
+                                                <button
+                                                    onClick={() => handleScheduleClick(client)}
+                                                    style={{
+                                                        padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none',
+                                                        backgroundColor: '#000', color: 'white', fontWeight: 500, cursor: 'pointer',
+                                                        display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem',
+                                                        whiteSpace: 'nowrap'
+                                                    }}
+                                                >
+                                                    <Plus size={16} /> Agendar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
 

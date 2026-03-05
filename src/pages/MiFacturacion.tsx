@@ -182,7 +182,7 @@ export function MiFacturacion() {
                 marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem'
             }}>
                 <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem' }}>Mi Facturación</h1>
+                    <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem' }}>Mi Facturación</h1>
                     <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Resumen mensual para facturar a la escuela.</p>
                 </div>
 
@@ -218,7 +218,7 @@ export function MiFacturacion() {
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>Cargando datos...</div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 1024 ? '1fr' : 'minmax(0, 1fr) 350px', gap: '1.5rem', alignItems: 'start' }}>
 
                     {/* Left Column: List of items */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -233,7 +233,8 @@ export function MiFacturacion() {
                             concepts.map(concept => (
                                 <div key={concept.id} style={{
                                     backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '0.75rem',
-                                    padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                    padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    flexWrap: 'wrap', gap: '1rem'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{
@@ -274,8 +275,9 @@ export function MiFacturacion() {
                     {/* Right Column: Matematicas y Totales */}
                     <div style={{
                         backgroundColor: '#111827', color: 'white', borderRadius: '1rem',
-                        padding: '1.5rem', position: 'sticky', top: '80px',
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                        padding: '1.5rem', position: window.innerWidth < 1024 ? 'static' : 'sticky', top: '80px',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                        marginTop: window.innerWidth < 1024 ? '2rem' : '0'
                     }}>
                         <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <DollarSign size={20} /> Resumen Liquidación
