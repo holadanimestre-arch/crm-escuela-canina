@@ -185,8 +185,8 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
 
     return (
         <div style={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
-            {onBack ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                {onBack && (
                     <button
                         onClick={handleBack}
                         style={{
@@ -197,33 +197,33 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
                     >
                         <ArrowLeft size={18} color="#000" />
                     </button>
-                    <h1 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Agenda</h1>
+                )}
+                <h1 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Agenda</h1>
 
-                    <div style={{ marginLeft: 'auto' }}>
-                        {isLinked ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#166534', backgroundColor: '#dcfce7', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 600 }}>
-                                <CheckCircle size={16} /> Google Calendar Vinculado
-                            </div>
-                        ) : (
-                            <button
-                                onClick={handleLinkGoogle}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                    padding: '0.5rem 1rem', borderRadius: '0.5rem',
-                                    backgroundColor: '#fff', border: '1px solid #e5e7eb',
-                                    color: '#374151', fontSize: '0.875rem', fontWeight: 600,
-                                    cursor: 'pointer', transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.borderColor = '#000'}
-                                onMouseLeave={e => e.currentTarget.style.borderColor = '#e5e7eb'}
-                            >
-                                <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: '16px', height: '16px' }} />
-                                Vincular Google Calendar
-                            </button>
-                        )}
-                    </div>
+                <div style={{ marginLeft: 'auto' }}>
+                    {isLinked ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#166534', backgroundColor: '#dcfce7', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 600 }}>
+                            <CheckCircle size={16} /> Google Calendar Vinculado
+                        </div>
+                    ) : (
+                        <button
+                            onClick={handleLinkGoogle}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                padding: '0.5rem 1rem', borderRadius: '0.5rem',
+                                backgroundColor: '#fff', border: '1px solid #e5e7eb',
+                                color: '#374151', fontSize: '0.875rem', fontWeight: 600,
+                                cursor: 'pointer', transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = '#000'}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+                        >
+                            <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: '16px', height: '16px' }} />
+                            Vincular Google Calendar
+                        </button>
+                    )}
                 </div>
-            ) : null}
+            </div>
 
             <div style={{ flex: 1, backgroundColor: 'white', borderRadius: '1rem', padding: '1rem', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
                 <BigCalendar
