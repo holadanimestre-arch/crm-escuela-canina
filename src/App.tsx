@@ -19,6 +19,7 @@ import { EvaluationDetail } from './pages/Evaluations/EvaluationDetail'
 import { Sesiones } from './pages/Sesiones'
 import { MiFacturacion } from './pages/MiFacturacion'
 import { PagoAdiestradores } from './pages/admin/PagoAdiestradores'
+import { AgendaView } from './pages/Agenda'
 
 import './index.css'
 
@@ -51,6 +52,12 @@ function AppRoutes() {
                 <Route path="leads" element={
                     <RoleRoute allowedRoles={['admin', 'comercial']}>
                         <Leads />
+                    </RoleRoute>
+                } />
+
+                <Route path="agenda" element={
+                    <RoleRoute allowedRoles={['admin', 'adiestrador']}>
+                        <AgendaView />
                     </RoleRoute>
                 } />
 

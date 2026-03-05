@@ -69,6 +69,7 @@ export function AppLayout() {
         if (role === 'adiestrador') {
             return [
                 ...common,
+                { name: 'Agenda', href: '/agenda', icon: Calendar },
                 { name: 'Mis Clientes', href: '/clientes', icon: UserCheck },
                 { name: 'Mi Facturación', href: '/mi-facturacion', icon: Receipt },
             ]
