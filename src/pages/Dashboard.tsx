@@ -1,7 +1,7 @@
 import { useAuth } from '../hooks/useAuth'
 import { AdminDashboard } from './dashboards/AdminDashboard'
 import { ComercialDashboard } from './dashboards/ComercialDashboard'
-import { AdiestradorDashboard } from './dashboards/AdiestradorDashboard'
+import AdiestradorDashboard from './dashboards/AdiestradorDashboard'
 
 export function Dashboard() {
     const { profile } = useAuth()

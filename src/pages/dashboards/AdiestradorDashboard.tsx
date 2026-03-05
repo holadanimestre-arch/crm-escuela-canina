@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { useFilters } from '../../context/FilterContext'
-import { Phone, ClipboardCheck, CalendarClock, ArrowLeft, Search, CheckCircle, XCircle, MessageCircle, PhoneOff, MapPin, Mail, User, Edit } from 'lucide-react'
+import { Phone, ClipboardCheck, CalendarClock, ArrowLeft, Search, MapPin, User, Edit } from 'lucide-react'
 import { Modal } from '../../components/Modal'
 
 // ─── Componente Principal ──────────────────────────────────────────
@@ -455,7 +455,7 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
 function ModificarSesion({ onBack, syncGoogleCalendar }: any) {
     const { profile } = useAuth()
     const [clients, setClients] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+    const [, setLoading] = useState(true)
     const [modifyingSession, setModifyingSession] = useState<any>(null)
     const [newDate, setNewDate] = useState('')
     const [newTime, setNewTime] = useState('')
