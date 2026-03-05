@@ -49,6 +49,7 @@ export function AppLayout() {
         if (role === 'admin' || profile?.email === 'lupe@escuelacaninafranestevez.es') {
             return [
                 ...common,
+                { name: 'Agenda', href: '/agenda', icon: Calendar },
                 { name: 'Leads', href: '/leads', icon: Users },
                 { name: 'Clientes', href: '/clientes', icon: UserCheck },
                 { name: 'Facturación', href: '/facturacion', icon: FileText },
