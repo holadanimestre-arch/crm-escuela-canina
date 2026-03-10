@@ -187,7 +187,7 @@ export function ClientDetail() {
                             <Dog size={20} />
                             Información del Perro
                         </h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
+                        <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Raza</label>
                                 <p>{client.dog_breed || '-'}</p>
@@ -258,7 +258,7 @@ export function ClientDetail() {
                                 <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>El adiestrador creará la evaluación cuando contacte al cliente</p>
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Resultado</label>
                                     <span style={{
@@ -492,7 +492,7 @@ export function ClientDetail() {
                             </h3>
 
                             {/* Summary */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                                 <div style={{ padding: '0.75rem 1rem', backgroundColor: '#f0fdf4', borderRadius: '0.5rem', border: '1px solid #bbf7d0' }}>
                                     <div style={{ fontSize: '0.7rem', color: '#166534', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Total Cobrado</div>
                                     <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#166534' }}>{totalPaid.toFixed(2)}€</div>
@@ -529,7 +529,7 @@ export function ClientDetail() {
                                 ) : (
                                     <div style={{ marginBottom: '1.5rem', padding: '1.25rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
                                         <h4 style={{ fontWeight: 600, marginBottom: '1rem' }}>Nuevo Pago</h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                             <div>
                                                 <label style={{ display: 'block', fontSize: '0.8rem', color: '#374151', marginBottom: '0.25rem' }}>Importe (€)</label>
                                                 <input

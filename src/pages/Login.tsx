@@ -41,35 +41,35 @@ export function Login() {
     }
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3f4f6', padding: '1rem' }}>
-            <div style={{ padding: '2rem', backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', width: '100%', maxWidth: '400px' }}>
+        <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000', padding: '1rem' }}>
+            <div style={{ padding: '2rem', backgroundColor: '#111827', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(255, 255, 255, 0.1)', width: '100%', maxWidth: '400px', border: '1px solid #374151' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
                     <img src="/logo.png" alt="Logo" style={{ width: '80px', height: 'auto' }} />
                 </div>
-                <h1 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', textAlign: 'center' }}>Escuela Canina Fran Estévez</h1>
-                <p style={{ textAlign: 'center', color: '#6b7280', marginBottom: '1.5rem' }}>Inicia sesión para continuar</p>
+                <h1 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', textAlign: 'center', color: 'white' }}>Escuela Canina Fran Estévez</h1>
+                <p style={{ textAlign: 'center', color: '#9ca3af', marginBottom: '1.5rem' }}>Inicia sesión para continuar</p>
 
                 <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {error && <div style={{ color: 'red', fontSize: '0.875rem' }}>{error}</div>}
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Email</label>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: 'white' }}>Email</label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
+                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #4b5563', backgroundColor: '#1f2937', color: 'white', outline: 'none' }}
                             required
                         />
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Contraseña</label>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: 'white' }}>Contraseña</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
+                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #4b5563', backgroundColor: '#1f2937', color: 'white', outline: 'none' }}
                             required
                         />
                     </div>
@@ -80,12 +80,13 @@ export function Login() {
                         style={{
                             marginTop: '1rem',
                             padding: '0.5rem',
-                            backgroundColor: '#000',
-                            color: 'white',
+                            backgroundColor: 'white',
+                            color: 'black',
                             borderRadius: '0.375rem',
                             border: 'none',
-                            fontWeight: 500,
-                            cursor: loading ? 'not-allowed' : 'pointer'
+                            fontWeight: 600,
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            transition: 'background-color 0.2s'
                         }}
                     >
                         {loading ? 'Cargando...' : 'Entrar'}

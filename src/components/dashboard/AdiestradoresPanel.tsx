@@ -184,7 +184,7 @@ export function AdiestradoresPanel() {
             </div>
 
             {/* Individual Trainer Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
                 {trainerStats.map(s => (
                     <div key={s.id} style={{
                         backgroundColor: 'white',
@@ -220,7 +220,7 @@ export function AdiestradoresPanel() {
                         </div>
 
                         {/* Metrics Content */}
-                        <div style={{ padding: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div className="kpi-grid" style={{ padding: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                             {/* Success Metric */}
                             <div style={{ backgroundColor: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#6b7280' }}>

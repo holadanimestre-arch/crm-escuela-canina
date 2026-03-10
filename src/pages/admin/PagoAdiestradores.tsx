@@ -316,7 +316,7 @@ export function PagoAdiestradores() {
             ) : (
                 <>
                     {/* Summary Cards */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                    <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                         <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', borderLeft: '4px solid #3b82f6' }}>
                             <p style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: 500, marginBottom: '0.5rem' }}>Total a Pagar (Mes)</p>
                             <p style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700, color: '#111827' }}>{formatCurrency(totalMesAdmin)}</p>

@@ -273,7 +273,12 @@ export function Leads() {
                             </tr>
                         ) : (
                             leads.map((lead) => (
-                                <tr key={lead.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                <tr 
+                                    key={lead.id} 
+                                    className="clickable-row"
+                                    style={{ borderBottom: '1px solid #f3f4f6' }}
+                                    onClick={() => openDetailModal(lead)}
+                                >
                                     <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>
                                         {lead.name}
                                         <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 400 }}>{lead.phone || 'Sin teléfono'}</div>
@@ -281,6 +286,7 @@ export function Leads() {
                                     <td style={{ padding: '1rem 1.5rem' }}>
                                         <select
                                             value={lead.status}
+                                            onClick={(e) => e.stopPropagation()}
                                             onChange={(e) => handleStatusChange(lead.id, e.target.value as any)}
                                             style={{
                                                 ...getStatusStyle(lead.status),
@@ -317,13 +323,13 @@ export function Leads() {
                                     </td>
                                     <td style={{ padding: '1rem 1.5rem' }}>
                                         <button
-                                            onClick={() => openDetailModal(lead)}
+                                            onClick={(e) => { e.stopPropagation(); openDetailModal(lead) }}
                                             style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', marginRight: '0.5rem' }}
                                         >
                                             Ver
                                         </button>
                                         <button
-                                            onClick={() => openConvertModal(lead)}
+                                            onClick={(e) => { e.stopPropagation(); openConvertModal(lead) }}
                                             style={{ color: '#059669', background: 'none', border: 'none', cursor: 'pointer' }}
                                         >
                                             Convertir
@@ -351,7 +357,7 @@ export function Leads() {
                         />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                    <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                         <div>
                             <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Email</label>
                             <input
@@ -438,7 +444,7 @@ export function Leads() {
                         </p>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                    <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                 <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Raza</label>

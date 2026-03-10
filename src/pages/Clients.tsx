@@ -119,7 +119,12 @@ export function Clients() {
                             clients.map((client) => {
                                 const badge = getEvaluationBadge(client)
                                 return (
-                                    <tr key={client.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                    <tr 
+                                        key={client.id} 
+                                        className="clickable-row"
+                                        style={{ borderBottom: '1px solid #f3f4f6' }}
+                                        onClick={() => navigate(`/clientes/${client.id}`)}
+                                    >
                                         <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>
                                             {client.name}
                                             <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 400 }}>{client.email}</div>
@@ -157,7 +162,7 @@ export function Clients() {
                                             {client.currentSession ? `${client.currentSession} / ${client.evaluation?.total_sessions || '?'}` : '-'}
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
-                                            <button onClick={() => navigate(`/clientes/${client.id}`)} style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', marginRight: '0.5rem' }}>Ver Ficha</button>
+                                            <button onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${client.id}`) }} style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', marginRight: '0.5rem' }}>Ver Ficha</button>
                                         </td>
                                     </tr>
                                 )

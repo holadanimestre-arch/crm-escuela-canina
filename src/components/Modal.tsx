@@ -39,7 +39,9 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = '500px' }: 
             justifyContent: 'center',
             zIndex: 50
         }}>
-            <div style={{
+            <div 
+                className="modal-content"
+                style={{
                 backgroundColor: 'white',
                 borderRadius: '0.5rem',
                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',

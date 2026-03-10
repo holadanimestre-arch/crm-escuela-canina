@@ -263,7 +263,7 @@ export function AdminDashboard() {
 
             {activeTab === 'direccion' && (
                 <>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+                    <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
                         <KPICard title="Ingresos Totales" value={`€${kpiData.revenue.toLocaleString()}`} icon={DollarSign} color="#16a34a" trend="Recaudado" trendUp description="Suma total de pagos recibidos en el periodo y ciudad seleccionados." />
                         <KPICard title="Clientes Activos" value={kpiData.activeClients} icon={UserCheck} color="#2563eb" trend="Suscritos" trendUp description="Número de clientes con estado 'activo' actualmente en esta ciudad." />
                         <KPICard title="Nuevos Leads" value={kpiData.newLeads} icon={Users} color="#06b6d4" trend="Interesados" trendUp description="Nuevos prospectos que han entrado al sistema durante las fechas seleccionadas." />
@@ -271,7 +271,7 @@ export function AdminDashboard() {
                         <KPICard title="Éxito Eval." value={`${kpiData.evalSuccess}%`} icon={TrendingUp} color="#10b981" trend="Aprobaron" trendUp description="Porcentaje de evaluaciones con resultado 'aprobada' sobre el total realizado." />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+                    <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
                         {/* Operational Stats */}
                         <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
                             <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>Estado de Sesiones</h3>
@@ -284,7 +284,7 @@ export function AdminDashboard() {
                                     <div style={{ width: `${kpiData.totalSessions > 0 ? (kpiData.completedSessions / kpiData.totalSessions) * 100 : 0}%`, height: '100%', backgroundColor: '#8b5cf6', borderRadius: '6px' }} />
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div style={{ textAlign: 'center', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem' }}>
                                     <p style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>{kpiData.totalSessions - kpiData.completedSessions}</p>
                                     <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>Pendientes</p>
@@ -346,7 +346,7 @@ export function AdminDashboard() {
 
             {activeTab === 'marketing' && (
                 <>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                    <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                         <KPICard title="Gasto Publicitario" value={`€${marketingStats.adSpend.toLocaleString()}`} icon={TrendingUp} color="#3b82f6" trend="Inversión" trendUp={false} description="Presupuesto estimado invertido en captación (simulado)." />
                         <KPICard title="Leads Totales" value={kpiData.newLeads} icon={Users} color="#06b6d4" trend="Captados" trendUp description="Total de leads reales captados por todos los canales en este periodo." />
                         <KPICard title="CPL" value={kpiData.newLeads > 0 ? `€${(marketingStats.adSpend / kpiData.newLeads).toFixed(2)}` : '€0.00'} icon={Activity} color="#f59e0b" trend="Costo/Lead" trendUp={false} description="Coste medio por Lead (Inversión / Leads)." />
@@ -354,7 +354,7 @@ export function AdminDashboard() {
                         <KPICard title="ROI" value={`${marketingStats.roi}%`} icon={TrendingUp} color="#10b981" trend="Retorno" trendUp description="Estimación del retorno de la inversión publicitaria." />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+                    <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
                         {/* Funnel de Conversión */}
                         <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', gridColumn: '1 / -1' }}>
                             <h3 style={{ fontSize: '1.125rem', fontWeight: 600, textAlign: 'center', marginBottom: '1.5rem' }}>Funnel de Conversión</h3>

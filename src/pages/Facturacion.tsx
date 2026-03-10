@@ -253,7 +253,7 @@ export function Facturacion() {
             <h1 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Facturación y Pagos</h1>
 
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                 <div style={{ padding: '1.25rem', backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
                     <div style={{ color: '#6b7280', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 600 }}>Total Facturado</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '0.5rem', color: '#111827' }}>{stats.totalReceived.toFixed(2)} €</div>

@@ -206,7 +206,7 @@ export function ComercialesPanel() {
 
 
             {/* Comerciales Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                 {metrics.stats.map(s => (
                     <div key={s.id} style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ width: '60px', height: '60px', borderRadius: '0.5rem', backgroundColor: '#e5e7eb', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -228,7 +228,7 @@ export function ComercialesPanel() {
             </div>
 
             {/* Global KPIs Container */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 <KPICard title="Ratio Contacto" value={`${metrics.global.contactRatio.toFixed(0)}%`} icon={PhoneCall} color="#3b82f6" trend="Exitoso" trendUp description="Porcentaje de leads que han sido contactados (estado distinto a 'nuevo')." />
                 <KPICard title="% Eval. Aprobadas" value={`${metrics.global.evalApproveRatio.toFixed(0)}%`} icon={CheckCircle} color="#10b981" trend="De agendadas" trendUp description="Porcentaje de evaluaciones con resultado 'aprobada' sobre las evaluadas por el comercial." />
                 <KPICard title="Progs. Vendidos" value={metrics.global.programsSold} icon={Target} color="#8b5cf6" trend="Total" trendUp description="Número de clientes que han pasado a estado 'activo' o 'finalizado'." />
@@ -238,7 +238,7 @@ export function ComercialesPanel() {
             </div>
 
             {/* Charts Area */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
 
                 {/* Ratio Contacto Chart */}
                 <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '350px' }}>

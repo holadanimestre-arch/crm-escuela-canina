@@ -151,3 +151,13 @@ input, select, textarea {
 .fade-in {
   animation: fadeIn 0.3s ease-out;
 }
+
+/* ─── CLICKABLE ROW ─────────────────────────────────────────── */
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.clickable-row:hover {
+  background-color: #f9fafb !important;
+}

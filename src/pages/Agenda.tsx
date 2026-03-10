@@ -287,7 +287,7 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.75rem' }}>
+                        <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.75rem' }}>
                             <div>
                                 <div style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem' }}>Fecha</div>
                                 <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>{format(selectedEvent.start, 'EEEE d MMMM', { locale: es })}</div>

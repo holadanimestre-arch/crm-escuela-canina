@@ -63,7 +63,7 @@ export default function AdiestradorDashboard() {
         <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem', maxWidth: '1200px', margin: '0 auto' }}>
             <h1 style={{ fontSize: window.innerWidth < 640 ? '1.5rem' : '1.875rem', fontWeight: 700, marginBottom: '2rem' }}>Panel de Adiestrador</h1>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 <DashboardButton
                     icon={Phone}
                     title="Llamadas Pendientes"
@@ -238,7 +238,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
             </div>
 
             {loading ? <p>Cargando...</p> : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                     {clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).map(client => (
                         <div key={client.id} style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
@@ -363,7 +363,7 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
             </div>
 
             {loading ? <p>Cargando...</p> : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1rem' }}>
+                <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1rem' }}>
                     {evaluations.map(ev => (
                         <div key={ev.id} style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white' }}>
                             <h3 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{ev.clients.name}</h3>
@@ -461,7 +461,7 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
             </div>
 
             {loading ? <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>Cargando clientes...</p> : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                     {clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).map(client => (
                         <div key={client.id} style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white' }}>
                             <h3 style={{ fontWeight: 600 }}>{client.name}</h3>
@@ -542,7 +542,7 @@ function ModificarSesion({ onBack, syncGoogleCalendar }: any) {
             </div>
 
             {loading ? <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>Cargando sesiones...</p> : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                     {clients.map(sess => (
                         <div key={sess.id} style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white' }}>
                             <h3 style={{ fontWeight: 600 }}>{/* @ts-ignore */ sess.clients?.name || 'Cliente'}</h3>
