@@ -42,7 +42,7 @@ export function Login() {
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000000', padding: '1rem' }}>
-            <div style={{ padding: '2rem', backgroundColor: '#111827', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(255, 255, 255, 0.1)', width: '100%', maxWidth: '400px', border: '1px solid #374151' }}>
+            <div style={{ padding: '2rem', backgroundColor: '#000000', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(255, 255, 255, 0.1)', width: '100%', maxWidth: '400px', border: '1px solid #333333' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
                     <img src="/logo.png" alt="Logo" style={{ width: '80px', height: 'auto' }} />
                 </div>
@@ -58,7 +58,7 @@ export function Login() {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #4b5563', backgroundColor: '#1f2937', color: 'white', outline: 'none' }}
+                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #404040', backgroundColor: '#000000', color: 'white', outline: 'none' }}
                             required
                         />
                     </div>
@@ -69,7 +69,7 @@ export function Login() {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #4b5563', backgroundColor: '#1f2937', color: 'white', outline: 'none' }}
+                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #404040', backgroundColor: '#000000', color: 'white', outline: 'none' }}
                             required
                         />
                     </div>
