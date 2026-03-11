@@ -4,7 +4,7 @@ import { Database } from '../types/database.types'
 import { Modal } from '../components/Modal'
 import { useAuth } from '../hooks/useAuth'
 import { LeadDetailModal } from './Leads/LeadDetailModal'
-import { CityModal } from './Leads/CityModal'
+
 import { DogBreedModal } from './Leads/DogBreedModal'
 import { CallReasonModal } from './Leads/CallReasonModal'
 import { useFilters } from '../context/FilterContext'
@@ -23,7 +23,6 @@ export function Leads() {
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-    const [isCityModalOpen, setIsCityModalOpen] = useState(false)
     const [isDogBreedModalOpen, setIsDogBreedModalOpen] = useState(false)
     const [isCallReasonModalOpen, setIsCallReasonModalOpen] = useState(false)
 
@@ -224,20 +223,6 @@ export function Leads() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 600 }}>Leads</h1>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                        onClick={() => setIsCityModalOpen(true)}
-                        style={{
-                            backgroundColor: '#000',
-                            color: 'white',
-                            padding: '0.5rem 0.75rem',
-                            borderRadius: '0.375rem',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontWeight: 500,
-                            fontSize: '0.8rem'
-                        }}>
-                        + Ciudad
-                    </button>
                     <button
                         onClick={() => setIsModalOpen(true)}
                         style={{
@@ -566,12 +551,6 @@ export function Leads() {
                 isOpen={isDetailModalOpen}
                 onClose={() => setIsDetailModalOpen(false)}
                 onUpdate={fetchLeads}
-            />
-
-            <CityModal
-                isOpen={isCityModalOpen}
-                onClose={() => setIsCityModalOpen(false)}
-                onSuccess={fetchCities}
             />
 
             <DogBreedModal
