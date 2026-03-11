@@ -31,8 +31,11 @@ export function AppLayout() {
         fetchCities()
         const handleResize = () => {
             const mobile = window.innerWidth < 768
-            setIsMobile(mobile)
-            if (!mobile) setSidebarOpen(false)
+            setIsMobile(prev => {
+                if (prev !== mobile) return mobile;
+                return prev;
+            })
+            if (window.innerWidth >= 768) setSidebarOpen(false)
         }
         window.addEventListener('resize', handleResize)
         return () => window.removeEventListener('resize', handleResize)
@@ -324,7 +327,7 @@ export function AppLayout() {
                     </div>
                 </header>
 
-                <main style={{ padding: isMobile ? '1rem' : '2rem', flex: 1, overflow: 'auto' }}>
+                <main style={{ padding: isMobile ? '1rem' : '2rem', flex: 1 }}>
                     <Outlet />
                 </main>
             </div>
