@@ -355,21 +355,35 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
             </Modal>
 
             <Modal isOpen={!!schedulingClient} onClose={() => setSchedulingClient(null)} title="Agendar Evaluación">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    <div style={{ backgroundColor: '#f3f4f6', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Calendar size={14} /> DÍA DE LA EVALUACIÓN
-                        </p>
-                        <input type="date" value={evalDate} onChange={e => setEvalDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontSize: '1rem', color: '#000' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>
+                            <Calendar size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Fecha de la Evaluación
+                        </label>
+                        <input 
+                            type="date" 
+                            value={evalDate} 
+                            onChange={e => setEvalDate(e.target.value)} 
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '1rem', color: '#000', outline: 'none' }} 
+                        />
                     </div>
-                    <div style={{ backgroundColor: '#f3f4f6', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Clock size={14} /> HORA
-                        </p>
-                        <input type="time" value={evalTime} onChange={e => setEvalTime(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontSize: '1rem', color: '#000' }} />
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>
+                            <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Hora
+                        </label>
+                        <input 
+                            type="time" 
+                            value={evalTime} 
+                            onChange={e => setEvalTime(e.target.value)} 
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '1rem', color: '#000', outline: 'none' }} 
+                        />
                     </div>
-                    <button onClick={handleScheduleEval} disabled={saving} style={{ padding: '1rem', borderRadius: '0.5rem', background: '#000', color: 'white', fontWeight: 700, cursor: 'pointer', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                        {saving ? 'Guardando...' : 'CONFIRMAR CITA'}
+                    <button 
+                        onClick={handleScheduleEval} 
+                        disabled={saving} 
+                        style={{ width: '100%', padding: '1rem', borderRadius: '0.75rem', background: '#000', color: 'white', fontWeight: 700, marginTop: '0.5rem', cursor: 'pointer', border: 'none' }}
+                    >
+                        {saving ? 'Confirmando...' : 'CONFIRMAR CITA'}
                     </button>
                 </div>
             </Modal>
@@ -465,21 +479,35 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
             )}
 
             <Modal isOpen={!!activeEval} onClose={() => setActiveEval(null)} title="Aprobar Evaluación">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    <div style={{ backgroundColor: '#f3f4f6', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Calendar size={14} /> FECHA 1ª SESIÓN
-                        </p>
-                        <input type="date" value={firstSessionDate} onChange={e => setFirstSessionDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontSize: '1rem', color: '#000' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>
+                            <Calendar size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Fecha 1ª Sesión
+                        </label>
+                        <input 
+                            type="date" 
+                            value={firstSessionDate} 
+                            onChange={e => setFirstSessionDate(e.target.value)} 
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '1rem', color: '#000', outline: 'none' }} 
+                        />
                     </div>
-                    <div style={{ backgroundColor: '#f3f4f6', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Clock size={14} /> HORA
-                        </p>
-                        <input type="time" value={firstSessionTime} onChange={e => setFirstSessionTime(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontSize: '1rem', color: '#000' }} />
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>
+                            <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Hora
+                        </label>
+                        <input 
+                            type="time" 
+                            value={firstSessionTime} 
+                            onChange={e => setFirstSessionTime(e.target.value)} 
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '1rem', color: '#000', outline: 'none' }} 
+                        />
                     </div>
-                    <button onClick={() => confirmResult(activeEval.id, 'aprobado')} disabled={saving} style={{ padding: '1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer' }}>
-                        {saving ? 'Guardando...' : 'CONFIRMAR Y AGENDAR'}
+                    <button 
+                        onClick={() => confirmResult(activeEval.id, 'aprobado')} 
+                        disabled={saving} 
+                        style={{ width: '100%', padding: '1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                        {saving ? 'Confirmando...' : 'CONFIRMAR Y AGENDAR'}
                     </button>
                 </div>
             </Modal>
@@ -568,20 +596,34 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
             )}
 
             <Modal isOpen={!!schedulingClient} onClose={() => setSchedulingClient(null)} title="Agendar Sesión">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    <div style={{ backgroundColor: '#f3f4f6', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Calendar size={14} /> FECHA DE LA SESIÓN
-                        </p>
-                        <input type="date" value={sessionDate} onChange={e => setSessionDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontSize: '1rem', color: '#000' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>
+                            <Calendar size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Fecha de la Sesión
+                        </label>
+                        <input 
+                            type="date" 
+                            value={sessionDate} 
+                            onChange={e => setSessionDate(e.target.value)} 
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '1rem', color: '#000', outline: 'none' }} 
+                        />
                     </div>
-                    <div style={{ backgroundColor: '#f3f4f6', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Clock size={14} /> HORA
-                        </p>
-                        <input type="time" value={sessionTime} onChange={e => setSessionTime(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontSize: '1rem', color: '#000' }} />
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>
+                            <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Hora
+                        </label>
+                        <input 
+                            type="time" 
+                            value={sessionTime} 
+                            onChange={e => setSessionTime(e.target.value)} 
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '1rem', color: '#000', outline: 'none' }} 
+                        />
                     </div>
-                    <button onClick={handleScheduleNext} disabled={saving} style={{ padding: '1rem', background: '#000', color: 'white', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer', border: 'none' }}>
+                    <button 
+                        onClick={handleScheduleNext} 
+                        disabled={saving} 
+                        style={{ width: '100%', padding: '1rem', background: '#000', color: 'white', borderRadius: '0.75rem', fontWeight: 700, cursor: 'pointer', border: 'none' }}
+                    >
                         {saving ? 'Guardando...' : 'CONFIRMAR SESIÓN'}
                     </button>
                 </div>
@@ -662,20 +704,34 @@ function ModificarSesion({ onBack, syncGoogleCalendar }: any) {
             )}
 
             <Modal isOpen={!!modifyingSession} onClose={() => setModifyingSession(null)} title="Modificar Fecha/Hora">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    <div style={{ backgroundColor: '#f3f4f6', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Calendar size={14} /> NUEVA FECHA
-                        </p>
-                        <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontSize: '1rem', color: '#000' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>
+                            <Calendar size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Nueva Fecha
+                        </label>
+                        <input 
+                            type="date" 
+                            value={newDate} 
+                            onChange={e => setNewDate(e.target.value)} 
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '1rem', color: '#000', outline: 'none' }} 
+                        />
                     </div>
-                    <div style={{ backgroundColor: '#f3f4f6', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
-                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', fontWeight: 800, color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Clock size={14} /> NUEVA HORA
-                        </p>
-                        <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontSize: '1rem', color: '#000' }} />
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>
+                            <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Nueva Hora
+                        </label>
+                        <input 
+                            type="time" 
+                            value={newTime} 
+                            onChange={e => setNewTime(e.target.value)} 
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '1rem', color: '#000', outline: 'none' }} 
+                        />
                     </div>
-                    <button onClick={handleUpdate} disabled={saving} style={{ padding: '1rem', background: '#000', color: 'white', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer', border: 'none' }}>
+                    <button 
+                        onClick={handleUpdate} 
+                        disabled={saving} 
+                        style={{ width: '100%', padding: '1rem', background: '#000', color: 'white', borderRadius: '0.75rem', fontWeight: 700, cursor: 'pointer', border: 'none' }}
+                    >
                         {saving ? 'Guardando...' : 'ACTUALIZAR SESIÓN'}
                     </button>
                 </div>

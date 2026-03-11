@@ -43,14 +43,12 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = '500px' }: 
                 className="modal-content"
                 style={{
                 backgroundColor: 'white',
-                borderRadius: '0.5rem',
+                borderRadius: '1rem',
                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                width: '90%',
-                maxWidth: maxWidth,
+                width: 'min(calc(100% - 2rem), ' + maxWidth + ')',
                 maxHeight: '90vh',
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                margin: '1rem'
+                overflow: 'auto',
+                margin: 'auto'
             }}>
                 <div style={{
                     display: 'flex',
