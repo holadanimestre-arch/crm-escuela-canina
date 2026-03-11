@@ -108,6 +108,18 @@ export default function AdiestradorDashboard() {
     )
 }
 
+const InfoRow = ({ icon: Icon, label, value }: any) => (
+    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+        <div style={{ padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '0.5rem' }}>
+            <Icon size={18} color="#6b7280" />
+        </div>
+        <div>
+            <p style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.25rem' }}>{label}</p>
+            <p style={{ fontWeight: 500, color: '#111827' }}>{value || 'No indicado'}</p>
+        </div>
+    </div>
+)
+
 function DashboardButton({ icon: Icon, title, count, onClick, color }: any) {
     return (
         <button
@@ -241,10 +253,16 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                 />
             </div>
 
-            {loading ? <p>Cargando...</p> : (
+            {loading ? <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>Cargando clientes...</p> : (
                 <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                     {clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).map(client => (
-                        <div key={client.id} style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white' }}>
+                        <div 
+                            key={client.id} 
+                            onClick={() => setDetailClient(client)}
+                            style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white', cursor: 'pointer', transition: 'all 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+                        >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                                 <h3 style={{ fontWeight: 600 }}>{client.name}</h3>
                             </div>
@@ -253,12 +271,19 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}><strong>Observaciones:</strong> {client.observations || '-'}</div>
                             </div>
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <a
+                                    href={`tel:${client.phone}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{ flex: 1, minWidth: '80px', padding: '0.625rem', borderRadius: '0.5rem', background: '#22c55e', color: 'white', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', textDecoration: 'none' }}
+                                >
+                                    <Phone size={14} /> Llamar
+                                </a>
                                 <button
-                                    onClick={() => setDetailClient(client)}
-                                    style={{ flex: 1, minWidth: '100px', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', background: 'white', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                                    onClick={(e) => { e.stopPropagation(); setDetailClient(client) }}
+                                    style={{ flex: 1, minWidth: '80px', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', background: 'white', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
                                 >Ver ficha</button>
                                 <button
-                                    onClick={() => { setSchedulingClient(client); setEvalDate(''); setEvalTime('') }}
+                                    onClick={(e) => { e.stopPropagation(); setSchedulingClient(client); setEvalDate(''); setEvalTime('') }}
                                     style={{ flex: 1, minWidth: '100px', padding: '0.625rem', borderRadius: '0.5rem', background: '#000', color: 'white', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
                                 >
                                     <CalendarClock size={14} /> Agendar Eval.
@@ -269,16 +294,55 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                 </div>
             )}
 
-            <Modal isOpen={!!detailClient} onClose={() => setDetailClient(null)} title="Detalle del Lead">
+            <Modal isOpen={!!detailClient} onClose={() => setDetailClient(null)} title="Ficha del Cliente">
                 {detailClient && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <InfoRow icon={User} label="Nombre" value={detailClient.name} />
-                        <InfoRow icon={Phone} label="Teléfono" value={detailClient.phone} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                            <InfoRow icon={User} label="Nombre" value={detailClient.name} />
+                            <InfoRow icon={Phone} label="Teléfono" value={detailClient.phone} />
+                        </div>
+                        <InfoRow icon={Edit} label="Email" value={detailClient.email} />
                         <InfoRow icon={MapPin} label="Dirección" value={detailClient.address} />
-                        <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb' }} />
-                        <button onClick={() => handleNoContesta(detailClient)} disabled={savingNoContesta} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: '#ef4444', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
-                            {savingNoContesta ? 'Guardando...' : 'NO CONTESTA'}
-                        </button>
+                        
+                        <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                                <div>
+                                    <p style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.25rem' }}>Raza</p>
+                                    <p style={{ fontWeight: 600 }}>{detailClient.dog_breed || '-'}</p>
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.25rem' }}>Edad</p>
+                                    <p style={{ fontWeight: 600 }}>{detailClient.dog_age || '-'}</p>
+                                </div>
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.25rem' }}>Motivo de la llamada</p>
+                                <p style={{ fontWeight: 600 }}>{detailClient.call_reason || '-'}</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.5rem' }}>Observaciones del Comercial</p>
+                            <div style={{ padding: '0.75rem', backgroundColor: '#fff7ed', borderRadius: '0.5rem', border: '1px solid #ffedd5', color: '#9a3412', fontSize: '0.875rem' }}>
+                                {detailClient.observations || 'Sin observaciones'}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                            <a
+                                href={`tel:${detailClient.phone}`}
+                                style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', background: '#22c55e', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                            >
+                                <Phone size={18} /> LLAMAR AHORA
+                            </a>
+                            <button 
+                                onClick={() => handleNoContesta(detailClient)} 
+                                disabled={savingNoContesta} 
+                                style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', background: '#ef4444', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                            >
+                                {savingNoContesta ? '...' : 'NO CONTESTA'}
+                            </button>
+                        </div>
                     </div>
                 )}
             </Modal>
@@ -574,14 +638,3 @@ function ModificarSesion({ onBack, syncGoogleCalendar }: any) {
     )
 }
 
-function InfoRow({ icon: Icon, label, value }: any) {
-    return (
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <Icon size={18} color="#9ca3af" />
-            <div>
-                <p style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
-                <p style={{ fontSize: '0.95rem', fontWeight: 500, color: '#111827' }}>{value || '-'}</p>
-            </div>
-        </div>
-    )
-}
