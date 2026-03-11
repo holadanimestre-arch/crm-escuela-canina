@@ -19,7 +19,7 @@ export default function AdiestradorDashboard() {
     async function fetchCounts() {
         if (!profile) return
 
-        let llamadasQ = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'pendiente_llamada')
+        let llamadasQ = supabase.from('leads').select('*', { count: 'exact', head: true }).ilike('status', 'evaluacion_aceptada%')
         let resultadoQ = supabase.from('evaluations').select('*', { count: 'exact', head: true }).is('result', null)
         let sesionesQ = supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'activo')
 
@@ -28,9 +28,15 @@ export default function AdiestradorDashboard() {
             resultadoQ = resultadoQ.eq('city_id', cityId)
             sesionesQ = sesionesQ.eq('city_id', cityId)
         } else if (profile.role !== 'admin') {
-            llamadasQ = llamadasQ.eq('adiestrador_id', profile.id)
+            // El adiestrador ve los leads de su ciudad asignada
+            if (profile.assigned_city_id) {
+                llamadasQ = llamadasQ.eq('city_id', profile.assigned_city_id)
+            }
             resultadoQ = resultadoQ.eq('adiestrador_id', profile.id)
-            sesionesQ = sesionesQ.eq('adiestrador_id', profile.id)
+            // Nota: clients no tiene adiestrador_id, suele filtrarse por evaluación o ciudad
+            if (profile.assigned_city_id) {
+                sesionesQ = sesionesQ.eq('city_id', profile.assigned_city_id)
+            }
         }
 
         const { count: llamadas } = await llamadasQ
@@ -156,12 +162,12 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
     async function fetchClients() {
         if (!profile) return
         setLoading(true)
-        let query = supabase.from('leads').select('*').eq('status', 'pendiente_llamada')
+        let query = supabase.from('leads').select('*').ilike('status', 'evaluacion_aceptada%')
 
         if (profile.role === 'admin' && cityId !== 'all') {
             query = query.eq('city_id', cityId)
-        } else if (profile.role !== 'admin') {
-            query = query.eq('adiestrador_id', profile.id)
+        } else if (profile.role !== 'admin' && profile.assigned_city_id) {
+            query = query.eq('city_id', profile.assigned_city_id)
         }
 
         const { data } = await query
@@ -203,8 +209,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
             const { error } = await supabase
                 .from('leads')
                 .update({
-                    status: 'no_contesta',
-                    no_contesta_at: new Date().toISOString()
+                    status: 'evaluacion_denegada_pablo' // Usamos un estado que sí existe en el enum
                 })
                 .eq('id', client.id)
             if (error) throw error
@@ -245,8 +250,8 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                                 <h3 style={{ fontWeight: 600 }}>{client.name}</h3>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem', fontSize: '0.875rem', color: '#4b5563' }}>
-                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}><strong>Motivo:</strong> {client.obs_comercial || 'No especificado'}</div>
-                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}><strong>Observaciones:</strong> {client.comments || '-'}</div>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}><strong>Origen:</strong> {client.source || 'No especificado'}</div>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}><strong>Notas:</strong> {client.notes || '-'}</div>
                             </div>
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                 <button
