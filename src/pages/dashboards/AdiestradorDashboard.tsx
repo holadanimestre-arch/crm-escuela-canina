@@ -66,7 +66,9 @@ export default function AdiestradorDashboard() {
 
     return (
         <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-            <h1 style={{ fontSize: window.innerWidth < 640 ? '1.5rem' : '1.875rem', fontWeight: 700, marginBottom: '2rem' }}>Panel de Adiestrador (Actualizado)</h1>
+            <h1 style={{ fontSize: window.innerWidth < 640 ? '1.5rem' : '1.875rem', fontWeight: 700, marginBottom: '2rem' }}>
+                ¡Hola {profile?.full_name?.split(' ')[0] || 'Adiestrador'}! 👋
+            </h1>
 
             <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 <DashboardButton
