@@ -19,7 +19,7 @@ export default function AdiestradorDashboard() {
     async function fetchCounts() {
         if (!profile) return
 
-        let llamadasQ = supabase.from('leads').select('*', { count: 'exact', head: true }).ilike('status', 'evaluacion_aceptada%')
+        let llamadasQ = supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'evaluado')
         let resultadoQ = supabase.from('evaluations').select('*', { count: 'exact', head: true }).is('result', null)
         let sesionesQ = supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'activo')
 
@@ -28,12 +28,11 @@ export default function AdiestradorDashboard() {
             resultadoQ = resultadoQ.eq('city_id', cityId)
             sesionesQ = sesionesQ.eq('city_id', cityId)
         } else if (profile.role !== 'admin') {
-            // El adiestrador ve los leads de su ciudad asignada
+            // El adiestrador ve los clientes de su ciudad asignada que están pendientes de evaluación
             if (profile.assigned_city_id) {
                 llamadasQ = llamadasQ.eq('city_id', profile.assigned_city_id)
             }
             resultadoQ = resultadoQ.eq('adiestrador_id', profile.id)
-            // Nota: clients no tiene adiestrador_id, suele filtrarse por evaluación o ciudad
             if (profile.assigned_city_id) {
                 sesionesQ = sesionesQ.eq('city_id', profile.assigned_city_id)
             }
@@ -162,7 +161,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
     async function fetchClients() {
         if (!profile) return
         setLoading(true)
-        let query = supabase.from('leads').select('*').ilike('status', 'evaluacion_aceptada%')
+        let query = supabase.from('clients').select('*').eq('status', 'evaluado')
 
         if (profile.role === 'admin' && cityId !== 'all') {
             query = query.eq('city_id', cityId)
@@ -250,8 +249,8 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                                 <h3 style={{ fontWeight: 600 }}>{client.name}</h3>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem', fontSize: '0.875rem', color: '#4b5563' }}>
-                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}><strong>Origen:</strong> {client.source || 'No especificado'}</div>
-                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}><strong>Notas:</strong> {client.notes || '-'}</div>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}><strong>Raza:</strong> {client.dog_breed || 'No especificada'}</div>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}><strong>Observaciones:</strong> {client.observations || '-'}</div>
                             </div>
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                 <button
