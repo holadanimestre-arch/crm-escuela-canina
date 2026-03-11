@@ -74,18 +74,30 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
             // 1. Fetch Sessions
             let sessionsQuery = supabase
                 .from('sessions')
-                .select('id, date, session_number, completed, comments, client_id, clients(id, name, phone, dog_breed)')
-
-            if (cityId !== 'all') sessionsQuery = sessionsQuery.eq('clients.city_id', cityId)
+                .select('id, date, session_number, completed, comments, client_id, adiestrador_id, clients!inner(id, name, phone, dog_breed, city_id)')
+            
+            if (cityId !== 'all') {
+                sessionsQuery = sessionsQuery.eq('clients.city_id', cityId)
+            }
+            if (profile?.role === 'adiestrador') {
+                sessionsQuery = sessionsQuery.eq('adiestrador_id', profile.id)
+            }
+            
             const { data: sessionsData } = await sessionsQuery
 
             // 2. Fetch Evaluations
             let evalsQuery = supabase
                 .from('evaluations')
-                .select('id, scheduled_date, comments, client_id, city_id, clients(id, name, phone, dog_breed)')
+                .select('id, scheduled_date, comments, client_id, city_id, adiestrador_id, clients!inner(id, name, phone, dog_breed, city_id)')
                 .is('result', null)
 
-            if (cityId !== 'all') evalsQuery = evalsQuery.eq('city_id', cityId)
+            if (cityId !== 'all') {
+                evalsQuery = evalsQuery.eq('city_id', cityId)
+            }
+            if (profile?.role === 'adiestrador') {
+                evalsQuery = evalsQuery.eq('adiestrador_id', profile.id)
+            }
+
             const { data: evalsData } = await evalsQuery
 
             const mappedEvents: any[] = []

@@ -473,8 +473,11 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
             if (evalError) throw evalError
 
             if (result === 'aprobada') {
-                // 2. Marcar cliente como activo
-                await supabase.from('clients').update({ status: 'activo' }).eq('id', currentEval.client_id)
+                // 2. Marcar cliente como activo y ASIGNAR al adiestrador
+                await supabase.from('clients').update({ 
+                    status: 'activo',
+                    adiestrador_id: profile?.id // Asignamos al adiestrador que lo aprobó
+                }).eq('id', currentEval.client_id)
 
                 // 3. Agendar sesión si se indicaron datos
                 if (firstSessionDate && firstSessionTime) {
