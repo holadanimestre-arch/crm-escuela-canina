@@ -175,6 +175,14 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
     const [saving, setSaving] = useState(false)
     const [savingNoContesta, setSavingNoContesta] = useState(false)
 
+    // Función para limpiar y cerrar todo
+    const closeModals = () => {
+        setDetailClient(null)
+        setSchedulingClient(null)
+        setEvalDate('')
+        setEvalTime('')
+    }
+
     useEffect(() => { if (profile) fetchClients() }, [profile, cityId])
 
     async function fetchClients() {
@@ -216,7 +224,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                 if (insertError) throw insertError
                 if (insertData?.[0]) syncGoogleCalendar('evaluation', insertData[0].id)
             }
-            setSchedulingClient(null)
+            closeModals()
             fetchClients()
         } catch (err: any) {
             alert(err.message)
@@ -235,7 +243,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                 })
                 .eq('id', client.id)
             if (error) throw error
-            setDetailClient(null)
+            closeModals()
             fetchClients()
         } catch (err: any) {
             alert(err.message)
@@ -294,7 +302,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                                     style={{ flex: 1, minWidth: '80px', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', background: 'white', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
                                 >Ver ficha</button>
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setSchedulingClient(client); setEvalDate(''); setEvalTime('') }}
+                                    onClick={(e) => { e.stopPropagation(); closeModals(); setSchedulingClient(client) }}
                                     style={{ flex: 1, minWidth: '100px', padding: '0.625rem', borderRadius: '0.5rem', background: '#000', color: 'white', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
                                 >
                                     <CalendarClock size={14} /> Agendar Eval.
@@ -305,7 +313,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                 </div>
             )}
 
-            <Modal isOpen={!!detailClient} onClose={() => setDetailClient(null)} title="Ficha del Cliente">
+            <Modal isOpen={!!detailClient} onClose={closeModals} title="Ficha del Cliente">
                 {detailClient && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
@@ -355,7 +363,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                                 </button>
                             </div>
                             <button
-                                onClick={() => { setSchedulingClient(detailClient); setDetailClient(null); setEvalDate(''); setEvalTime('') }}
+                                onClick={() => { closeModals(); setSchedulingClient(detailClient); }}
                                 style={{ width: '100%', padding: '0.875rem', borderRadius: '0.5rem', background: '#000', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                             >
                                 <CalendarClock size={20} /> AGENDAR EVALUACIÓN
@@ -365,7 +373,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                 )}
             </Modal>
 
-            <Modal isOpen={!!schedulingClient} onClose={() => setSchedulingClient(null)} title="Agendar Evaluación">
+            <Modal isOpen={!!schedulingClient} onClose={closeModals} title="Agendar Evaluación">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>
@@ -415,6 +423,14 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
     const [firstSessionTime, setFirstSessionTime] = useState('')
     const [saving, setSaving] = useState(false)
 
+    const closeModals = () => {
+        setActiveEval(null)
+        setRejectingEval(null)
+        setEvalNotes('')
+        setFirstSessionDate('')
+        setFirstSessionTime('')
+    }
+    
     useEffect(() => { if (profile) fetchEvaluations() }, [profile, cityId])
 
     async function fetchEvaluations() {
@@ -475,7 +491,7 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
 
             setActiveEval(null)
             setRejectingEval(null)
-            setEvalNotes('')
+            closeModals()
             fetchEvaluations()
         } catch (err: any) {
             alert(err.message)
@@ -503,13 +519,13 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
                             </p>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <button 
-                                    onClick={() => { setRejectingEval(ev); setEvalNotes('') }} 
+                                    onClick={() => { closeModals(); setRejectingEval(ev); }} 
                                     style={{ flex: 1, padding: '0.75rem', color: '#ef4444', border: '1px solid #fee2e2', background: '#fef2f2', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}
                                 >
                                     RECHAZADA
                                 </button>
                                 <button 
-                                    onClick={() => { setActiveEval(ev); setFirstSessionDate(''); setFirstSessionTime(''); setEvalNotes('') }} 
+                                    onClick={() => { closeModals(); setActiveEval(ev); }} 
                                     style={{ flex: 1, padding: '0.75rem', color: '#10b981', border: '1px solid #dcfce7', background: '#f0fdf4', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}
                                 >
                                     APROBADA
@@ -520,9 +536,9 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
                 </div>
             )}
 
-            <Modal isOpen={!!activeEval} onClose={() => setActiveEval(null)} title="Aprobar Evaluación">
+            <Modal isOpen={!!activeEval} onClose={closeModals} title="Aprobar Evaluación">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 640 ? '1fr' : '1fr 1fr', gap: '1rem' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Fecha 1ª Sesión</label>
                             <input type="date" value={firstSessionDate} onChange={e => setFirstSessionDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', color: '#000' }} />
@@ -549,7 +565,7 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
                 </div>
             </Modal>
 
-            <Modal isOpen={!!rejectingEval} onClose={() => setRejectingEval(null)} title="Rechazar Evaluación">
+            <Modal isOpen={!!rejectingEval} onClose={closeModals} title="Rechazar Evaluación">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Motivo del Rechazo</label>
@@ -561,7 +577,7 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
                         />
                     </div>
                     <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <button onClick={() => setRejectingEval(null)} style={{ flex: 1, padding: '0.875rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', background: 'white' }}>Cancelar</button>
+                        <button onClick={closeModals} style={{ flex: 1, padding: '0.875rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', background: 'white' }}>Cancelar</button>
                         <button onClick={() => confirmResult(rejectingEval.id, 'rechazada')} disabled={saving} style={{ flex: 2, padding: '0.875rem', borderRadius: '0.5rem', background: '#ef4444', color: 'white', fontWeight: 700, border: 'none' }}>
                             {saving ? 'Guardando...' : 'CONFIRMAR RECHAZO'}
                         </button>
