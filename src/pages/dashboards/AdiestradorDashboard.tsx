@@ -66,7 +66,7 @@ export default function AdiestradorDashboard() {
 
     return (
         <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-            <h1 style={{ fontSize: window.innerWidth < 640 ? '1.5rem' : '1.875rem', fontWeight: 700, marginBottom: '2rem' }}>Panel de Adiestrador</h1>
+            <h1 style={{ fontSize: window.innerWidth < 640 ? '1.5rem' : '1.875rem', fontWeight: 700, marginBottom: '2rem' }}>Panel de Adiestrador (Actualizado)</h1>
 
             <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 <DashboardButton
@@ -357,7 +357,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
             <Modal isOpen={!!schedulingClient} onClose={() => setSchedulingClient(null)} title="Agendar Evaluación">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                        <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700, color: '#4b5563', textTransform: 'uppercase' }}>Fecha</p>
+                        <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase' }}>FECHA</p>
                         <input type="date" value={evalDate} onChange={e => setEvalDate(e.target.value)} style={{ padding: '0.875rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', width: '100%', outline: 'none', color: '#000' }} />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
