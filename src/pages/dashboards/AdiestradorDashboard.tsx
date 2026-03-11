@@ -426,6 +426,7 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
     const [evalNotes, setEvalNotes] = useState('')
     const [firstSessionDate, setFirstSessionDate] = useState('')
     const [firstSessionTime, setFirstSessionTime] = useState('')
+    const [totalSessions, setTotalSessions] = useState<number>(8)
     const [saving, setSaving] = useState(false)
 
     const closeModals = () => {
@@ -434,6 +435,7 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
         setEvalNotes('')
         setFirstSessionDate('')
         setFirstSessionTime('')
+        setTotalSessions(8)
     }
     
     useEffect(() => { if (profile) fetchEvaluations() }, [profile, cityId])
@@ -466,7 +468,7 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
                 .update({ 
                     result, 
                     comments: evalNotes,
-                    // Algunos esquemas usan result_at, otros created_at. Mantenemos comments que está en schema.sql
+                    total_sessions: result === 'aprobada' ? totalSessions : null
                 })
                 .eq('id', evalId)
             
@@ -558,6 +560,19 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
                     </div>
 
                     <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Nº de Sesiones Contratadas</label>
+                        <select 
+                            value={totalSessions} 
+                            onChange={e => setTotalSessions(Number(e.target.value))} 
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', color: '#000' }}
+                        >
+                            <option value={8}>8 Sesiones</option>
+                            <option value={10}>10 Sesiones</option>
+                            <option value={12}>12 Sesiones</option>
+                        </select>
+                    </div>
+
+                    <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Comentarios de la Evaluación</label>
                         <textarea 
                             value={evalNotes} 
@@ -613,7 +628,7 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
     async function fetchClients() {
         if (!profile) return
         setLoading(true)
-        let query = supabase.from('clients').select('*').eq('status', 'activo')
+        let query = supabase.from('clients').select('*, sessions(session_number)').eq('status', 'activo')
 
         if (profile.role === 'admin' && cityId !== 'all') {
             query = query.eq('city_id', cityId)
@@ -622,7 +637,19 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
         }
 
         const { data } = await query
-        setClients(data || [])
+        
+        const clientsWithSessions = (data || []).map(client => {
+            const sessions = client.sessions || []
+            const maxSession = sessions.length > 0 
+                ? Math.max(...sessions.map((s: any) => s.session_number)) 
+                : 0
+            return {
+                ...client,
+                next_session_number: maxSession + 1
+            }
+        })
+
+        setClients(clientsWithSessions)
         setLoading(false)
     }
 
