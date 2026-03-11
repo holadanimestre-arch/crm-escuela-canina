@@ -30,12 +30,14 @@ export function AppLayout() {
     useEffect(() => {
         fetchCities()
         const handleResize = () => {
-            const mobile = window.innerWidth < 768
+            const width = window.innerWidth
+            const mobile = width < 768
+            
             setIsMobile(prev => {
                 if (prev !== mobile) return mobile;
                 return prev;
             })
-            if (window.innerWidth >= 768) setSidebarOpen(false)
+            if (width >= 768) setSidebarOpen(false)
         }
         window.addEventListener('resize', handleResize)
         return () => window.removeEventListener('resize', handleResize)
@@ -101,7 +103,7 @@ export function AppLayout() {
     const navigation = getNavigation()
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+        <div style={{ display: 'flex', minHeight: '100dvh', backgroundColor: '#f9fafb', position: 'relative' }}>
             {/* Mobile Overlay */}
             {isMobile && sidebarOpen && (
                 <div
@@ -212,7 +214,7 @@ export function AppLayout() {
                 display: 'flex',
                 flexDirection: 'column',
                 minWidth: 0,
-                transition: 'margin-left 0.3s ease'
+                minHeight: '100dvh'
             }}>
                 {/* Top Bar for Filters */}
                 <header style={{
