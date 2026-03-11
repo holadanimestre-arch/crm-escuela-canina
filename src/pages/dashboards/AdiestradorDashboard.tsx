@@ -301,7 +301,6 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                             <InfoRow icon={User} label="Nombre" value={detailClient.name} />
                             <InfoRow icon={Phone} label="Teléfono" value={detailClient.phone} />
                         </div>
-                        <InfoRow icon={Edit} label="Email" value={detailClient.email} />
                         <InfoRow icon={MapPin} label="Dirección" value={detailClient.address} />
                         
                         <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
@@ -328,19 +327,27 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                            <a
-                                href={`tel:${detailClient.phone}`}
-                                style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', background: '#22c55e', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <a
+                                    href={`tel:${detailClient.phone}`}
+                                    style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', background: '#22c55e', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                >
+                                    <Phone size={18} /> LLAMAR
+                                </a>
+                                <button 
+                                    onClick={() => handleNoContesta(detailClient)} 
+                                    disabled={savingNoContesta} 
+                                    style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', background: '#ef4444', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                                >
+                                    {savingNoContesta ? '...' : 'NO CONTESTA'}
+                                </button>
+                            </div>
+                            <button
+                                onClick={() => { setSchedulingClient(detailClient); setDetailClient(null); setEvalDate(''); setEvalTime('') }}
+                                style={{ width: '100%', padding: '0.875rem', borderRadius: '0.5rem', background: '#000', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                             >
-                                <Phone size={18} /> LLAMAR AHORA
-                            </a>
-                            <button 
-                                onClick={() => handleNoContesta(detailClient)} 
-                                disabled={savingNoContesta} 
-                                style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', background: '#ef4444', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer' }}
-                            >
-                                {savingNoContesta ? '...' : 'NO CONTESTA'}
+                                <CalendarClock size={20} /> AGENDAR EVALUACIÓN
                             </button>
                         </div>
                     </div>
