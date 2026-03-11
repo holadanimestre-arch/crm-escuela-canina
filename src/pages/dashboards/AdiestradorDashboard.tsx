@@ -19,31 +19,28 @@ export default function AdiestradorDashboard() {
     async function fetchCounts() {
         if (!profile) return
 
-        let llamadasQ = supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'evaluado')
+        // Para las llamadas, contamos los clientes 'evaluado' que NO tienen evaluación pendiente
+        const { data: llamadasData } = await supabase.from('clients').select('id, evaluations(id)').eq('status', 'evaluado')
+        const llamadas = (llamadasData || []).filter(c => !c.evaluations || (c.evaluations as any).length === 0).length
+
         let resultadoQ = supabase.from('evaluations').select('*', { count: 'exact', head: true }).is('result', null)
         let sesionesQ = supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'activo')
 
         if (profile.role === 'admin' && cityId !== 'all') {
-            llamadasQ = llamadasQ.eq('city_id', cityId)
             resultadoQ = resultadoQ.eq('city_id', cityId)
             sesionesQ = sesionesQ.eq('city_id', cityId)
         } else if (profile.role !== 'admin') {
-            // El adiestrador ve los clientes de su ciudad asignada que están pendientes de evaluación
-            if (profile.assigned_city_id) {
-                llamadasQ = llamadasQ.eq('city_id', profile.assigned_city_id)
-            }
             resultadoQ = resultadoQ.eq('adiestrador_id', profile.id)
             if (profile.assigned_city_id) {
                 sesionesQ = sesionesQ.eq('city_id', profile.assigned_city_id)
             }
         }
 
-        const { count: llamadas } = await llamadasQ
         const { count: resultado } = await resultadoQ
         const { count: sesiones } = await sesionesQ
 
         setCounts({
-            llamadas: llamadas || 0,
+            llamadas,
             resultado: resultado || 0,
             sesiones: sesiones || 0
         })
@@ -175,7 +172,8 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
     async function fetchClients() {
         if (!profile) return
         setLoading(true)
-        let query = supabase.from('clients').select('*').eq('status', 'evaluado')
+        // Obtenemos clientes en estado evaluado y sus evaluaciones para filtrar
+        let query = supabase.from('clients').select('*, evaluations(id)').eq('status', 'evaluado')
 
         if (profile.role === 'admin' && cityId !== 'all') {
             query = query.eq('city_id', cityId)
@@ -184,7 +182,10 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
         }
 
         const { data } = await query
-        setClients(data || [])
+        // Filtramos: solo clientes que NO tienen records en evaluations (o todos sus records tienen resultado ya puesto, aunque aquí buscamos los que ni tienen cita)
+        const finalClients = (data || []).filter(c => !c.evaluations || (c.evaluations as any).length === 0)
+        
+        setClients(finalClients)
         setLoading(false)
     }
 
@@ -400,6 +401,8 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
     const [evaluations, setEvaluations] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [activeEval, setActiveEval] = useState<any>(null)
+    const [rejectingEval, setRejectingEval] = useState<any>(null)
+    const [evalNotes, setEvalNotes] = useState('')
     const [firstSessionDate, setFirstSessionDate] = useState('')
     const [firstSessionTime, setFirstSessionTime] = useState('')
     const [saving, setSaving] = useState(false)
@@ -422,30 +425,49 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
         setLoading(false)
     }
 
-    async function confirmResult(evalId: string, result: 'aprobado' | 'rechazado') {
-        const activeEval = evaluations.find(e => e.id === evalId)
-        if (!activeEval) return
+    async function confirmResult(evalId: string, result: 'aprobada' | 'rechazada') {
+        const currentEval = evaluations.find(e => e.id === evalId)
+        if (!currentEval) return
 
         setSaving(true)
         try {
-            await supabase.from('evaluations').update({ result, result_at: new Date().toISOString() }).eq('id', evalId)
+            // 1. Actualizar evaluación
+            const { error: evalError } = await supabase
+                .from('evaluations')
+                .update({ 
+                    result, 
+                    comments: evalNotes,
+                    // Algunos esquemas usan result_at, otros created_at. Mantenemos comments que está en schema.sql
+                })
+                .eq('id', evalId)
+            
+            if (evalError) throw evalError
 
-            if (result === 'aprobado' && firstSessionDate && firstSessionTime) {
-                const sessionDate = new Date(`${firstSessionDate}T${firstSessionTime}:00`).toISOString()
-                const { data: sData } = await supabase.from('sessions').insert({
-                    client_id: activeEval.client_id,
-                    session_number: 1,
-                    date: sessionDate,
-                    completed: false,
-                    adiestrador_id: profile?.id
-                }).select()
+            if (result === 'aprobada') {
+                // 2. Marcar cliente como activo
+                await supabase.from('clients').update({ status: 'activo' }).eq('id', currentEval.client_id)
 
-                syncGoogleCalendar('evaluation', evalId, 'update')
-                if (sData?.[0]) syncGoogleCalendar('session', sData[0].id)
+                // 3. Agendar sesión si se indicaron datos
+                if (firstSessionDate && firstSessionTime) {
+                    const sessionDate = new Date(`${firstSessionDate}T${firstSessionTime}:00`).toISOString()
+                    const { data: sData } = await supabase.from('sessions').insert({
+                        client_id: currentEval.client_id,
+                        session_number: 1,
+                        date: sessionDate,
+                        completed: false,
+                        adiestrador_id: profile?.id
+                    }).select()
+
+                    syncGoogleCalendar('evaluation', evalId, 'update')
+                    if (sData?.[0]) syncGoogleCalendar('session', sData[0].id)
+                }
             } else {
                 syncGoogleCalendar('evaluation', evalId, 'update')
             }
+
             setActiveEval(null)
+            setRejectingEval(null)
+            setEvalNotes('')
             fetchEvaluations()
         } catch (err: any) {
             alert(err.message)
@@ -472,8 +494,18 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
                                 Eval: {new Date(ev.scheduled_date).toLocaleDateString()} {new Date(ev.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button onClick={() => confirmResult(ev.id, 'rechazado')} style={{ flex: 1, padding: '0.5rem', color: '#ef4444', border: '1px solid #fee2e2', background: '#fef2f2', borderRadius: '0.5rem', cursor: 'pointer' }}>Rechazar</button>
-                                <button onClick={() => { setActiveEval(ev); setFirstSessionDate(''); setFirstSessionTime('') }} style={{ flex: 1, padding: '0.5rem', color: '#10b981', border: '1px solid #dcfce7', background: '#f0fdf4', borderRadius: '0.5rem', cursor: 'pointer' }}>Aprobar</button>
+                                <button 
+                                    onClick={() => { setRejectingEval(ev); setEvalNotes('') }} 
+                                    style={{ flex: 1, padding: '0.75rem', color: '#ef4444', border: '1px solid #fee2e2', background: '#fef2f2', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}
+                                >
+                                    RECHAZADA
+                                </button>
+                                <button 
+                                    onClick={() => { setActiveEval(ev); setFirstSessionDate(''); setFirstSessionTime(''); setEvalNotes('') }} 
+                                    style={{ flex: 1, padding: '0.75rem', color: '#10b981', border: '1px solid #dcfce7', background: '#f0fdf4', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}
+                                >
+                                    APROBADA
+                                </button>
                             </div>
                         </div>
                     ))}
@@ -482,35 +514,50 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
 
             <Modal isOpen={!!activeEval} onClose={() => setActiveEval(null)} title="Aprobar Evaluación">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Fecha 1ª Sesión</label>
+                            <input type="date" value={firstSessionDate} onChange={e => setFirstSessionDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', color: '#000' }} />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Hora</label>
+                            <input type="time" value={firstSessionTime} onChange={e => setFirstSessionTime(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', color: '#000' }} />
+                        </div>
+                    </div>
+
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>
-                            <Calendar size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Fecha 1ª Sesión
-                        </label>
-                        <input 
-                            type="date" 
-                            value={firstSessionDate} 
-                            onChange={e => setFirstSessionDate(e.target.value)} 
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '1rem', color: '#000', outline: 'none' }} 
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Comentarios de la Evaluación</label>
+                        <textarea 
+                            value={evalNotes} 
+                            onChange={e => setEvalNotes(e.target.value)} 
+                            placeholder="Escribe aquí las conclusiones..."
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '100px', outline: 'none', color: '#000' }}
                         />
                     </div>
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem', marginLeft: '0.25rem' }}>
-                            <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Hora
-                        </label>
-                        <input 
-                            type="time" 
-                            value={firstSessionTime} 
-                            onChange={e => setFirstSessionTime(e.target.value)} 
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', fontSize: '1rem', color: '#000', outline: 'none' }} 
-                        />
-                    </div>
-                    <button 
-                        onClick={() => confirmResult(activeEval.id, 'aprobado')} 
-                        disabled={saving} 
-                        style={{ width: '100%', padding: '1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-                    >
-                        {saving ? 'Confirmando...' : 'CONFIRMAR Y AGENDAR'}
+
+                    <button onClick={() => confirmResult(activeEval.id, 'aprobada')} disabled={saving} style={{ width: '100%', padding: '1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                        {saving ? 'Guardando...' : 'CONFIRMAR Y APROBAR'}
                     </button>
+                </div>
+            </Modal>
+
+            <Modal isOpen={!!rejectingEval} onClose={() => setRejectingEval(null)} title="Rechazar Evaluación">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Motivo del Rechazo</label>
+                        <textarea 
+                            value={evalNotes} 
+                            onChange={e => setEvalNotes(e.target.value)} 
+                            placeholder="¿Por qué no se ha aprobado la evaluación?"
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', minHeight: '100px', outline: 'none', color: '#000' }}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        <button onClick={() => setRejectingEval(null)} style={{ flex: 1, padding: '0.875rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', background: 'white' }}>Cancelar</button>
+                        <button onClick={() => confirmResult(rejectingEval.id, 'rechazada')} disabled={saving} style={{ flex: 2, padding: '0.875rem', borderRadius: '0.5rem', background: '#ef4444', color: 'white', fontWeight: 700, border: 'none' }}>
+                            {saving ? 'Guardando...' : 'CONFIRMAR RECHAZO'}
+                        </button>
+                    </div>
                 </div>
             </Modal>
         </div>
