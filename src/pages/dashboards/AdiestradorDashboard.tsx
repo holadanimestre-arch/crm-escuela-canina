@@ -20,7 +20,15 @@ export default function AdiestradorDashboard() {
         if (!profile) return
 
         // Para las llamadas, contamos los clientes 'evaluado' que NO tienen evaluación pendiente
-        const { data: llamadasData } = await supabase.from('clients').select('id, evaluations(id)').eq('status', 'evaluado')
+        let llamadasQ = supabase.from('clients').select('id, evaluations(id)').eq('status', 'evaluado')
+        
+        if (profile.role === 'admin' && cityId !== 'all') {
+            llamadasQ = llamadasQ.eq('city_id', cityId)
+        } else if (profile.role !== 'admin' && profile.assigned_city_id) {
+            llamadasQ = llamadasQ.eq('city_id', profile.assigned_city_id)
+        }
+
+        const { data: llamadasData } = await llamadasQ
         const llamadas = (llamadasData || []).filter(c => !c.evaluations || (c.evaluations as any).length === 0).length
 
         let resultadoQ = supabase.from('evaluations').select('*', { count: 'exact', head: true }).is('result', null)
