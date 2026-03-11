@@ -12,6 +12,11 @@ export default function AdiestradorDashboard() {
     const { profile } = useAuth()
     const { cityId } = useFilters()
 
+    // Scroll to top when view changes
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [activeView])
+
     useEffect(() => {
         if (profile) fetchCounts()
     }, [profile, cityId])
@@ -70,8 +75,8 @@ export default function AdiestradorDashboard() {
     if (activeView === 'modificar') return <ModificarSesion onBack={() => { setActiveView('home'); fetchCounts() }} syncGoogleCalendar={syncGoogleCalendar} />
 
     return (
-        <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-            <h1 style={{ fontSize: window.innerWidth < 640 ? '1.5rem' : '1.875rem', fontWeight: 700, marginBottom: '2rem' }}>
+        <div className="dashboard-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <h1 className="dashboard-title" style={{ fontWeight: 700, marginBottom: '2rem' }}>
                 ¡Hola {profile?.full_name?.split(' ')[0] || 'Adiestrador'}! 👋
             </h1>
 
@@ -253,12 +258,12 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
     }
 
     return (
-        <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem' }}>
+        <div className="dashboard-container">
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
                     <ArrowLeft size={20} /> Volver
                 </button>
-                <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700 }}>Llamadas Pendientes</h1>
+                <h1 className="dashboard-view-title" style={{ fontWeight: 700 }}>Llamadas Pendientes</h1>
             </div>
 
             <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
@@ -501,12 +506,12 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
     }
 
     return (
-        <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem' }}>
+        <div className="dashboard-container">
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
                     <ArrowLeft size={20} /> Volver
                 </button>
-                <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700 }}>Resultado de Evaluación</h1>
+                <h1 className="dashboard-view-title" style={{ fontWeight: 700 }}>Resultado de Evaluación</h1>
             </div>
 
             {loading ? <p>Cargando...</p> : (
@@ -642,12 +647,12 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
     }
 
     return (
-        <div style={{ padding: window.innerWidth < 640 ? '1rem' : '2rem' }}>
+        <div className="dashboard-container">
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
                     <ArrowLeft size={20} /> Volver
                 </button>
-                <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 700 }}>Agendar Sesión</h1>
+                <h1 className="dashboard-view-title" style={{ fontWeight: 700 }}>Agendar Sesión</h1>
             </div>
 
             <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
