@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Database } from '../types/database.types'
 import { useFilters } from '../context/FilterContext'
+import { useAuth } from '../hooks/useAuth'
 import { Modal } from '../components/Modal'
 import { DogBreedModal } from './Leads/DogBreedModal'
 import { CallReasonModal } from './Leads/CallReasonModal'
@@ -21,10 +22,10 @@ type CallReason = Database['public']['Tables']['call_reasons']['Row']
 
 export function Clients() {
     const navigate = useNavigate()
+    const { profile } = useAuth()
+    const { cityId } = useFilters()
     const [clients, setClients] = useState<ClientWithExtras[]>([])
     const [loading, setLoading] = useState(true)
-
-    const { cityId } = useFilters()
     const [cities, setCities] = useState<City[]>([])
     const [dogBreeds, setDogBreeds] = useState<DogBreed[]>([])
     const [callReasons, setCallReasons] = useState<CallReason[]>([])
@@ -111,6 +112,11 @@ export function Clients() {
 
             if (cityId !== 'all') {
                 query = query.eq('city_id', cityId)
+            }
+
+            // Si es adiestrador, solo ve sus clientes asignados
+            if (profile?.role === 'adiestrador') {
+                query = query.eq('adiestrador_id', profile.id)
             }
 
             const { data: clientsData, error: clientsError } = await query
