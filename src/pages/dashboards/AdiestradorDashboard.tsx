@@ -214,14 +214,16 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
         if (!schedulingClient || !evalDate || !evalTime) return
         setSaving(true)
         try {
-            const scheduledDate = new Date(`${evalDate}T${evalTime}:00`).toISOString()
+            // Unify local time cleanly without toISOString() immediately corrupting it relative to UTC.
+            const scheduledDate = new Date(`${evalDate}T${evalTime}:00`)
+            
             const { data: clientData } = await supabase.from('clients').select('city_id').eq('id', schedulingClient.id).single()
 
             if (clientData) {
                 const { data: insertData, error: insertError } = await supabase.from('evaluations').insert({
                     client_id: schedulingClient.id,
                     city_id: clientData.city_id,
-                    scheduled_date: scheduledDate,
+                    scheduled_date: scheduledDate.toISOString(),
                     adiestrador_id: profile?.id,
                     result: null
                 }).select()
@@ -476,21 +478,27 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
 
             if (result === 'aprobada') {
                 // 2. Marcar cliente como activo y ASIGNAR al adiestrador
-                await supabase.from('clients').update({ 
+                const { error: errorUpdateClient } = await supabase.from('clients').update({ 
                     status: 'activo',
-                    adiestrador_id: profile?.id // Asignamos al adiestrador que lo aprobó
+                    adiestrador_id: profile?.id 
                 }).eq('id', currentEval.client_id)
+                
+                if (errorUpdateClient) {
+                    console.error("Fallo actualizando cliente al aprobar:", errorUpdateClient);
+                    throw errorUpdateClient;
+                }
 
                 // 3. Agendar sesión si se indicaron datos
                 if (firstSessionDate && firstSessionTime) {
-                    const sessionDate = new Date(`${firstSessionDate}T${firstSessionTime}:00`).toISOString()
-                    const { data: sData } = await supabase.from('sessions').insert({
+                    const sessionDate = new Date(`${firstSessionDate}T${firstSessionTime}:00`)
+                    const { data: sData, error: sError } = await supabase.from('sessions').insert({
                         client_id: currentEval.client_id,
                         session_number: 1,
-                        date: sessionDate,
+                        date: sessionDate.toISOString(),
                         completed: false,
                         adiestrador_id: profile?.id
                     }).select()
+                    if(sError) throw sError;
 
                     syncGoogleCalendar('evaluation', evalId, 'update')
                     if (sData?.[0]) syncGoogleCalendar('session', sData[0].id)
