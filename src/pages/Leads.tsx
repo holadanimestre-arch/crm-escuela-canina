@@ -139,7 +139,7 @@ export function Leads() {
                 call_reason: convertData.call_reason,
                 observations: convertData.observations,
                 converted_by: convertData.converted_by,
-                status: 'activo'
+                status: 'evaluado'
             })
             if (clientError) throw clientError
 
