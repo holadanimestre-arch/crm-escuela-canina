@@ -127,9 +127,26 @@ export function Leads() {
         setSubmitting(true)
 
         try {
+            const targetCityId = convertData.city_id || selectedLead.city_id;
+
+            // Find if there is an adiestrador assigned to this city
+            let assignedAdiestradorId = null;
+            if (targetCityId) {
+                const { data: adiestrador } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('role', 'adiestrador')
+                    .eq('assigned_city_id', targetCityId)
+                    .maybeSingle();
+                
+                if (adiestrador) {
+                    assignedAdiestradorId = adiestrador.id;
+                }
+            }
+
             const { error: clientError } = await supabase.from('clients').insert({
                 lead_id: selectedLead.id,
-                city_id: convertData.city_id || selectedLead.city_id,
+                city_id: targetCityId,
                 name: selectedLead.name,
                 email: selectedLead.email,
                 phone: selectedLead.phone,
@@ -139,7 +156,8 @@ export function Leads() {
                 call_reason: convertData.call_reason,
                 observations: convertData.observations,
                 converted_by: convertData.converted_by,
-                status: 'evaluado'
+                status: 'evaluado',
+                adiestrador_id: assignedAdiestradorId
             })
             if (clientError) throw clientError
 

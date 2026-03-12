@@ -73,6 +73,21 @@ export function Clients() {
         e.preventDefault()
         setSubmitting(true)
         try {
+            // Find if there is an adiestrador assigned to this city
+            let assignedAdiestradorId = null;
+            if (formData.city_id) {
+                const { data: adiestrador } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('role', 'adiestrador')
+                    .eq('assigned_city_id', formData.city_id)
+                    .maybeSingle();
+                
+                if (adiestrador) {
+                    assignedAdiestradorId = adiestrador.id;
+                }
+            }
+
             const { error } = await supabase.from('clients').insert({
                 name: formData.name,
                 email: formData.email,
@@ -84,7 +99,8 @@ export function Clients() {
                 call_reason: formData.call_reason,
                 observations: formData.observations,
                 converted_by: formData.converted_by,
-                status: 'activo'
+                status: 'activo',
+                adiestrador_id: assignedAdiestradorId
             })
 
             if (error) throw error
