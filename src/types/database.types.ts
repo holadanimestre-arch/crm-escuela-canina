@@ -18,6 +18,11 @@ export interface Database {
                     assigned_city_id: string | null
                     avatar_url: string | null
                     created_at: string
+                    base_address: string | null
+                    base_lat: number | null
+                    base_lng: number | null
+                    coverage_polygon_green: Json | null
+                    coverage_polygon_yellow: Json | null
                 }
                 Insert: {
                     id: string
@@ -27,6 +32,11 @@ export interface Database {
                     assigned_city_id?: string | null
                     avatar_url?: string | null
                     created_at?: string
+                    base_address?: string | null
+                    base_lat?: number | null
+                    base_lng?: number | null
+                    coverage_polygon_green?: Json | null
+                    coverage_polygon_yellow?: Json | null
                 }
                 Update: {
                     id?: string
@@ -36,6 +46,11 @@ export interface Database {
                     assigned_city_id?: string | null
                     avatar_url?: string | null
                     created_at?: string
+                    base_address?: string | null
+                    base_lat?: number | null
+                    base_lng?: number | null
+                    coverage_polygon_green?: Json | null
+                    coverage_polygon_yellow?: Json | null
                 }
             }
             cities: {

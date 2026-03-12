@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { UserPlus, Shield, MapPin, Mail, Save, X, Trash2 } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
+import { CoverageMap } from '../components/CoverageMap'
 
 export function Usuarios() {
     const [profiles, setProfiles] = useState<any[]>([])
@@ -18,6 +19,13 @@ export function Usuarios() {
     const [role, setRole] = useState<'admin' | 'comercial' | 'adiestrador'>('comercial')
     const [assignedCityId, setAssignedCityId] = useState('')
     const [submitting, setSubmitting] = useState(false)
+    
+    // Coverage Map States
+    const [baseAddress, setBaseAddress] = useState('')
+    const [baseLat, setBaseLat] = useState<number | null>(null)
+    const [baseLng, setBaseLng] = useState<number | null>(null)
+    const [polygonGreen, setPolygonGreen] = useState<any[] | null>(null)
+    const [polygonYellow, setPolygonYellow] = useState<any[] | null>(null)
 
     useEffect(() => {
         fetchData()
@@ -50,6 +58,11 @@ export function Usuarios() {
         setFullName('')
         setRole('comercial')
         setAssignedCityId('')
+        setBaseAddress('')
+        setBaseLat(null)
+        setBaseLng(null)
+        setPolygonGreen(null)
+        setPolygonYellow(null)
         setEditingUser(null)
     }
 
@@ -102,7 +115,12 @@ export function Usuarios() {
                     email: email,
                     full_name: fullName,
                     role,
-                    assigned_city_id: role === 'adiestrador' ? assignedCityId : null
+                    assigned_city_id: role === 'adiestrador' ? assignedCityId : null,
+                    base_address: role === 'adiestrador' ? baseAddress : null,
+                    base_lat: role === 'adiestrador' ? baseLat : null,
+                    base_lng: role === 'adiestrador' ? baseLng : null,
+                    coverage_polygon_green: role === 'adiestrador' ? polygonGreen : null,
+                    coverage_polygon_yellow: role === 'adiestrador' ? polygonYellow : null
                 }, { onConflict: 'id' })
                 .select()
 
@@ -139,7 +157,12 @@ export function Usuarios() {
                 .update({
                     role,
                     assigned_city_id: role === 'adiestrador' ? assignedCityId : null,
-                    full_name: fullName
+                    full_name: fullName,
+                    base_address: role === 'adiestrador' ? baseAddress : null,
+                    base_lat: role === 'adiestrador' ? baseLat : null,
+                    base_lng: role === 'adiestrador' ? baseLng : null,
+                    coverage_polygon_green: role === 'adiestrador' ? polygonGreen : null,
+                    coverage_polygon_yellow: role === 'adiestrador' ? polygonYellow : null
                 })
                 .eq('id', editingUser.id)
 
@@ -206,6 +229,11 @@ export function Usuarios() {
         setFullName(user.full_name || '')
         setRole(user.role)
         setAssignedCityId(user.assigned_city_id || '')
+        setBaseAddress(user.base_address || '')
+        setBaseLat(user.base_lat || null)
+        setBaseLng(user.base_lng || null)
+        setPolygonGreen(user.coverage_polygon_green || null)
+        setPolygonYellow(user.coverage_polygon_yellow || null)
         setIsModalOpen(true)
     }
 
@@ -383,6 +411,20 @@ export function Usuarios() {
                                             <option key={city.id} value={city.id}>{city.name}</option>
                                         ))}
                                     </select>
+
+                                    {/* Componente Mapa de Cobertura */}
+                                    <CoverageMap
+                                        baseAddress={baseAddress}
+                                        setBaseAddress={setBaseAddress}
+                                        baseLat={baseLat}
+                                        setBaseLat={setBaseLat}
+                                        baseLng={baseLng}
+                                        setBaseLng={setBaseLng}
+                                        polygonGreen={polygonGreen}
+                                        setPolygonGreen={setPolygonGreen}
+                                        polygonYellow={polygonYellow}
+                                        setPolygonYellow={setPolygonYellow}
+                                    />
                                 </div>
                             )}
 
