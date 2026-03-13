@@ -1,128 +1,100 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 
-Deno.serve(async (req) => {
-    // Manejo de CORS (Preflight)
-    if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders })
-    }
+serve(async (req) => {
+    if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
     try {
         const body = await req.json().catch(() => ({}))
-        const { clientId, leadId } = body
-        
-        const apiToken = Deno.env.get('WAZEND_API_TOKEN')
-        const instanceName = Deno.env.get('WAZEND_INSTANCE_NAME')
-        const baseUrl = Deno.env.get('WAZEND_BASE_URL') || 'https://api1.wazend.net'
+        const id = body.leadId || body.clientId
+        const table = body.leadId ? 'leads' : 'clients'
 
-        if (!apiToken || !instanceName) {
-            throw new Error('Faltan secretos en Supabase (WAZEND_API_TOKEN o WAZEND_INSTANCE_NAME)')
-        }
+        if (!id) throw new Error('ID no proporcionado')
 
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-        const supabaseClient = createClient(supabaseUrl, supabaseKey)
+        const supabase = createClient(
+            Deno.env.get('SUPABASE_URL') || '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+        )
 
-        let table = clientId ? 'clients' : 'leads'
-        let id = clientId || leadId
-
-        if (!id) throw new Error('No se proporcionó ID de cliente o lead')
-
-        // 1. Obtener datos del cliente/lead y su asignado
-        const { data: entity, error: entityError } = await supabaseClient
+        // 1. Obtener datos
+        const { data: item, error: itemError } = await supabase
             .from(table)
-            .select(`
-                name, 
-                phone, 
-                assigned_id: ${clientId ? 'adiestrador_id' : 'comercial_id'},
-                profiles: ${clientId ? 'adiestrador_id' : 'comercial_id'} (full_name)
-            `)
+            .select('name, phone')
             .eq('id', id)
             .single()
 
-        if (entityError || !entity || !entity.phone) {
-            throw new Error(`No se encontró el teléfono o datos del ${table}`)
-        }
+        if (itemError || !item) throw new Error('Registro no encontrado en la base de datos')
 
-        const assignedName = (entity as any).profiles?.full_name || 'tu adiestrador'
-
-        // 2. Obtener plantilla personalizada o por defecto
-        const { data: settings } = await supabaseClient
+        // 2. Obtener plantilla
+        const { data: settings } = await supabase
             .from('crm_settings')
             .select('whatsapp_no_contesta_template')
-            .single()
+            .maybeSingle()
 
-        const template = settings?.whatsapp_no_contesta_template || 
-            'Hola [NOMBRE], soy [ADIESTRADOR] de la Escuela Canina. No hemos podido contactar contigo por teléfono.'
-        
-        let text = template.replace('[NOMBRE]', entity.name || 'cliente')
-        text = text.replace('[ADIESTRADOR]', assignedName)
+        const template = settings?.whatsapp_no_contesta_template || 'Hola [NOMBRE], soy de la Escuela Canina. No hemos podido contactar contigo.'
+        const message = template.replace('[NOMBRE]', item.name || 'cliente')
 
         // 3. Formatear teléfono
-        let phone = entity.phone.replace(/\D/g, '')
-        if (!phone.startsWith('34') && phone.length === 9) phone = '34' + phone
+        let phone = (item.phone || '').replace(/\D/g, '')
+        if (phone.length === 9) phone = '34' + phone
 
-        console.log(`[WA-SEND] Intentando enviar a ${phone} a través de ${baseUrl} (Instancia: ${instanceName})`)
+        // 4. Secretos y llamada
+        const token = Deno.env.get('WAZEND_API_TOKEN')
+        const instance = Deno.env.get('WAZEND_INSTANCE_NAME')
+        const baseUrl = Deno.env.get('WAZEND_BASE_URL') || 'https://api1.wazend.net'
 
-        // 4. Petición a Wazend
-        const wazendUrl = `${baseUrl.replace(/\/$/, '')}/message/sendText/${instanceName}`
-        
-        const response = await fetch(wazendUrl, {
+        if (!token || !instance) throw new Error('Faltan secretos de Wazend (TOKEN o INSTANCIA)')
+
+        console.log(`[WA-SEND] Enviando a ${phone} via ${baseUrl}...`)
+
+        const response = await fetch(`${baseUrl.replace(/\/$/, '')}/message/sendText/${instance}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'apiKey': apiToken
+                'apiKey': token 
             },
             body: JSON.stringify({ 
                 number: phone, 
-                text: text,
-                instance: instanceName // Añadimos por si acaso la versión lo requiere en el body
+                text: message 
             })
         })
 
-        // Capturar respuesta con timeout mental? No, fetch nativo.
-        const resultText = await response.text()
-        let result = {}
-        try {
-            result = JSON.parse(resultText)
-        } catch (_) {
-            result = { raw: resultText }
-        }
+        const result = await response.json().catch(() => ({ raw: 'No legible' }))
 
-        if (!response.ok) {
-            console.error(`[WA-SEND] Wazend respondió con status ${response.status}:`, resultText)
-            return new Response(JSON.stringify({ 
-                error: `Wazend devolvió error (${response.status}): ${resultText.substring(0, 100)}` 
-            }), {
-                status: 200, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        if (response.ok) {
+            await supabase.from(table).update({ 
+                last_whatsapp_sent_at: new Date().toISOString(),
+                send_whatsapp: false 
+            }).eq('id', id)
+            
+            return new Response(JSON.stringify({ success: true, result }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200
+            })
+        } else {
+            return new Response(JSON.stringify({ error: 'Wazend rechazó el mensaje', details: result }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200
             })
         }
-
-        // 5. Marcar como enviado y resetear flag si es lead
-        const updatePayload: any = { last_whatsapp_sent_at: new Date().toISOString() }
-        if (table === 'leads') {
-            updatePayload.send_whatsapp = false
-        }
-
-        await supabaseClient.from(table).update(updatePayload).eq('id', id)
-
-        return new Response(JSON.stringify({ success: true, result }), {
-            status: 200, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
 
     } catch (err: any) {
-        console.error('[WA-SEND] Fatal Error:', err.message)
+        console.error('[WA-SEND] Fatal:', err.message)
         return new Response(JSON.stringify({ error: err.message }), {
-            status: 200, // Siempre devolvemos 200 para capturar el error amigablemente en el front
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
         })
     }
 })
+
+
+
+
+
+
 

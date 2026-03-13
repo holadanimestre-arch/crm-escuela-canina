@@ -4,6 +4,7 @@ import { Database } from '../types/database.types'
 import { Modal } from '../components/Modal'
 import { useAuth } from '../hooks/useAuth'
 import { LeadDetailModal } from './Leads/LeadDetailModal'
+import { AddressCoverageChecker } from '../components/AddressCoverageChecker'
 
 import { DogBreedModal } from './Leads/DogBreedModal'
 import { CallReasonModal } from './Leads/CallReasonModal'
@@ -21,6 +22,7 @@ export function Leads() {
     const [dogBreeds, setDogBreeds] = useState<DogBreed[]>([])
     const [callReasons, setCallReasons] = useState<CallReason[]>([])
     const [loading, setLoading] = useState(true)
+    const [adiestradores, setAdiestradores] = useState<any[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
     const [isDogBreedModalOpen, setIsDogBreedModalOpen] = useState(false)
@@ -40,9 +42,12 @@ export function Leads() {
         dog_breed: '',
         dog_age: '',
         address: '',
+        location_lat: null as number | null,
+        location_lng: null as number | null,
         call_reason: '',
         observations: '',
-        converted_by: ''
+        converted_by: '',
+        adiestrador_id: ''
     })
 
     const { cityId } = useFilters()
@@ -109,9 +114,12 @@ export function Leads() {
             dog_breed: '',
             dog_age: '',
             address: '',
+            location_lat: null,
+            location_lng: null,
             call_reason: '',
             observations: '',
-            converted_by: ''
+            converted_by: '',
+            adiestrador_id: ''
         })
         setIsConvertModalOpen(true)
     }
@@ -129,18 +137,18 @@ export function Leads() {
         try {
             const targetCityId = convertData.city_id || selectedLead.city_id;
 
-            // Find if there is an adiestrador assigned to this city
-            let assignedAdiestradorId = null;
-            if (targetCityId) {
+            // We now get adiestrador manually. Fallback to basic finding if none explicitly confirmed
+            let finalAdiestradorId = convertData.adiestrador_id || null;
+            if (targetCityId && !finalAdiestradorId) {
                 const { data: adiestrador } = await supabase
                     .from('profiles')
                     .select('id')
                     .eq('role', 'adiestrador')
                     .eq('assigned_city_id', targetCityId)
                     .maybeSingle();
-                
+
                 if (adiestrador) {
-                    assignedAdiestradorId = adiestrador.id;
+                    finalAdiestradorId = adiestrador.id;
                 }
             }
 
@@ -153,11 +161,13 @@ export function Leads() {
                 dog_breed: convertData.dog_breed,
                 dog_age: convertData.dog_age,
                 address: convertData.address,
+                location_lat: convertData.location_lat,
+                location_lng: convertData.location_lng,
                 call_reason: convertData.call_reason,
                 observations: convertData.observations,
                 converted_by: convertData.converted_by,
                 status: 'evaluado',
-                adiestrador_id: assignedAdiestradorId
+                adiestrador_id: finalAdiestradorId
             })
             if (clientError) throw clientError
 
@@ -422,11 +432,20 @@ export function Leads() {
                     </p>
 
                     <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb', marginBottom: '0.5rem' }}>
-                        <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Asignar a Ciudad / Adiestrador</label>
+                        <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Asignar a Ciudad / Zona</label>
                         <select
                             required
                             value={convertData.city_id}
-                            onChange={e => setConvertData({ ...convertData, city_id: e.target.value })}
+                            onChange={async (e) => {
+                                const newCityId = e.target.value;
+                                setConvertData(prev => ({ ...prev, city_id: newCityId, adiestrador_id: '' }));
+                                if (newCityId) {
+                                    const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').eq('assigned_city_id', newCityId);
+                                    setAdiestradores(data || []);
+                                } else {
+                                    setAdiestradores([]);
+                                }
+                            }}
                             style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white' }}
                         >
                             <option value="">Selecciona destino...</option>
@@ -487,14 +506,43 @@ export function Leads() {
                             </select>
                         </div>
                     </div>
-                    <div>
-                        <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Dirección</label>
-                        <input
-                            type="text"
-                            value={convertData.address}
-                            onChange={e => setConvertData({ ...convertData, address: e.target.value })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
-                        />
+                    <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                        <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>
+                            Dirección de Trabajo
+                        </label>
+                        {!convertData.city_id ? (
+                            <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Selecciona primero la ciudad destino para analizar la cobertura.</p>
+                        ) : (
+                            <AddressCoverageChecker
+                                cityId={convertData.city_id}
+                                initialAddress={convertData.address}
+                                onAddressSelect={(addr, lat, lng, recId) => {
+                                    setConvertData(prev => ({
+                                        ...prev,
+                                        address: addr,
+                                        location_lat: lat,
+                                        location_lng: lng,
+                                        adiestrador_id: recId || prev.adiestrador_id // Autofill if valid recommendation
+                                    }))
+                                }}
+                            />
+                        )}
+                        <hr style={{ margin: '1rem 0', borderColor: '#e5e7eb' }} />
+                        <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>
+                            CONFIRMAR ADIESTRADOR DE REFERENCIA
+                        </label>
+                        <select
+                            required
+                            value={convertData.adiestrador_id || ''}
+                            onChange={e => setConvertData({ ...convertData, adiestrador_id: e.target.value })}
+                            disabled={!convertData.city_id}
+                            style={{ width: '100%', padding: '0.625rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontWeight: 600 }}
+                        >
+                            <option value="">Selecciona Adiestrador...</option>
+                            {adiestradores.map(ad => (
+                                <option key={ad.id} value={ad.id}>{ad.full_name}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <div>

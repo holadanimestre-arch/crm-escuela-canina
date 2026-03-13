@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth'
 import { Modal } from '../components/Modal'
 import { DogBreedModal } from './Leads/DogBreedModal'
 import { CallReasonModal } from './Leads/CallReasonModal'
+import { AddressCoverageChecker } from '../components/AddressCoverageChecker'
 
 type Client = Database['public']['Tables']['clients']['Row']
 type Evaluation = Database['public']['Tables']['evaluations']['Row']
@@ -29,6 +30,7 @@ export function Clients() {
     const [cities, setCities] = useState<City[]>([])
     const [dogBreeds, setDogBreeds] = useState<DogBreed[]>([])
     const [callReasons, setCallReasons] = useState<CallReason[]>([])
+    const [adiestradores, setAdiestradores] = useState<any[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isDogBreedModalOpen, setIsDogBreedModalOpen] = useState(false)
     const [isCallReasonModalOpen, setIsCallReasonModalOpen] = useState(false)
@@ -40,6 +42,9 @@ export function Clients() {
         phone: '',
         city_id: '',
         address: '',
+        location_lat: null as number | null,
+        location_lng: null as number | null,
+        adiestrador_id: '',
         dog_breed: '',
         dog_age: '',
         call_reason: '',
@@ -74,8 +79,8 @@ export function Clients() {
         setSubmitting(true)
         try {
             // Find if there is an adiestrador assigned to this city
-            let assignedAdiestradorId = null;
-            if (formData.city_id) {
+            let finalAdiestradorId = formData.adiestrador_id || null;
+            if (formData.city_id && !finalAdiestradorId) {
                 const { data: adiestrador } = await supabase
                     .from('profiles')
                     .select('id')
@@ -84,7 +89,7 @@ export function Clients() {
                     .maybeSingle();
                 
                 if (adiestrador) {
-                    assignedAdiestradorId = adiestrador.id;
+                    finalAdiestradorId = adiestrador.id;
                 }
             }
 
@@ -94,20 +99,22 @@ export function Clients() {
                 phone: formData.phone,
                 city_id: formData.city_id,
                 address: formData.address,
+                location_lat: formData.location_lat,
+                location_lng: formData.location_lng,
                 dog_breed: formData.dog_breed,
                 dog_age: formData.dog_age,
                 call_reason: formData.call_reason,
                 observations: formData.observations,
                 converted_by: formData.converted_by,
                 status: 'activo',
-                adiestrador_id: assignedAdiestradorId
+                adiestrador_id: finalAdiestradorId
             })
 
             if (error) throw error
 
             setIsModalOpen(false)
             setFormData({
-                name: '', email: '', phone: '', city_id: '', address: '',
+                name: '', email: '', phone: '', city_id: '', address: '', location_lat: null, location_lng: null, adiestrador_id: '',
                 dog_breed: '', dog_age: '', call_reason: '', observations: '', converted_by: ''
             })
             fetchClients()
@@ -304,11 +311,20 @@ export function Clients() {
                             />
                         </div>
                         <div>
-                            <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Ciudad / Adiestrador</label>
+                            <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Ciudad / Zona</label>
                             <select
                                 required
                                 value={formData.city_id}
-                                onChange={e => setFormData({ ...formData, city_id: e.target.value })}
+                                onChange={async (e) => {
+                                    const newCityId = e.target.value;
+                                    setFormData(prev => ({ ...prev, city_id: newCityId, adiestrador_id: '' }));
+                                    if (newCityId) {
+                                        const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').eq('assigned_city_id', newCityId);
+                                        setAdiestradores(data || []);
+                                    } else {
+                                        setAdiestradores([]);
+                                    }
+                                }}
                                 style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white' }}
                             >
                                 <option value="">Selecciona una ciudad...</option>
@@ -339,15 +355,43 @@ export function Clients() {
                         </div>
                     </div>
 
-                    <div>
-                        <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Dirección</label>
-                        <input
-                            type="text"
-                            value={formData.address}
-                            onChange={e => setFormData({ ...formData, address: e.target.value })}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
-                            placeholder="Calle, número, piso..."
-                        />
+                    <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                        <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>
+                            Dirección de Trabajo
+                        </label>
+                        {!formData.city_id ? (
+                            <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Selecciona primero la ciudad destino para analizar la cobertura.</p>
+                        ) : (
+                            <AddressCoverageChecker
+                                cityId={formData.city_id}
+                                initialAddress={formData.address}
+                                onAddressSelect={(addr, lat, lng, recId) => {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        address: addr,
+                                        location_lat: lat,
+                                        location_lng: lng,
+                                        adiestrador_id: recId || prev.adiestrador_id
+                                    }))
+                                }}
+                            />
+                        )}
+                        <hr style={{ margin: '1rem 0', borderColor: '#e5e7eb' }} />
+                        <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>
+                            CONFIRMAR ADIESTRADOR DE REFERENCIA
+                        </label>
+                        <select
+                            required
+                            value={formData.adiestrador_id || ''}
+                            onChange={e => setFormData({ ...formData, adiestrador_id: e.target.value })}
+                            disabled={!formData.city_id}
+                            style={{ width: '100%', padding: '0.625rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', backgroundColor: 'white', fontWeight: 600 }}
+                        >
+                            <option value="">Selecciona Adiestrador...</option>
+                            {adiestradores.map(ad => (
+                                <option key={ad.id} value={ad.id}>{ad.full_name}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
