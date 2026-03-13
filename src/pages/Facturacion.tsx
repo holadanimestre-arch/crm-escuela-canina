@@ -159,19 +159,15 @@ export function Facturacion() {
                 }
             }
 
-            // 5. Show email modal
-            if (clientEmail) {
-                setEmailModal({
-                    clientEmail,
-                    clientName: client.name,
-                    invoiceNumber: invoice?.invoice_number ?? 0,
-                    amount: numericAmount,
-                    invoiceDate: invoice?.invoice_date ?? new Date().toISOString(),
-                    pdfUrl: finalPdfUrl
-                })
-            } else {
-                fetchData()
-            }
+            // 5. Show confirmation modal (always, with or without email)
+            setEmailModal({
+                clientEmail: clientEmail || '',
+                clientName: client.name,
+                invoiceNumber: invoice?.invoice_number ?? 0,
+                amount: numericAmount,
+                invoiceDate: invoice?.invoice_date ?? new Date().toISOString(),
+                pdfUrl: finalPdfUrl
+            })
 
         } catch (error: any) {
             console.error('Error registrando pago:', error)
@@ -451,28 +447,38 @@ export function Facturacion() {
                         <p style={{ fontSize: '0.9rem', color: '#374151', marginBottom: '1rem', lineHeight: 1.6 }}>
                             La <strong>Factura #{String(emailModal.invoiceNumber).padStart(3, '0')}</strong> de <strong>{emailModal.amount.toFixed(2)} €</strong> se ha generado correctamente para <strong>{emailModal.clientName}</strong>.
                         </p>
-                        <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.5rem', padding: '0.875rem 1rem', marginBottom: '1.5rem' }}>
-                            <p style={{ fontSize: '0.85rem', color: '#166534', margin: 0 }}>
-                                ¿Quieres enviar la factura por email a:
-                            </p>
-                            <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#14532d', margin: '0.25rem 0 0' }}>
-                                {emailModal.clientEmail}
-                            </p>
-                        </div>
+                        {emailModal.clientEmail ? (
+                            <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.5rem', padding: '0.875rem 1rem', marginBottom: '1.5rem' }}>
+                                <p style={{ fontSize: '0.85rem', color: '#166534', margin: 0 }}>
+                                    ¿Quieres enviar la factura por email a:
+                                </p>
+                                <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#14532d', margin: '0.25rem 0 0' }}>
+                                    {emailModal.clientEmail}
+                                </p>
+                            </div>
+                        ) : (
+                            <div style={{ backgroundColor: '#fef9c3', border: '1px solid #fde047', borderRadius: '0.5rem', padding: '0.875rem 1rem', marginBottom: '1.5rem' }}>
+                                <p style={{ fontSize: '0.85rem', color: '#854d0e', margin: 0 }}>
+                                    El cliente no tiene email registrado. Añádelo en su ficha para poder enviar facturas por correo.
+                                </p>
+                            </div>
+                        )}
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
                             <button
                                 onClick={handleDismissEmailModal}
                                 style={{ flex: 1, padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}
                             >
-                                No, omitir
+                                {emailModal.clientEmail ? 'No, omitir' : 'Cerrar'}
                             </button>
-                            <button
-                                onClick={handleSendEmail}
-                                disabled={sendingEmail}
-                                style={{ flex: 2, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', background: '#111827', color: 'white', cursor: sendingEmail ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                            >
-                                {sendingEmail ? 'Enviando...' : '📧 Sí, enviar factura'}
-                            </button>
+                            {emailModal.clientEmail && (
+                                <button
+                                    onClick={handleSendEmail}
+                                    disabled={sendingEmail}
+                                    style={{ flex: 2, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', background: '#111827', color: 'white', cursor: sendingEmail ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                >
+                                    {sendingEmail ? 'Enviando...' : '📧 Sí, enviar factura'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
