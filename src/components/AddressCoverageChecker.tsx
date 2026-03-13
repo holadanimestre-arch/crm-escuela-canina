@@ -3,7 +3,7 @@ import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocom
 import { supabase } from '../lib/supabase';
 import { useJsApiLoader } from '@react-google-maps/api';
 
-const libraries: ("places" | "geometry")[] = ['places', 'geometry'];
+const libraries: ("places" | "drawing" | "geometry")[] = ['places', 'drawing', 'geometry'];
 
 interface Adiestrador {
     id: string;
@@ -86,7 +86,7 @@ export function AddressCoverageChecker({ cityId, initialAddress = '', onAddressS
 
         try {
             const results = await getGeocode({ address });
-            const { lat, lng } = await getLatLng(results[0]);
+            const { lat, lng } = getLatLng(results[0]);
             
             evaluateCoverage(address, lat, lng);
         } catch (error) {
