@@ -12,6 +12,8 @@ export function Facturacion() {
     const [processingPayment, setProcessingPayment] = useState<string | null>(null)
     const [downloading, setDownloading] = useState(false)
     const [settings, setSettings] = useState<any>(null)
+    const [emailModal, setEmailModal] = useState<{ clientEmail: string; clientName: string; invoiceNumber: number; amount: number; invoiceDate: string; pdfUrl: string } | null>(null)
+    const [sendingEmail, setSendingEmail] = useState(false)
 
     // Filters
     const [startDate, setStartDate] = useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-dd'))
@@ -28,7 +30,7 @@ export function Facturacion() {
         const { data: clientsData } = await supabase
             .from('clients')
             .select(`
-                id, name, address, 
+                id, name, email, address,
                 cities(name),
                 payments(payment_number, amount)
             `)
@@ -130,6 +132,8 @@ export function Facturacion() {
                 await new Promise(r => setTimeout(r, 500))
             }
 
+            let finalPdfUrl = ''
+
             if (invoice) {
                 // 3. Generate PDF
                 const pdfBlob = await generateInvoicePDF({
@@ -152,11 +156,27 @@ export function Facturacion() {
 
                 if (!uploadError) {
                     const { data: urlData } = supabase.storage.from('invoices').getPublicUrl(fileName)
-                    await supabase.from('invoices').update({ pdf_url: urlData.publicUrl }).eq('id', invoice.id)
+                    finalPdfUrl = urlData.publicUrl
+                    await supabase.from('invoices').update({ pdf_url: finalPdfUrl }).eq('id', invoice.id)
                 }
+
+                // 5. Show email modal if client has email
+                if (client.email) {
+                    setEmailModal({
+                        clientEmail: client.email,
+                        clientName: client.name,
+                        invoiceNumber: invoice.invoice_number,
+                        amount: numericAmount,
+                        invoiceDate: invoice.invoice_date || new Date().toISOString(),
+                        pdfUrl: finalPdfUrl
+                    })
+                } else {
+                    alert('Pago registrado y factura generada correctamente.')
+                }
+            } else {
+                alert('Pago registrado correctamente.')
             }
 
-            alert('Pago registrado y factura generada correctamente.')
             fetchData()
 
         } catch (error: any) {
@@ -164,6 +184,23 @@ export function Facturacion() {
             alert('Error al procesar el pago: ' + error.message)
         } finally {
             setProcessingPayment(null)
+        }
+    }
+
+    const handleSendEmail = async () => {
+        if (!emailModal) return
+        setSendingEmail(true)
+        try {
+            const { error } = await supabase.functions.invoke('send-invoice-email', {
+                body: emailModal
+            })
+            if (error) throw error
+            alert(`Factura enviada correctamente a ${emailModal.clientEmail}`)
+        } catch (err: any) {
+            alert('Error al enviar el email: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setSendingEmail(false)
+            setEmailModal(null)
         }
     }
 
@@ -249,6 +286,7 @@ export function Facturacion() {
     if (loading) return <div>Cargando facturación...</div>
 
     return (
+        <>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <h1 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Facturación y Pagos</h1>
 
@@ -399,6 +437,48 @@ export function Facturacion() {
                 </div>
             </div>
         </div>
+
+        {/* Email Invoice Modal */}
+
+        {emailModal && (
+            <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '1rem' }}>
+                <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }}>
+                    <div style={{ backgroundColor: '#111827', padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <FileText size={22} color="white" />
+                        <h2 style={{ color: 'white', fontSize: '1rem', fontWeight: 600, margin: 0 }}>Factura generada</h2>
+                    </div>
+                    <div style={{ padding: '1.5rem' }}>
+                        <p style={{ fontSize: '0.9rem', color: '#374151', marginBottom: '1rem', lineHeight: 1.6 }}>
+                            La <strong>Factura #{String(emailModal.invoiceNumber).padStart(3, '0')}</strong> de <strong>{emailModal.amount.toFixed(2)} €</strong> se ha generado correctamente para <strong>{emailModal.clientName}</strong>.
+                        </p>
+                        <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.5rem', padding: '0.875rem 1rem', marginBottom: '1.5rem' }}>
+                            <p style={{ fontSize: '0.85rem', color: '#166534', margin: 0 }}>
+                                ¿Quieres enviar la factura por email a:
+                            </p>
+                            <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#14532d', margin: '0.25rem 0 0' }}>
+                                {emailModal.clientEmail}
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button
+                                onClick={() => setEmailModal(null)}
+                                style={{ flex: 1, padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}
+                            >
+                                No, omitir
+                            </button>
+                            <button
+                                onClick={handleSendEmail}
+                                disabled={sendingEmail}
+                                style={{ flex: 2, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', background: '#111827', color: 'white', cursor: sendingEmail ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                            >
+                                {sendingEmail ? 'Enviando...' : '📧 Sí, enviar factura'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     )
 }
 
