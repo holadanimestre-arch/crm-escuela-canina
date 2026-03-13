@@ -116,61 +116,50 @@ export function Facturacion() {
 
             if (pError) throw pError
 
-            // 2. Fetch fresh client email immediately
+            // 2. Fetch fresh client email
             const { data: freshClient } = await supabase
                 .from('clients').select('email').eq('id', client.id).single()
             const clientEmail = freshClient?.email || client.email
-            alert(`DEBUG paso 2 — email: ${clientEmail || 'SIN EMAIL'} | payment_id: ${pData.id}`)
 
-            // 3. Wait for invoice (10 attempts × 1s = 10s)
+            // 3. Wait for invoice (5 attempts × 1s)
             let invoice = null
-            for (let i = 0; i < 10; i++) {
-                const { data: invByPayment } = await supabase
+            for (let i = 0; i < 5; i++) {
+                const { data: inv } = await supabase
                     .from('invoices').select('*').eq('payment_id', pData.id).maybeSingle()
-                if (invByPayment) { invoice = invByPayment; break }
-
-                // Fallback: most recent invoice for this client (created in last 30s)
-                const { data: invByClient } = await supabase
-                    .from('invoices').select('*').eq('client_id', client.id)
-                    .order('created_at', { ascending: false }).limit(1).maybeSingle()
-                if (invByClient) {
-                    const age = Date.now() - new Date(invByClient.created_at).getTime()
-                    if (age < 30000) { invoice = invByClient; break }
-                }
+                if (inv) { invoice = inv; break }
                 await new Promise(r => setTimeout(r, 1000))
             }
-            alert(`DEBUG paso 3 — factura encontrada: ${invoice ? 'SÍ (nº' + invoice.invoice_number + ')' : 'NO'}`)
 
+            // 4. Generate & upload PDF (isolated — errors here don't block the modal)
             let finalPdfUrl = ''
-
             if (invoice) {
-                // 4. Generate PDF
-                const pdfBlob = await generateInvoicePDF({
-                    invoiceNumber: invoice.invoice_number,
-                    date: new Date(),
-                    clientName: client.name,
-                    clientAddress: client.address || '',
-                    clientCity: client.cities?.name || '',
-                    concept: 'Adiestramiento a Domicilio',
-                    amount: numericAmount,
-                    paymentMethod: 'transferencia',
-                    settings: settings
-                })
-
-                // 5. Upload PDF
-                const fileName = `factura_${invoice.invoice_number}_${client.id}.pdf`
-                const { error: uploadError } = await supabase.storage
-                    .from('invoices')
-                    .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true })
-
-                if (!uploadError) {
-                    const { data: urlData } = supabase.storage.from('invoices').getPublicUrl(fileName)
-                    finalPdfUrl = urlData.publicUrl
-                    await supabase.from('invoices').update({ pdf_url: finalPdfUrl }).eq('id', invoice.id)
+                try {
+                    const pdfBlob = await generateInvoicePDF({
+                        invoiceNumber: invoice.invoice_number,
+                        date: new Date(),
+                        clientName: client.name,
+                        clientAddress: client.address || '',
+                        clientCity: client.cities?.name || '',
+                        concept: 'Adiestramiento a Domicilio',
+                        amount: numericAmount,
+                        paymentMethod: 'transferencia',
+                        settings: settings
+                    })
+                    const fileName = `factura_${invoice.invoice_number}_${client.id}.pdf`
+                    const { error: uploadError } = await supabase.storage
+                        .from('invoices')
+                        .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true })
+                    if (!uploadError) {
+                        const { data: urlData } = supabase.storage.from('invoices').getPublicUrl(fileName)
+                        finalPdfUrl = urlData.publicUrl
+                        await supabase.from('invoices').update({ pdf_url: finalPdfUrl }).eq('id', invoice.id)
+                    }
+                } catch (pdfErr) {
+                    console.error('Error generando PDF:', pdfErr)
                 }
             }
 
-            // 6. Show email modal or alert
+            // 5. Show email modal
             if (clientEmail) {
                 setEmailModal({
                     clientEmail,
@@ -181,13 +170,13 @@ export function Facturacion() {
                     pdfUrl: finalPdfUrl
                 })
             } else {
-                alert('Pago registrado. El cliente no tiene email registrado en su ficha.')
                 fetchData()
             }
 
         } catch (error: any) {
-            console.error('Error processing payment:', error)
+            console.error('Error registrando pago:', error)
             alert('Error al procesar el pago: ' + error.message)
+            fetchData()
         } finally {
             setProcessingPayment(null)
         }
