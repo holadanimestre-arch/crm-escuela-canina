@@ -170,14 +170,15 @@ export function Facturacion() {
                         invoiceDate: invoice.invoice_date || new Date().toISOString(),
                         pdfUrl: finalPdfUrl
                     })
+                    // fetchData after modal is dismissed (see modal handlers)
                 } else {
                     alert('Pago registrado y factura generada correctamente.')
+                    fetchData()
                 }
             } else {
                 alert('Pago registrado correctamente.')
+                fetchData()
             }
-
-            fetchData()
 
         } catch (error: any) {
             console.error('Error processing payment:', error)
@@ -201,7 +202,13 @@ export function Facturacion() {
         } finally {
             setSendingEmail(false)
             setEmailModal(null)
+            fetchData()
         }
+    }
+
+    const handleDismissEmailModal = () => {
+        setEmailModal(null)
+        fetchData()
     }
 
     const handleViewInvoice = async (inv: any) => {
@@ -461,7 +468,7 @@ export function Facturacion() {
                         </div>
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
                             <button
-                                onClick={() => setEmailModal(null)}
+                                onClick={handleDismissEmailModal}
                                 style={{ flex: 1, padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}
                             >
                                 No, omitir
