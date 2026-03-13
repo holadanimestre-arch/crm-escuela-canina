@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, DrawingManager, Polygon, Marker } from '@react-google-maps/api';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 
@@ -76,7 +76,7 @@ export function CoverageMap({
 
         try {
             const results = await getGeocode({ address });
-            const { lat, lng } = await getLatLng(results[0]);
+            const { lat, lng } = getLatLng(results[0]);
             setBaseLat(lat);
             setBaseLng(lng);
             if (map) {
@@ -96,7 +96,7 @@ export function CoverageMap({
         }
     }, [baseLat, baseLng]);
 
-    const onUnmount = useCallback(function callback(map: google.maps.Map) {
+    const onUnmount = useCallback(function callback(_map: google.maps.Map) {
         setMap(null);
     }, []);
 
