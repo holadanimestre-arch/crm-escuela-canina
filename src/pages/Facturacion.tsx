@@ -324,8 +324,7 @@ export function Facturacion() {
                         <thead>
                             <tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
                                 <th style={{ padding: '0.75rem', fontSize: '0.875rem', textTransform: 'uppercase', color: '#6b7280' }}>Cliente</th>
-                                <th style={{ padding: '0.75rem', fontSize: '0.875rem', textTransform: 'uppercase', color: '#6b7280' }}>Estado Pago 1</th>
-                                <th style={{ padding: '0.75rem', fontSize: '0.875rem', textTransform: 'uppercase', color: '#6b7280' }}>Estado Pago 2</th>
+                                <th colSpan={2} style={{ padding: '0.75rem', fontSize: '0.875rem', textTransform: 'uppercase', color: '#6b7280' }}>Pagos</th>
                             </tr>
                         </thead>
                         <tbody>
