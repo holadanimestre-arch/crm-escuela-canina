@@ -160,19 +160,26 @@ export function Facturacion() {
                     await supabase.from('invoices').update({ pdf_url: finalPdfUrl }).eq('id', invoice.id)
                 }
 
-                // 5. Show email modal if client has email
-                if (client.email) {
+                // 5. Fetch fresh client email and show modal
+                const { data: freshClient } = await supabase
+                    .from('clients')
+                    .select('email')
+                    .eq('id', client.id)
+                    .single()
+
+                const clientEmail = freshClient?.email || client.email
+
+                if (clientEmail) {
                     setEmailModal({
-                        clientEmail: client.email,
+                        clientEmail,
                         clientName: client.name,
                         invoiceNumber: invoice.invoice_number,
                         amount: numericAmount,
                         invoiceDate: invoice.invoice_date || new Date().toISOString(),
                         pdfUrl: finalPdfUrl
                     })
-                    // fetchData after modal is dismissed (see modal handlers)
                 } else {
-                    alert('Pago registrado y factura generada correctamente.')
+                    alert('Pago registrado y factura generada. El cliente no tiene email registrado.')
                     fetchData()
                 }
             } else {
