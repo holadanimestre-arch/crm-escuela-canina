@@ -116,26 +116,35 @@ export function Facturacion() {
 
             if (pError) throw pError
 
-            // 2. Wait for trigger and fetch invoice
-            let invoice = null
-            for (let i = 0; i < 5; i++) {
-                const { data: invData } = await supabase
-                    .from('invoices')
-                    .select('*')
-                    .eq('payment_id', pData.id)
-                    .maybeSingle()
+            // 2. Fetch fresh client email immediately
+            const { data: freshClient } = await supabase
+                .from('clients').select('email').eq('id', client.id).single()
+            const clientEmail = freshClient?.email || client.email
+            alert(`DEBUG paso 2 — email: ${clientEmail || 'SIN EMAIL'} | payment_id: ${pData.id}`)
 
-                if (invData) {
-                    invoice = invData
-                    break
+            // 3. Wait for invoice (10 attempts × 1s = 10s)
+            let invoice = null
+            for (let i = 0; i < 10; i++) {
+                const { data: invByPayment } = await supabase
+                    .from('invoices').select('*').eq('payment_id', pData.id).maybeSingle()
+                if (invByPayment) { invoice = invByPayment; break }
+
+                // Fallback: most recent invoice for this client (created in last 30s)
+                const { data: invByClient } = await supabase
+                    .from('invoices').select('*').eq('client_id', client.id)
+                    .order('created_at', { ascending: false }).limit(1).maybeSingle()
+                if (invByClient) {
+                    const age = Date.now() - new Date(invByClient.created_at).getTime()
+                    if (age < 30000) { invoice = invByClient; break }
                 }
-                await new Promise(r => setTimeout(r, 500))
+                await new Promise(r => setTimeout(r, 1000))
             }
+            alert(`DEBUG paso 3 — factura encontrada: ${invoice ? 'SÍ (nº' + invoice.invoice_number + ')' : 'NO'}`)
 
             let finalPdfUrl = ''
 
             if (invoice) {
-                // 3. Generate PDF
+                // 4. Generate PDF
                 const pdfBlob = await generateInvoicePDF({
                     invoiceNumber: invoice.invoice_number,
                     date: new Date(),
@@ -148,7 +157,7 @@ export function Facturacion() {
                     settings: settings
                 })
 
-                // 4. Upload PDF
+                // 5. Upload PDF
                 const fileName = `factura_${invoice.invoice_number}_${client.id}.pdf`
                 const { error: uploadError } = await supabase.storage
                     .from('invoices')
@@ -159,31 +168,20 @@ export function Facturacion() {
                     finalPdfUrl = urlData.publicUrl
                     await supabase.from('invoices').update({ pdf_url: finalPdfUrl }).eq('id', invoice.id)
                 }
+            }
 
-                // 5. Fetch fresh client email and show modal
-                const { data: freshClient } = await supabase
-                    .from('clients')
-                    .select('email')
-                    .eq('id', client.id)
-                    .single()
-
-                const clientEmail = freshClient?.email || client.email
-
-                if (clientEmail) {
-                    setEmailModal({
-                        clientEmail,
-                        clientName: client.name,
-                        invoiceNumber: invoice.invoice_number,
-                        amount: numericAmount,
-                        invoiceDate: invoice.invoice_date || new Date().toISOString(),
-                        pdfUrl: finalPdfUrl
-                    })
-                } else {
-                    alert('Pago registrado y factura generada. El cliente no tiene email registrado.')
-                    fetchData()
-                }
+            // 6. Show email modal or alert
+            if (clientEmail) {
+                setEmailModal({
+                    clientEmail,
+                    clientName: client.name,
+                    invoiceNumber: invoice?.invoice_number ?? 0,
+                    amount: numericAmount,
+                    invoiceDate: invoice?.invoice_date ?? new Date().toISOString(),
+                    pdfUrl: finalPdfUrl
+                })
             } else {
-                alert('Pago registrado correctamente.')
+                alert('Pago registrado. El cliente no tiene email registrado en su ficha.')
                 fetchData()
             }
 
