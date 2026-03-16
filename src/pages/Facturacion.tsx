@@ -107,31 +107,44 @@ export function Facturacion() {
 
         try {
             // 1. Insert payment (DB trigger creates the invoice)
-            const { data: pData, error: pError } = await supabase
+            const insertedAt = new Date().toISOString()
+            const { error: pError } = await supabase
                 .from('payments')
                 .insert({
                     client_id: client.id,
                     amount: numericAmount,
                     payment_number: paymentNumber,
                     received: true,
-                    received_at: new Date().toISOString(),
+                    received_at: insertedAt,
                     method: 'transferencia'
                 })
-                .select()
-                .single()
 
             if (pError) throw pError
 
+            // Get the payment ID by querying back (avoids RLS issue with .single() on insert)
+            const { data: paymentRow } = await supabase
+                .from('payments')
+                .select('id')
+                .eq('client_id', client.id)
+                .eq('payment_number', paymentNumber)
+                .order('id', { ascending: false })
+                .limit(1)
+                .maybeSingle()
+
+            const paymentId = paymentRow?.id ?? null
+
             // 2. Fetch fresh client email
             const { data: freshClient } = await supabase
-                .from('clients').select('email').eq('id', client.id).single()
+                .from('clients').select('email').eq('id', client.id).maybeSingle()
             const clientEmail = freshClient?.email || client.email
 
             // 3. Wait for invoice (5 attempts × 1s)
             let invoice = null
             for (let i = 0; i < 5; i++) {
-                const { data: inv } = await supabase
-                    .from('invoices').select('*').eq('payment_id', pData.id).maybeSingle()
+                const query = paymentId
+                    ? supabase.from('invoices').select('*').eq('payment_id', paymentId).maybeSingle()
+                    : supabase.from('invoices').select('*').eq('client_id', client.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
+                const { data: inv } = await query
                 if (inv) { invoice = inv; break }
                 await new Promise(r => setTimeout(r, 1000))
             }
