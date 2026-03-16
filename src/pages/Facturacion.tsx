@@ -135,36 +135,7 @@ export function Facturacion() {
             }
             console.log('[Facturacion] PASO 5 — factura encontrada:', invoice ? `nº ${invoice.invoice_number}` : 'NO encontrada')
 
-            // 4. Generate & upload PDF (isolated — errors here don't block the modal)
-            let finalPdfUrl = ''
-            if (invoice) {
-                try {
-                    const pdfBlob = await generateInvoicePDF({
-                        invoiceNumber: invoice.invoice_number,
-                        date: new Date(),
-                        clientName: client.name,
-                        clientAddress: client.address || '',
-                        clientCity: client.cities?.name || '',
-                        concept: 'Adiestramiento a Domicilio',
-                        amount: numericAmount,
-                        paymentMethod: 'transferencia',
-                        settings: settings
-                    })
-                    const fileName = `factura_${invoice.invoice_number}_${client.id}.pdf`
-                    const { error: uploadError } = await supabase.storage
-                        .from('invoices')
-                        .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true })
-                    if (!uploadError) {
-                        const { data: urlData } = supabase.storage.from('invoices').getPublicUrl(fileName)
-                        finalPdfUrl = urlData.publicUrl
-                        await supabase.from('invoices').update({ pdf_url: finalPdfUrl }).eq('id', invoice.id)
-                    }
-                } catch (pdfErr) {
-                    console.error('[Facturacion] Error generando PDF:', pdfErr)
-                }
-            }
-
-            // 5. Show confirmation modal (always, with or without email)
+            // 4. Show modal immediately (don't wait for PDF)
             console.log('[Facturacion] PASO 6 — llamando setEmailModal')
             setEmailModal({
                 clientEmail: clientEmail || '',
@@ -172,9 +143,40 @@ export function Facturacion() {
                 invoiceNumber: invoice?.invoice_number ?? 0,
                 amount: numericAmount,
                 invoiceDate: invoice?.invoice_date ?? new Date().toISOString(),
-                pdfUrl: finalPdfUrl
+                pdfUrl: ''
             })
-            console.log('[Facturacion] PASO 7 — setEmailModal llamado, modal debería aparecer')
+            console.log('[Facturacion] PASO 7 — modal visible, generando PDF en segundo plano')
+
+            // 5. Generate & upload PDF in background (doesn't block the modal)
+            if (invoice) {
+                ;(async () => {
+                    try {
+                        const pdfBlob = await generateInvoicePDF({
+                            invoiceNumber: invoice.invoice_number,
+                            date: new Date(),
+                            clientName: client.name,
+                            clientAddress: client.address || '',
+                            clientCity: client.cities?.name || '',
+                            concept: 'Adiestramiento a Domicilio',
+                            amount: numericAmount,
+                            paymentMethod: 'transferencia',
+                            settings: settings
+                        })
+                        const fileName = `factura_${invoice.invoice_number}_${client.id}.pdf`
+                        const { error: uploadError } = await supabase.storage
+                            .from('invoices')
+                            .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true })
+                        if (!uploadError) {
+                            const { data: urlData } = supabase.storage.from('invoices').getPublicUrl(fileName)
+                            const pdfUrl = urlData.publicUrl
+                            await supabase.from('invoices').update({ pdf_url: pdfUrl }).eq('id', invoice.id)
+                            setEmailModal(prev => prev ? { ...prev, pdfUrl } : null)
+                        }
+                    } catch (pdfErr) {
+                        console.error('[Facturacion] Error generando PDF (no crítico):', pdfErr)
+                    }
+                })()
+            }
 
         } catch (error: any) {
             console.error('[Facturacion] ERROR en catch:', error)
