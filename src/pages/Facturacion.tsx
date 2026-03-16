@@ -98,6 +98,7 @@ export function Facturacion() {
         }
 
         const numericAmount = parseFloat(amount)
+        console.log('[Facturacion] PASO 1 — iniciando registro de pago:', numericAmount, '€ para', client.name)
 
         try {
             // 1. Insert Payment (Trigger will create Invoice record)
@@ -115,11 +116,13 @@ export function Facturacion() {
                 .single()
 
             if (pError) throw pError
+            console.log('[Facturacion] PASO 2 — pago insertado, id:', pData.id)
 
             // 2. Fetch fresh client email
             const { data: freshClient } = await supabase
                 .from('clients').select('email').eq('id', client.id).single()
             const clientEmail = freshClient?.email || client.email
+            console.log('[Facturacion] PASO 3 — email cliente:', clientEmail || 'SIN EMAIL')
 
             // 3. Wait for invoice (5 attempts × 1s)
             let invoice = null
@@ -127,8 +130,10 @@ export function Facturacion() {
                 const { data: inv } = await supabase
                     .from('invoices').select('*').eq('payment_id', pData.id).maybeSingle()
                 if (inv) { invoice = inv; break }
+                console.log('[Facturacion] PASO 4 — esperando factura, intento', i + 1)
                 await new Promise(r => setTimeout(r, 1000))
             }
+            console.log('[Facturacion] PASO 5 — factura encontrada:', invoice ? `nº ${invoice.invoice_number}` : 'NO encontrada')
 
             // 4. Generate & upload PDF (isolated — errors here don't block the modal)
             let finalPdfUrl = ''
@@ -155,11 +160,12 @@ export function Facturacion() {
                         await supabase.from('invoices').update({ pdf_url: finalPdfUrl }).eq('id', invoice.id)
                     }
                 } catch (pdfErr) {
-                    console.error('Error generando PDF:', pdfErr)
+                    console.error('[Facturacion] Error generando PDF:', pdfErr)
                 }
             }
 
             // 5. Show confirmation modal (always, with or without email)
+            console.log('[Facturacion] PASO 6 — llamando setEmailModal')
             setEmailModal({
                 clientEmail: clientEmail || '',
                 clientName: client.name,
@@ -168,9 +174,10 @@ export function Facturacion() {
                 invoiceDate: invoice?.invoice_date ?? new Date().toISOString(),
                 pdfUrl: finalPdfUrl
             })
+            console.log('[Facturacion] PASO 7 — setEmailModal llamado, modal debería aparecer')
 
         } catch (error: any) {
-            console.error('Error registrando pago:', error)
+            console.error('[Facturacion] ERROR en catch:', error)
             alert('Error al procesar el pago: ' + error.message)
             fetchData()
         } finally {
