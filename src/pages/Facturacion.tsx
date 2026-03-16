@@ -14,6 +14,8 @@ export function Facturacion() {
     const [settings, setSettings] = useState<any>(null)
     const [emailModal, setEmailModal] = useState<{ clientEmail: string; clientName: string; invoiceNumber: number; amount: number; invoiceDate: string; pdfUrl: string } | null>(null)
     const [sendingEmail, setSendingEmail] = useState(false)
+    const [paymentModal, setPaymentModal] = useState<{ client: any; paymentNumber: number } | null>(null)
+    const [paymentAmount, setPaymentAmount] = useState('')
 
     // Filters
     const [startDate, setStartDate] = useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-dd'))
@@ -87,21 +89,24 @@ export function Facturacion() {
         setStats(prev => ({ ...prev, totalFiltered: total }))
     }, [filteredInvoices])
 
-    const handleReceivePayment = async (client: any, paymentNumber: number) => {
-        if (!confirm(`¿Registrar Pago ${paymentNumber} para ${client.name}? Esto generará una factura automáticamente.`)) return
+    // Open the payment entry modal (replaces confirm/prompt)
+    const handleReceivePayment = (client: any, paymentNumber: number) => {
+        setPaymentAmount('')
+        setPaymentModal({ client, paymentNumber })
+    }
 
+    // Called when the user confirms the amount in the payment modal
+    const handleConfirmPayment = async () => {
+        if (!paymentModal) return
+        const numericAmount = parseFloat(paymentAmount)
+        if (!paymentAmount || isNaN(numericAmount) || numericAmount <= 0) return
+
+        const { client, paymentNumber } = paymentModal
+        setPaymentModal(null)
         setProcessingPayment(`${client.id}-${paymentNumber}`)
-        const amount = prompt("Introduce el importe pagado (€):", "0")
-        if (!amount || isNaN(parseFloat(amount))) {
-            setProcessingPayment(null)
-            return
-        }
-
-        const numericAmount = parseFloat(amount)
-        console.log('[Facturacion] PASO 1 — iniciando registro de pago:', numericAmount, '€ para', client.name)
 
         try {
-            // 1. Insert Payment (Trigger will create Invoice record)
+            // 1. Insert payment (DB trigger creates the invoice)
             const { data: pData, error: pError } = await supabase
                 .from('payments')
                 .insert({
@@ -116,13 +121,11 @@ export function Facturacion() {
                 .single()
 
             if (pError) throw pError
-            console.log('[Facturacion] PASO 2 — pago insertado, id:', pData.id)
 
             // 2. Fetch fresh client email
             const { data: freshClient } = await supabase
                 .from('clients').select('email').eq('id', client.id).single()
             const clientEmail = freshClient?.email || client.email
-            console.log('[Facturacion] PASO 3 — email cliente:', clientEmail || 'SIN EMAIL')
 
             // 3. Wait for invoice (5 attempts × 1s)
             let invoice = null
@@ -130,13 +133,10 @@ export function Facturacion() {
                 const { data: inv } = await supabase
                     .from('invoices').select('*').eq('payment_id', pData.id).maybeSingle()
                 if (inv) { invoice = inv; break }
-                console.log('[Facturacion] PASO 4 — esperando factura, intento', i + 1)
                 await new Promise(r => setTimeout(r, 1000))
             }
-            console.log('[Facturacion] PASO 5 — factura encontrada:', invoice ? `nº ${invoice.invoice_number}` : 'NO encontrada')
 
-            // 4. Show modal immediately (don't wait for PDF)
-            console.log('[Facturacion] PASO 6 — llamando setEmailModal')
+            // 4. Show email modal immediately
             setEmailModal({
                 clientEmail: clientEmail || '',
                 clientName: client.name,
@@ -145,9 +145,8 @@ export function Facturacion() {
                 invoiceDate: invoice?.invoice_date ?? new Date().toISOString(),
                 pdfUrl: ''
             })
-            console.log('[Facturacion] PASO 7 — modal visible, generando PDF en segundo plano')
 
-            // 5. Generate & upload PDF in background (doesn't block the modal)
+            // 5. Generate & upload PDF in background
             if (invoice) {
                 ;(async () => {
                     try {
@@ -173,13 +172,13 @@ export function Facturacion() {
                             setEmailModal(prev => prev ? { ...prev, pdfUrl } : null)
                         }
                     } catch (pdfErr) {
-                        console.error('[Facturacion] Error generando PDF (no crítico):', pdfErr)
+                        console.error('Error generando PDF:', pdfErr)
                     }
                 })()
             }
 
         } catch (error: any) {
-            console.error('[Facturacion] ERROR en catch:', error)
+            console.error('Error registrando pago:', error)
             alert('Error al procesar el pago: ' + error.message)
             fetchData()
         } finally {
@@ -488,6 +487,51 @@ export function Facturacion() {
                                     {sendingEmail ? 'Enviando...' : '📧 Sí, enviar factura'}
                                 </button>
                             )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Payment Amount Modal */}
+        {paymentModal && (
+            <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '1rem' }}>
+                <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', width: '100%', maxWidth: '400px', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }}>
+                    <div style={{ backgroundColor: '#111827', padding: '1.25rem 1.5rem' }}>
+                        <h2 style={{ color: 'white', fontSize: '1rem', fontWeight: 600, margin: 0 }}>
+                            Registrar Pago {paymentModal.paymentNumber} — {paymentModal.client.name}
+                        </h2>
+                    </div>
+                    <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <p style={{ fontSize: '0.9rem', color: '#374151', margin: 0 }}>Introduce el importe recibido:</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', padding: '0.625rem 0.875rem' }}>
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                autoFocus
+                                value={paymentAmount}
+                                onChange={e => setPaymentAmount(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleConfirmPayment()}
+                                placeholder="0.00"
+                                style={{ flex: 1, border: 'none', outline: 'none', fontSize: '1.1rem', fontWeight: 600 }}
+                            />
+                            <span style={{ color: '#6b7280', fontWeight: 600 }}>€</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button
+                                onClick={() => setPaymentModal(null)}
+                                style={{ flex: 1, padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmPayment}
+                                disabled={!paymentAmount || isNaN(parseFloat(paymentAmount)) || parseFloat(paymentAmount) <= 0}
+                                style={{ flex: 2, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', background: '#111827', color: 'white', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', opacity: (!paymentAmount || parseFloat(paymentAmount) <= 0) ? 0.5 : 1 }}
+                            >
+                                Confirmar y generar factura
+                            </button>
                         </div>
                     </div>
                 </div>
