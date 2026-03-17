@@ -91,12 +91,14 @@ export function Facturacion() {
 
     // Open the payment entry modal (replaces confirm/prompt)
     const handleReceivePayment = (client: any, paymentNumber: number) => {
+        console.log('[FC] handleReceivePayment called', client.name, paymentNumber)
         setPaymentAmount('')
         setPaymentModal({ client, paymentNumber })
     }
 
     // Called when the user confirms the amount in the payment modal
     const handleConfirmPayment = async () => {
+        console.log('[FC] handleConfirmPayment called, paymentModal:', paymentModal, 'amount:', paymentAmount)
         if (!paymentModal) return
         const numericAmount = parseFloat(paymentAmount)
         if (!paymentAmount || isNaN(numericAmount) || numericAmount <= 0) return
