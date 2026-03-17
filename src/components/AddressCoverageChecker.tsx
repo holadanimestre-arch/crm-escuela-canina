@@ -32,7 +32,6 @@ export function AddressCoverageChecker({ cityId, initialAddress = '', onAddressS
     const [evalMessage, setEvalMessage] = useState('');
 
     const {
-        ready,
         value,
         suggestions: { status, data },
         setValue,
@@ -180,7 +179,7 @@ export function AddressCoverageChecker({ cityId, initialAddress = '', onAddressS
                             onAddressSelect(e.target.value, null, null, null);
                         }
                     }}
-                    disabled={!ready}
+                    disabled={false}
                     placeholder="Empieza a escribir la dirección..."
                     style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', outline: 'none' }}
                 />
