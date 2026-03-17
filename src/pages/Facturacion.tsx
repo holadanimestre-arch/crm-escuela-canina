@@ -107,6 +107,7 @@ export function Facturacion() {
 
         try {
             // 1. Insert payment (DB trigger creates the invoice)
+            console.log('[FC] 1 inserting payment for client', client.id, 'payment_number', paymentNumber)
             const insertedAt = new Date().toISOString()
             const { error: pError } = await supabase
                 .from('payments')
@@ -119,6 +120,7 @@ export function Facturacion() {
                     method: 'transferencia'
                 })
 
+            console.log('[FC] 2 insert result - pError:', pError)
             if (pError) throw pError
 
             // Get the payment ID by querying back (avoids RLS issue with .single() on insert)
@@ -132,15 +134,18 @@ export function Facturacion() {
                 .maybeSingle()
 
             const paymentId = paymentRow?.id ?? null
+            console.log('[FC] 3 paymentId:', paymentId)
 
             // 2. Fetch fresh client email
             const { data: freshClient } = await supabase
                 .from('clients').select('email').eq('id', client.id).maybeSingle()
             const clientEmail = freshClient?.email || client.email
+            console.log('[FC] 4 clientEmail:', clientEmail)
 
             // 3. Wait for invoice (5 attempts × 1s)
             let invoice = null
             for (let i = 0; i < 5; i++) {
+                console.log('[FC] 5 polling invoice attempt', i + 1)
                 const query = paymentId
                     ? supabase.from('invoices').select('*').eq('payment_id', paymentId).maybeSingle()
                     : supabase.from('invoices').select('*').eq('client_id', client.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
@@ -149,6 +154,8 @@ export function Facturacion() {
                 await new Promise(r => setTimeout(r, 1000))
             }
 
+            console.log('[FC] 6 invoice found:', invoice ? 'YES #' + invoice.invoice_number : 'NO')
+            console.log('[FC] 7 calling setEmailModal...')
             // 4. Show email modal immediately
             setEmailModal({
                 clientEmail: clientEmail || '',
@@ -158,6 +165,7 @@ export function Facturacion() {
                 invoiceDate: invoice?.invoice_date ?? new Date().toISOString(),
                 pdfUrl: ''
             })
+            console.log('[FC] 8 setEmailModal called OK')
 
             // 5. Generate & upload PDF in background
             if (invoice) {
@@ -191,7 +199,7 @@ export function Facturacion() {
             }
 
         } catch (error: any) {
-            console.error('Error registrando pago:', error)
+            console.error('[FC] CATCH error:', error)
             alert('Error al procesar el pago: ' + error.message)
             fetchData()
         } finally {
