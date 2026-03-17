@@ -107,7 +107,7 @@ export function Leads() {
         }
     }
 
-    function openConvertModal(lead: Lead) {
+    async function openConvertModal(lead: Lead) {
         setSelectedLead(lead)
         setConvertData({
             city_id: lead.city_id || '',
@@ -121,6 +121,13 @@ export function Leads() {
             converted_by: '',
             adiestrador_id: ''
         })
+        // Pre-load adiestradores for the lead's city
+        if (lead.city_id) {
+            const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').eq('assigned_city_id', lead.city_id)
+            setAdiestradores(data || [])
+        } else {
+            setAdiestradores([])
+        }
         setIsConvertModalOpen(true)
     }
 
