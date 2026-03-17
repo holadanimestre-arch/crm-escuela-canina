@@ -116,10 +116,12 @@ export function EvaluationForm() {
                 clientUpdate.status = 'activo'
             }
 
-            await supabase
+            const { error: clientUpdateError } = await supabase
                 .from('clients')
                 .update(clientUpdate)
                 .eq('id', client.id)
+
+            if (clientUpdateError) throw clientUpdateError
 
             // Navigate back
             navigate('/evaluaciones')
