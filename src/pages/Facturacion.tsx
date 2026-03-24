@@ -16,6 +16,8 @@ export function Facturacion() {
     const [settings, setSettings] = useState<any>(null)
     const [emailModal, setEmailModal] = useState<{ clientEmail: string; clientName: string; invoiceNumber: number; amount: number; invoiceDate: string; pdfUrl: string } | null>(null)
     const [sendingEmail, setSendingEmail] = useState(false)
+    const [generatingPdf, setGeneratingPdf] = useState(false)
+    const [pollingInvoice, setPollingInvoice] = useState<string | null>(null)
     const [paymentModal, setPaymentModal] = useState<{ client: any; paymentNumber: number } | null>(null)
     const [paymentAmount, setPaymentAmount] = useState('')
 
@@ -91,16 +93,14 @@ export function Facturacion() {
         setStats(prev => ({ ...prev, totalFiltered: total }))
     }, [filteredInvoices])
 
-    // Open the payment entry modal (replaces confirm/prompt)
+    // Open the payment entry modal
     const handleReceivePayment = (client: any, paymentNumber: number) => {
-        console.log('[FC] handleReceivePayment called', client.name, paymentNumber)
         setPaymentAmount('')
         setPaymentModal({ client, paymentNumber })
     }
 
     // Called when the user confirms the amount in the payment modal
     const handleConfirmPayment = async () => {
-        console.log('[FC] handleConfirmPayment called, paymentModal:', paymentModal, 'amount:', paymentAmount)
         if (!paymentModal) return
         const numericAmount = parseFloat(paymentAmount)
         if (!paymentAmount || isNaN(numericAmount) || numericAmount <= 0) return
@@ -108,11 +108,10 @@ export function Facturacion() {
         const { client, paymentNumber } = paymentModal
         setPaymentModal(null)
         setProcessingPayment(`${client.id}-${paymentNumber}`)
+        setPollingInvoice(`${client.id}-${paymentNumber}`)
 
         try {
             // 1. Insert payment (DB trigger creates the invoice)
-            console.log('[FC] 1 inserting payment for client', client.id, 'payment_number', paymentNumber)
-            const insertedAt = new Date().toISOString()
             const { error: pError } = await supabase
                 .from('payments')
                 .insert({
@@ -120,14 +119,12 @@ export function Facturacion() {
                     amount: numericAmount,
                     payment_number: paymentNumber,
                     received: true,
-                    received_at: insertedAt,
+                    received_at: new Date().toISOString(),
                     method: 'transferencia'
                 })
-
-            console.log('[FC] 2 insert result - pError:', pError)
             if (pError) throw pError
 
-            // Get the payment ID by querying back (avoids RLS issue with .single() on insert)
+            // Get the payment ID back (avoids RLS issue with .single() on insert)
             const { data: paymentRow } = await supabase
                 .from('payments')
                 .select('id')
@@ -136,20 +133,16 @@ export function Facturacion() {
                 .order('id', { ascending: false })
                 .limit(1)
                 .maybeSingle()
-
             const paymentId = paymentRow?.id ?? null
-            console.log('[FC] 3 paymentId:', paymentId)
 
             // 2. Fetch fresh client email
             const { data: freshClient } = await supabase
                 .from('clients').select('email').eq('id', client.id).maybeSingle()
             const clientEmail = freshClient?.email || client.email
-            console.log('[FC] 4 clientEmail:', clientEmail)
 
-            // 3. Wait for invoice (5 attempts × 1s)
+            // 3. Wait for invoice — 10 attempts × 1s = up to 10s
             let invoice = null
-            for (let i = 0; i < 5; i++) {
-                console.log('[FC] 5 polling invoice attempt', i + 1)
+            for (let i = 0; i < 10; i++) {
                 const query = paymentId
                     ? supabase.from('invoices').select('*').eq('payment_id', paymentId).maybeSingle()
                     : supabase.from('invoices').select('*').eq('client_id', client.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
@@ -158,9 +151,10 @@ export function Facturacion() {
                 await new Promise(r => setTimeout(r, 1000))
             }
 
-            console.log('[FC] 6 invoice found:', invoice ? 'YES #' + invoice.invoice_number : 'NO')
-            console.log('[FC] 7 calling setEmailModal...')
-            // 4. Show email modal immediately
+            setPollingInvoice(null)
+
+            // 4. Show email modal — PDF will update once generated
+            setGeneratingPdf(!!invoice)
             setEmailModal({
                 clientEmail: clientEmail || '',
                 clientName: client.name,
@@ -169,9 +163,8 @@ export function Facturacion() {
                 invoiceDate: invoice?.invoice_date ?? new Date().toISOString(),
                 pdfUrl: ''
             })
-            console.log('[FC] 8 setEmailModal called OK')
 
-            // 5. Generate & upload PDF in background
+            // 5. Generate & upload PDF in background, then unlock send button
             if (invoice) {
                 ;(async () => {
                     try {
@@ -192,18 +185,19 @@ export function Facturacion() {
                             .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true })
                         if (!uploadError) {
                             const { data: urlData } = supabase.storage.from('invoices').getPublicUrl(fileName)
-                            const pdfUrl = urlData.publicUrl
-                            await supabase.from('invoices').update({ pdf_url: pdfUrl }).eq('id', invoice.id)
-                            setEmailModal(prev => prev ? { ...prev, pdfUrl } : null)
+                            await supabase.from('invoices').update({ pdf_url: urlData.publicUrl }).eq('id', invoice.id)
+                            setEmailModal(prev => prev ? { ...prev, pdfUrl: urlData.publicUrl } : null)
                         }
-                    } catch (pdfErr) {
-                        console.error('Error generando PDF:', pdfErr)
+                    } catch {
+                        // PDF generation failed — allow sending without PDF
+                    } finally {
+                        setGeneratingPdf(false)
                     }
                 })()
             }
 
         } catch (error: any) {
-            console.error('[FC] CATCH error:', error)
+            setPollingInvoice(null)
             showAlert('Error al procesar el pago: ' + error.message)
             fetchData()
         } finally {
@@ -370,7 +364,7 @@ export function Facturacion() {
                                                         backgroundColor: 'white', color: '#2563eb', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600
                                                     }}
                                                 >
-                                                    {processingPayment === `${client.id}-${nextToRegister}` ? '...' : `+ Registrar P${nextToRegister}`}
+                                                    {pollingInvoice === `${client.id}-${nextToRegister}` ? 'Generando factura...' : processingPayment === `${client.id}-${nextToRegister}` ? 'Procesando...' : `+ Registrar P${nextToRegister}`}
                                                 </button>
                                             </div>
                                         </td>
@@ -506,10 +500,10 @@ export function Facturacion() {
                             {emailModal.clientEmail && (
                                 <button
                                     onClick={handleSendEmail}
-                                    disabled={sendingEmail}
-                                    style={{ flex: 2, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', background: '#111827', color: 'white', cursor: sendingEmail ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                    disabled={sendingEmail || generatingPdf}
+                                    style={{ flex: 2, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', background: '#111827', color: 'white', cursor: (sendingEmail || generatingPdf) ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (sendingEmail || generatingPdf) ? 0.7 : 1 }}
                                 >
-                                    {sendingEmail ? 'Enviando...' : '📧 Sí, enviar factura'}
+                                    {sendingEmail ? 'Enviando...' : generatingPdf ? '⏳ Preparando PDF...' : '📧 Sí, enviar factura'}
                                 </button>
                             )}
                         </div>
