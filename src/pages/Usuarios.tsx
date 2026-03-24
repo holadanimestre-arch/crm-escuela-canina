@@ -3,8 +3,10 @@ import { supabase } from '../lib/supabase'
 import { UserPlus, Shield, MapPin, Mail, Save, X, Trash2 } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
 import { CoverageMap } from '../components/CoverageMap'
+import { useDialog } from '../context/DialogContext'
 
 export function Usuarios() {
+    const { showAlert, showConfirm } = useDialog()
     const [profiles, setProfiles] = useState<any[]>([])
     const [cities, setCities] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -98,7 +100,7 @@ export function Usuarios() {
 
             // Detect fake success if email already exists (Supabase Email Enumeration Protection)
             if (authData.user?.identities && authData.user.identities.length === 0) {
-                if (confirm(`El email ${email} ya está registrado ocultamente.\n\n¿Quieres que intente limpiar este acceso automáticamente para que puedas crearlo de nuevo?`)) {
+                if (await showConfirm(`El email ${email} ya está registrado ocultamente.\n\n¿Quieres que intente limpiar este acceso automáticamente para que puedas crearlo de nuevo?`)) {
                     handleRepairUser(email)
                     return // stop creation flow since we initiated repair
                 } else {
@@ -129,18 +131,18 @@ export function Usuarios() {
                 throw new Error('El usuario se registró en Auth pero no se pudo crear su perfil en la base de datos.')
             }
 
-            alert('Usuario creado correctamente. El usuario ya puede iniciar sesión.')
+            showAlert('Usuario creado correctamente. El usuario ya puede iniciar sesión.')
             setIsModalOpen(false)
             resetForm()
             fetchData()
         } catch (error: any) {
             console.error('Error creating user:', error)
             if (error.message.includes('ya está registrado')) {
-                if (confirm(error.message + '\n\n¿Quieres que intente limpiar este email automáticamente para que puedas crearlo de nuevo?')) {
+                if (await showConfirm(error.message + '\n\n¿Quieres que intente limpiar este email automáticamente para que puedas crearlo de nuevo?')) {
                     handleRepairUser(email)
                 }
             } else {
-                alert('Error al crear usuario: ' + (error.message || 'Error desconocido'))
+                showAlert('Error al crear usuario: ' + (error.message || 'Error desconocido'))
             }
         } finally {
             setSubmitting(false)
@@ -168,13 +170,13 @@ export function Usuarios() {
 
             if (error) throw error
 
-            alert('Usuario actualizado correctamente.')
+            showAlert('Usuario actualizado correctamente.')
             setIsModalOpen(false)
             resetForm()
             fetchData()
         } catch (error: any) {
             console.error('Error updating user:', error)
-            alert('Error al actualizar usuario: ' + error.message)
+            showAlert('Error al actualizar usuario: ' + error.message)
         } finally {
             setSubmitting(false)
         }
@@ -192,19 +194,19 @@ export function Usuarios() {
 
             if (error) throw error
 
-            alert('Usuario eliminado por completo del sistema.')
+            showAlert('Usuario eliminado por completo del sistema.')
             setUserToDelete(null)
             fetchData()
         } catch (error: any) {
             console.error('Error deleting user:', error)
-            alert('Error al eliminar usuario: ' + (error.message || 'Error desconocido'))
+            showAlert('Error al eliminar usuario: ' + (error.message || 'Error desconocido'))
         } finally {
             setSubmitting(false)
         }
     }
 
     const handleRepairUser = async (emailToRepair: string) => {
-        if (!confirm(`¿Seguro que quieres limpiar el acceso de ${emailToRepair}? Esto permitirá volver a crearlo si antes falló.`)) return
+        if (!await showConfirm(`¿Seguro que quieres limpiar el acceso de ${emailToRepair}? Esto permitirá volver a crearlo si antes falló.`)) return
         setSubmitting(true)
 
         try {
@@ -214,11 +216,11 @@ export function Usuarios() {
 
             if (error) throw error
 
-            alert('Email desbloqueado. Ahora puedes intentar crearlo de nuevo.')
+            showAlert('Email desbloqueado. Ahora puedes intentar crearlo de nuevo.')
             fetchData()
         } catch (error: any) {
             console.error('Error repairing user:', error)
-            alert('Error al limpiar email: ' + (error.message || 'Error desconocido'))
+            showAlert('Error al limpiar email: ' + (error.message || 'Error desconocido'))
         } finally {
             setSubmitting(false)
         }

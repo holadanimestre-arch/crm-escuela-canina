@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../../components/Modal'
 import { supabase } from '../../lib/supabase'
+import { useDialog } from '../../context/DialogContext'
 
 interface CityModalProps {
     isOpen: boolean
@@ -9,6 +10,7 @@ interface CityModalProps {
 }
 
 export function CityModal({ isOpen, onClose, onSuccess }: CityModalProps) {
+    const { showAlert } = useDialog()
     const [cityName, setCityName] = useState('')
     const [saving, setSaving] = useState(false)
 
@@ -27,10 +29,10 @@ export function CityModal({ isOpen, onClose, onSuccess }: CityModalProps) {
             setCityName('')
             onSuccess()
             onClose()
-            alert('Ciudad añadida correctamente')
+            showAlert('Ciudad añadida correctamente')
         } catch (error: any) {
             console.error('Error adding city:', error)
-            alert('Error al añadir ciudad: ' + error.message)
+            showAlert('Error al añadir ciudad: ' + error.message)
         } finally {
             setSaving(false)
         }

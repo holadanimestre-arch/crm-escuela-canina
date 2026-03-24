@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { X, Calendar } from 'lucide-react'
+import { useDialog } from '../../context/DialogContext'
 
 interface SessionModalProps {
     isOpen: boolean
@@ -10,6 +11,7 @@ interface SessionModalProps {
 }
 
 export function SessionModal({ isOpen, onClose, client, onSessionSaved }: SessionModalProps) {
+    const { showAlert } = useDialog()
     const [date, setDate] = useState('')
     const [time, setTime] = useState('')
     const [sessionNumber, setSessionNumber] = useState<number | null>(null)
@@ -76,7 +78,7 @@ export function SessionModal({ isOpen, onClose, client, onSessionSaved }: Sessio
             onClose()
         } catch (error) {
             console.error('Error saving session:', error)
-            alert('Error al guardar la sesión')
+            showAlert('Error al guardar la sesión')
         } finally {
             setSaving(false)
         }

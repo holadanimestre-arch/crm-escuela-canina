@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useFilters } from '../context/FilterContext'
+import { useDialog } from '../context/DialogContext'
 import { CheckCircle, MessageCircle, ArrowLeft } from 'lucide-react'
 import { Modal } from '../components/Modal'
 import { Calendar as BigCalendar, dateFnsLocalizer, View } from 'react-big-calendar'
@@ -23,6 +24,7 @@ const localizer = dateFnsLocalizer({
 })
 
 export function AgendaView({ onBack }: { onBack?: () => void }) {
+    const { showAlert, showConfirm } = useDialog()
     const navigate = useNavigate()
     const [events, setEvents] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -174,7 +176,7 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
         if (!selectedEvent || selectedEvent.type !== 'session') return
         if (selectedEvent.completed) return
 
-        if (!confirm('¿Marcar esta sesión como completada?')) return
+        if (!await showConfirm('¿Marcar esta sesión como completada?')) return
 
         try {
             const { error } = await supabase
@@ -187,9 +189,9 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
             // Re-fetch to update calendar
             fetchAgenda()
             setSelectedEvent(null)
-            alert('Sesión completada correctamente')
+            showAlert('Sesión completada correctamente')
         } catch (err: any) {
-            alert('Error: ' + err.message)
+            showAlert('Error: ' + err.message)
         }
     }
 

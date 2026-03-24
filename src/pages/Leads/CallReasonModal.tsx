@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../../components/Modal'
 import { supabase } from '../../lib/supabase'
+import { useDialog } from '../../context/DialogContext'
 
 interface CallReasonModalProps {
     isOpen: boolean
@@ -9,6 +10,7 @@ interface CallReasonModalProps {
 }
 
 export function CallReasonModal({ isOpen, onClose, onSuccess }: CallReasonModalProps) {
+    const { showAlert } = useDialog()
     const [reasonName, setReasonName] = useState('')
     const [saving, setSaving] = useState(false)
 
@@ -27,10 +29,10 @@ export function CallReasonModal({ isOpen, onClose, onSuccess }: CallReasonModalP
             setReasonName('')
             onSuccess()
             onClose()
-            alert('Motivo añadido correctamente')
+            showAlert('Motivo añadido correctamente')
         } catch (error: any) {
             console.error('Error adding reason:', error)
-            alert('Error al añadir motivo: ' + error.message)
+            showAlert('Error al añadir motivo: ' + error.message)
         } finally {
             setSaving(false)
         }

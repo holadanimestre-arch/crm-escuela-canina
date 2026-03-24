@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { CheckCircle2, Eye, AlertCircle } from 'lucide-react'
 import { Modal } from '../../components/Modal'
+import { useDialog } from '../../context/DialogContext'
 
 type BillingConcept = {
     id: string
@@ -30,6 +31,7 @@ type TrainerSummary = {
 }
 
 export function PagoAdiestradores() {
+    const { showAlert, showConfirm } = useDialog()
     const [loading, setLoading] = useState(true)
     const [trainers, setTrainers] = useState<TrainerSummary[]>([])
     const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -207,7 +209,7 @@ export function PagoAdiestradores() {
     }
 
     async function handleMarkAsPaid(trainer: TrainerSummary) {
-        if (!confirm(`¿Estás seguro de marcar como PAGADO a ${trainer.trainerName} por ${formatCurrency(trainer.total)}?`)) return
+        if (!await showConfirm(`¿Estás seguro de marcar como PAGADO a ${trainer.trainerName} por ${formatCurrency(trainer.total)}?`)) return
 
         setSaving(true)
         try {
@@ -261,7 +263,7 @@ export function PagoAdiestradores() {
             fetchAdminBillingData()
 
         } catch (error: any) {
-            alert('Error al liquidar: ' + error.message)
+            showAlert('Error al liquidar: ' + error.message)
         } finally {
             setSaving(false)
         }

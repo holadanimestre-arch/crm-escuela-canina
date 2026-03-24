@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
+import { useDialog } from '../../context/DialogContext'
 import { EVALUATION_CATEGORIES, SCORE_LABELS } from './evaluationConfig'
 import { ChevronLeft, CheckCircle } from 'lucide-react'
 
@@ -15,6 +16,7 @@ interface ScoreData {
 }
 
 export function EvaluationForm() {
+    const { showAlert } = useDialog()
     const { clientId } = useParams<{ clientId: string }>()
     const navigate = useNavigate()
     const { profile } = useAuth()
@@ -127,7 +129,7 @@ export function EvaluationForm() {
             navigate('/evaluaciones')
         } catch (error) {
             console.error('Error saving evaluation:', error)
-            alert('Error al guardar la evaluación')
+            showAlert('Error al guardar la evaluación')
         } finally {
             setSaving(false)
         }

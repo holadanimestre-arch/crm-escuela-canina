@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { Plus, Calendar, CheckCircle } from 'lucide-react'
 import { SessionModal } from './Sesiones/SessionModal'
 import { useFilters } from '../context/FilterContext'
+import { useDialog } from '../context/DialogContext'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -24,6 +25,7 @@ interface Session {
 }
 
 export function Sesiones() {
+    const { showConfirm } = useDialog()
     const [activeClients, setActiveClients] = useState<ActiveClient[]>([])
     const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([])
     const [loading, setLoading] = useState(true)
@@ -95,7 +97,7 @@ export function Sesiones() {
     }
 
     const handleSessionCompleted = async (session: Session) => {
-        if (!confirm('¿Marcar sesión como completada?')) return
+        if (!await showConfirm('¿Marcar sesión como completada?')) return
 
         try {
             await supabase

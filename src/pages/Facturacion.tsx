@@ -3,8 +3,10 @@ import { supabase } from '../lib/supabase'
 import { FileText, Download, Calendar, Search } from 'lucide-react'
 import { generateInvoicePDF } from '../utils/invoiceGenerator'
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
+import { useDialog } from '../context/DialogContext'
 
 export function Facturacion() {
+    const { showAlert } = useDialog()
     const [clients, setClients] = useState<any[]>([])
     const [invoices, setInvoices] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -202,7 +204,7 @@ export function Facturacion() {
 
         } catch (error: any) {
             console.error('[FC] CATCH error:', error)
-            alert('Error al procesar el pago: ' + error.message)
+            showAlert('Error al procesar el pago: ' + error.message)
             fetchData()
         } finally {
             setProcessingPayment(null)
@@ -217,9 +219,9 @@ export function Facturacion() {
                 body: emailModal
             })
             if (error) throw error
-            alert(`Factura enviada correctamente a ${emailModal.clientEmail}`)
+            showAlert(`Factura enviada correctamente a ${emailModal.clientEmail}`)
         } catch (err: any) {
-            alert('Error al enviar el email: ' + (err.message || 'Error desconocido'))
+            showAlert('Error al enviar el email: ' + (err.message || 'Error desconocido'))
         } finally {
             setSendingEmail(false)
             setEmailModal(null)
@@ -236,7 +238,7 @@ export function Facturacion() {
         // Open window immediately to avoid popup blocker
         const win = window.open('', '_blank')
         if (!win) {
-            alert('Por favor, permite las ventanas emergentes para ver la factura.')
+            showAlert('Por favor, permite las ventanas emergentes para ver la factura.')
             return
         }
         win.document.write('Cargando factura...')
@@ -268,7 +270,7 @@ export function Facturacion() {
                 win.location.href = data.signedUrl
             } else {
                 win.close()
-                alert('No se pudo generar el enlace de la factura.')
+                showAlert('No se pudo generar el enlace de la factura.')
             }
         } catch (err) {
             console.error('Error viewing invoice:', err)
@@ -305,7 +307,7 @@ export function Facturacion() {
             }
         } catch (err) {
             console.error('Error downloading batch:', err)
-            alert('Error al descargar las facturas.')
+            showAlert('Error al descargar las facturas.')
         } finally {
             setDownloading(false)
         }

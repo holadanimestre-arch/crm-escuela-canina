@@ -5,6 +5,7 @@ import { Database } from '../types/database.types'
 import { generateInvoicePDF } from '../utils/invoiceGenerator'
 import { ArrowLeft, Mail, Phone, MapPin, Dog, ClipboardCheck, CalendarClock, CheckCircle2, Clock, Circle, FileText } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useDialog } from '../context/DialogContext'
 
 type Client = Database['public']['Tables']['clients']['Row'] & {
     cities: { name: string } | null
@@ -13,6 +14,7 @@ type Evaluation = Database['public']['Tables']['evaluations']['Row']
 type Session = Database['public']['Tables']['sessions']['Row']
 
 export function ClientDetail() {
+    const { showAlert, showConfirm } = useDialog()
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const { profile } = useAuth()
@@ -216,7 +218,7 @@ export function ClientDetail() {
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem', borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
                             <button
                                 onClick={async () => {
-                                    if (!window.confirm('¿Estás seguro de que quieres eliminar este cliente? Esta acción no se puede deshacer.')) return
+                                    if (!await showConfirm('¿Estás seguro de que quieres eliminar este cliente? Esta acción no se puede deshacer.')) return
                                     try {
                                         // Delete associated lead too
                                         if (client.lead_id) {
@@ -226,7 +228,7 @@ export function ClientDetail() {
                                         if (error) throw error
                                         navigate('/clientes')
                                     } catch (err: any) {
-                                        alert('Error al eliminar: ' + err.message)
+                                        showAlert('Error al eliminar: ' + err.message)
                                     }
                                 }}
                                 style={{
@@ -573,7 +575,7 @@ export function ClientDetail() {
                                             <button
                                                 onClick={async (e) => {
                                                     if (!newPayment.amount || parseFloat(newPayment.amount) <= 0) {
-                                                        alert('Introduce un importe válido')
+                                                        showAlert('Introduce un importe válido')
                                                         return
                                                     }
                                                     const btn = e.currentTarget as HTMLButtonElement
@@ -644,7 +646,7 @@ export function ClientDetail() {
                                                         fetchPayments(client.id)
                                                     } catch (err: any) {
                                                         console.error('Payment error:', err)
-                                                        alert('Error al registrar pago: ' + (err.message || 'Error desconocido'))
+                                                        showAlert('Error al registrar pago: ' + (err.message || 'Error desconocido'))
                                                     } finally {
                                                         if (btn) btn.disabled = false
                                                     }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { useFilters } from '../../context/FilterContext'
+import { useDialog } from '../../context/DialogContext'
 import { Phone, ClipboardCheck, CalendarClock, ArrowLeft, Search, MapPin, User, Edit, Calendar, Clock } from 'lucide-react'
 import { Modal } from '../../components/Modal'
 
@@ -168,6 +169,7 @@ function DashboardButton({ icon: Icon, title, count, onClick, color }: any) {
 
 // ─── 1. LLAMADAS PENDIENTES ─────────────────────────────────────────
 function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
+    const { showAlert } = useDialog()
     const { profile } = useAuth()
     const { cityId } = useFilters()
     const [clients, setClients] = useState<any[]>([])
@@ -234,7 +236,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
             closeModals()
             fetchClients()
         } catch (err: any) {
-            alert(err.message)
+            showAlert(err.message)
         } finally {
             setSaving(false)
         }
@@ -253,7 +255,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
             closeModals()
             fetchClients()
         } catch (err: any) {
-            alert(err.message)
+            showAlert(err.message)
         } finally {
             setSavingNoContesta(false)
         }
@@ -419,6 +421,7 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
 
 // ─── 2. RESULTADO EVALUACIÓN ────────────────────────────────────────
 function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
+    const { showAlert } = useDialog()
     const { profile } = useAuth()
     const { cityId } = useFilters()
     const [evaluations, setEvaluations] = useState<any[]>([])
@@ -512,7 +515,7 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
             closeModals()
             fetchEvaluations()
         } catch (err: any) {
-            alert(err.message)
+            showAlert(err.message)
         } finally {
             setSaving(false)
         }
@@ -621,6 +624,7 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
 
 // ─── 3. AGENDAR SIGUIENTE SESIÓN ────────────────────────────────────
 function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
+    const { showAlert } = useDialog()
     const { profile } = useAuth()
     const { cityId } = useFilters()
     const [clients, setClients] = useState<any[]>([])
@@ -678,7 +682,7 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
             setSchedulingClient(null)
             fetchClients()
         } catch (err: any) {
-            alert(err.message)
+            showAlert(err.message)
         } finally {
             setSaving(false)
         }
@@ -750,6 +754,7 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
 
 // ─── 4. MODIFICAR FECHA SESIÓN ──────────────────────────────────────
 function ModificarSesion({ onBack, syncGoogleCalendar }: any) {
+    const { showAlert } = useDialog()
     const { profile } = useAuth()
     const { cityId } = useFilters()
     const [clients, setClients] = useState<any[]>([])
@@ -788,7 +793,7 @@ function ModificarSesion({ onBack, syncGoogleCalendar }: any) {
             setModifyingSession(null)
             fetchSessions()
         } catch (err: any) {
-            alert(err.message)
+            showAlert(err.message)
         } finally {
             setSaving(false)
         }

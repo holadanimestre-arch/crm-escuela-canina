@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { Database } from '../types/database.types'
 import { useFilters } from '../context/FilterContext'
 import { useAuth } from '../hooks/useAuth'
+import { useDialog } from '../context/DialogContext'
 import { Modal } from '../components/Modal'
 import { DogBreedModal } from './Leads/DogBreedModal'
 import { CallReasonModal } from './Leads/CallReasonModal'
@@ -22,6 +23,7 @@ type DogBreed = Database['public']['Tables']['dog_breeds']['Row']
 type CallReason = Database['public']['Tables']['call_reasons']['Row']
 
 export function Clients() {
+    const { showAlert } = useDialog()
     const navigate = useNavigate()
     const { profile } = useAuth()
     const { cityId } = useFilters()
@@ -118,10 +120,10 @@ export function Clients() {
                 dog_breed: '', dog_age: '', call_reason: '', observations: '', converted_by: ''
             })
             fetchClients()
-            alert('Cliente creado con éxito')
+            showAlert('Cliente creado con éxito')
         } catch (error: any) {
             console.error('Error creating client:', error)
-            alert('Error al crear el cliente: ' + error.message)
+            showAlert('Error al crear el cliente: ' + error.message)
         } finally {
             setSubmitting(false)
         }

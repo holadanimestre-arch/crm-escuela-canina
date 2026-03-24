@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useDialog } from '../context/DialogContext'
 import { Database } from '../types/database.types'
 import { Modal } from '../components/Modal'
 import { useAuth } from '../hooks/useAuth'
@@ -16,6 +17,7 @@ type DogBreed = Database['public']['Tables']['dog_breeds']['Row']
 type CallReason = Database['public']['Tables']['call_reasons']['Row']
 
 export function Leads() {
+    const { showAlert } = useDialog()
     const { profile } = useAuth()
     const [leads, setLeads] = useState<Lead[]>([])
     const [cities, setCities] = useState<City[]>([])
@@ -183,10 +185,10 @@ export function Leads() {
 
             setIsConvertModalOpen(false)
             fetchLeads()
-            alert('Lead convertido a cliente con éxito')
+            showAlert('Lead convertido a cliente con éxito')
         } catch (error: any) {
             console.error('Error converting lead:', error)
-            alert('Error al convertir lead: ' + error.message)
+            showAlert('Error al convertir lead: ' + error.message)
         } finally {
             setSubmitting(false)
         }
@@ -205,7 +207,7 @@ export function Leads() {
             setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l))
         } catch (error) {
             console.error('Error updating status:', error)
-            alert('Error al actualizar estado')
+            showAlert('Error al actualizar estado')
             fetchLeads() // Revert on error
         }
     }
@@ -230,7 +232,7 @@ export function Leads() {
             fetchLeads() // Refresh list
         } catch (error) {
             console.error('Error creating lead:', error)
-            alert('Error al crear el lead')
+            showAlert('Error al crear el lead')
         } finally {
             setSubmitting(false)
         }

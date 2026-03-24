@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../../components/Modal'
 import { supabase } from '../../lib/supabase'
+import { useDialog } from '../../context/DialogContext'
 
 interface DogBreedModalProps {
     isOpen: boolean
@@ -9,6 +10,7 @@ interface DogBreedModalProps {
 }
 
 export function DogBreedModal({ isOpen, onClose, onSuccess }: DogBreedModalProps) {
+    const { showAlert } = useDialog()
     const [breedName, setBreedName] = useState('')
     const [saving, setSaving] = useState(false)
 
@@ -27,10 +29,10 @@ export function DogBreedModal({ isOpen, onClose, onSuccess }: DogBreedModalProps
             setBreedName('')
             onSuccess()
             onClose()
-            alert('Raza añadida correctamente')
+            showAlert('Raza añadida correctamente')
         } catch (error: any) {
             console.error('Error adding breed:', error)
-            alert('Error al añadir raza: ' + error.message)
+            showAlert('Error al añadir raza: ' + error.message)
         } finally {
             setSaving(false)
         }

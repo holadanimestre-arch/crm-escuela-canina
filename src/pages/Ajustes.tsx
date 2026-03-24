@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { MapPin, Plus, Trash2, Settings as SettingsIcon, Building2, CreditCard, FileText, Bell, Share2, Save, Image as ImageIcon, Upload } from 'lucide-react'
+import { useDialog } from '../context/DialogContext'
 
 export function Ajustes() {
+    const { showAlert, showConfirm } = useDialog()
     const [activeTab, setActiveTab] = useState<'general' | 'ciudades' | 'notificaciones' | 'integraciones' | 'comerciales' | 'whatsapp'>('general')
     const [comerciales, setComerciales] = useState<any[]>([])
     const [cities, setCities] = useState<any[]>([])
@@ -71,10 +73,10 @@ export function Ajustes() {
                 })
 
             if (error) throw error
-            alert('Configuración guardada correctamente.')
+            showAlert('Configuración guardada correctamente.')
         } catch (error: any) {
             console.error('Error saving settings:', error)
-            alert('Error al guardar: ' + error.message)
+            showAlert('Error al guardar: ' + error.message)
         } finally {
             setSaving(false)
         }
@@ -94,7 +96,7 @@ export function Ajustes() {
             setNewCityName('')
             fetchInitialData()
         } catch (error: any) {
-            alert('Error al añadir ciudad: ' + error.message)
+            showAlert('Error al añadir ciudad: ' + error.message)
         }
     }
 
@@ -118,7 +120,7 @@ export function Ajustes() {
             setCityToDelete(null)
             fetchInitialData()
         } catch (error: any) {
-            alert(error.message)
+            showAlert(error.message)
             setCityToDelete(null)
         }
     }
@@ -133,9 +135,9 @@ export function Ajustes() {
             if (error) throw error
 
             setComerciales(prev => prev.map(c => c.id === userId ? { ...c, avatar_url: avatarUrl } : c))
-            alert(avatarUrl ? 'Foto actualizada correctamente' : 'Foto eliminada correctamente')
+            showAlert(avatarUrl ? 'Foto actualizada correctamente' : 'Foto eliminada correctamente')
         } catch (error: any) {
-            alert('Error al actualizar foto: ' + error.message)
+            showAlert('Error al actualizar foto: ' + error.message)
         }
     }
 
@@ -171,7 +173,7 @@ export function Ajustes() {
             await handleUpdateAvatar(userId, publicUrl)
         } catch (error: any) {
             console.error('Error uploading:', error)
-            alert('Error al subir imagen: ' + error.message)
+            showAlert('Error al subir imagen: ' + error.message)
         } finally {
             setSaving(false)
         }
@@ -623,8 +625,8 @@ export function Ajustes() {
 
                                             {comercial.avatar_url && (
                                                 <button
-                                                    onClick={() => {
-                                                        if (confirm('¿Estás seguro de que quieres eliminar la foto?')) {
+                                                    onClick={async () => {
+                                                        if (await showConfirm('¿Estás seguro de que quieres eliminar la foto?')) {
                                                             handleUpdateAvatar(comercial.id, '')
                                                         }
                                                     }}

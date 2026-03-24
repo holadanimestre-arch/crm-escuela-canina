@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal } from '../../components/Modal'
 import { Database } from '../../types/database.types'
 import { supabase } from '../../lib/supabase'
+import { useDialog } from '../../context/DialogContext'
 
 type Lead = Database['public']['Tables']['leads']['Row']
 
@@ -13,6 +14,7 @@ interface LeadDetailModalProps {
 }
 
 export function LeadDetailModal({ lead, isOpen, onClose, onUpdate }: LeadDetailModalProps) {
+    const { showAlert } = useDialog()
     const [formData, setFormData] = useState<Partial<Lead>>({})
     const [sendWA, setSendWA] = useState(false) // Nueva variable dedicada
     const [saving, setSaving] = useState(false)
@@ -55,9 +57,9 @@ export function LeadDetailModal({ lead, isOpen, onClose, onUpdate }: LeadDetailM
                 })
 
                 if (fnError) {
-                    alert('Error en el servicio de WhatsApp: ' + fnError.message)
+                    showAlert('Error en el servicio de WhatsApp: ' + fnError.message)
                 } else if (fnData?.error) {
-                    alert('Nota de Wazend: ' + fnData.error)
+                    showAlert('Nota de Wazend: ' + fnData.error)
                 }
             }
 
@@ -65,7 +67,7 @@ export function LeadDetailModal({ lead, isOpen, onClose, onUpdate }: LeadDetailM
             onClose()
         } catch (error: any) {
             console.error('Error updating lead:', error)
-            alert('Error al guardar los cambios. Por favor, revisa tu conexión.');
+            showAlert('Error al guardar los cambios. Por favor, revisa tu conexión.');
         } finally {
             setSaving(false)
         }
