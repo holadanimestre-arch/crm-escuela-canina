@@ -218,9 +218,9 @@ export function ClientDetail() {
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem', borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
                             <button
                                 onClick={async () => {
-                                    if (!await showConfirm('¿Estás seguro de que quieres eliminar este cliente? Esta acción no se puede deshacer.')) return
+                                    if (!await showConfirm('¿Estás seguro de que quieres eliminar este cliente?\n\nSe eliminarán también todas sus sesiones, evaluaciones, pagos y facturas. Esta acción no se puede deshacer.')) return
                                     try {
-                                        // Delete associated lead too
+                                        // Cascade delete handles sessions, evaluations, payments and invoices automatically
                                         if (client.lead_id) {
                                             await supabase.from('leads').delete().eq('id', client.lead_id)
                                         }
