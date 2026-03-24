@@ -25,7 +25,7 @@ interface Session {
 }
 
 export function Sesiones() {
-    const { showConfirm } = useDialog()
+    const { showAlert, showConfirm } = useDialog()
     const [activeClients, setActiveClients] = useState<ActiveClient[]>([])
     const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([])
     const [loading, setLoading] = useState(true)
@@ -114,8 +114,8 @@ export function Sesiones() {
             }
 
             fetchData()
-        } catch (error) {
-            console.error('Error updating session:', error)
+        } catch (error: any) {
+            showAlert('Error al actualizar la sesión: ' + (error.message || 'Error desconocido'))
         }
     }
 

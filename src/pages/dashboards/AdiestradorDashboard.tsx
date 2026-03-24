@@ -778,7 +778,7 @@ function ModificarSesion({ onBack, syncGoogleCalendar }: any) {
         }
 
         const { data, error } = await query
-        if (error) console.error("Error fetching sessions:", error)
+        if (error) showAlert('Error al cargar las sesiones: ' + error.message)
         setClients(data || [])
         setLoading(false)
     }
