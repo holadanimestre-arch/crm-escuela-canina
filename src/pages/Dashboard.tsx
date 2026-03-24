@@ -8,11 +8,6 @@ export function Dashboard() {
 
     if (!profile) return <div>Cargando perfil...</div>
 
-    // Dispatch based on role (Lupe sees AdminDashboard)
-    if (profile.email === 'lupe@escuelacaninafranestevez.es') {
-        return <AdminDashboard />
-    }
-
     switch (profile.role) {
         case 'admin':
             return <AdminDashboard />
