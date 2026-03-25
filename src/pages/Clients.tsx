@@ -78,6 +78,15 @@ export function Clients() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
+
+        if (formData.email) {
+            const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!EMAIL_REGEX.test(formData.email)) {
+                showAlert('Por favor, introduce un correo electrónico válido.');
+                return;
+            }
+        }
+
         setSubmitting(true)
         try {
             // Find if there is an adiestrador assigned to this city
@@ -169,8 +178,11 @@ export function Clients() {
             const enriched: ClientWithExtras[] = clientsData.map(client => {
                 const eval_ = evaluations?.find(e => e.client_id === client.id) || null
                 const clientSessions = sessions?.filter(s => s.client_id === client.id) || []
-                const maxSession = clientSessions.length > 0
-                    ? Math.max(...clientSessions.map(s => s.session_number))
+                const sessionNumbers = clientSessions
+                    .map(s => s.session_number)
+                    .filter((n): n is number => n != null)
+                const maxSession = sessionNumbers.length > 0
+                    ? Math.max(...sessionNumbers)
                     : 0
                 return { ...client, evaluation: eval_, currentSession: maxSession }
             })

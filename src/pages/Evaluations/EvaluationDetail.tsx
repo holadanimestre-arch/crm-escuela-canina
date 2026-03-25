@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { EVALUATION_CATEGORIES, SCORE_LABELS } from './evaluationConfig'
 import { ChevronLeft, CheckCircle, XCircle, User, Calendar, MapPin } from 'lucide-react'
+import { useAuth } from '../../hooks/useAuth'
+import { useDialog } from '../../context/DialogContext'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -16,6 +18,7 @@ interface EvaluationData {
         name: string
         dog_breed: string | null
         phone: string | null
+        city_id?: string
     } | null
     cities: {
         name: string
@@ -36,6 +39,8 @@ interface EvaluationResultItem {
 export function EvaluationDetail() {
     const { evaluationId } = useParams<{ evaluationId: string }>()
     const navigate = useNavigate()
+    const { profile } = useAuth()
+    const { showAlert } = useDialog()
 
     const [evaluation, setEvaluation] = useState<EvaluationData | null>(null)
     const [results, setResults] = useState<EvaluationResultItem[]>([])
@@ -47,22 +52,35 @@ export function EvaluationDetail() {
             if (!evaluationId) return
 
             // Fetch evaluation with related data
-            const { data: evalData } = await supabase
+            const { data: evalData, error } = await supabase
                 .from('evaluations')
                 .select(`
                     id, result, comments, created_at,
-                    clients(id, name, dog_breed, phone),
+                    clients(id, name, dog_breed, phone, city_id),
                     cities(name),
                     profiles:adiestrador_id(full_name)
                 `)
                 .eq('id', evaluationId)
                 .single()
 
+            if (error) {
+                navigate('/')
+                return
+            }
+
             if (evalData) {
+                const clientData = Array.isArray(evalData.clients) ? evalData.clients[0] : evalData.clients;
+                
+                if (profile?.role === 'adiestrador' && clientData && clientData.city_id !== profile.assigned_city_id) {
+                    showAlert('No tienes permiso para ver esta evaluación.')
+                    navigate('/')
+                    return
+                }
+
                 // Transform the data to match EvaluationData interface (handling arrays from Supabase relations)
                 const transformedData: EvaluationData = {
                     ...evalData,
-                    clients: Array.isArray(evalData.clients) ? evalData.clients[0] : evalData.clients,
+                    clients: clientData,
                     cities: Array.isArray(evalData.cities) ? evalData.cities[0] : evalData.cities,
                     profiles: Array.isArray(evalData.profiles) ? evalData.profiles[0] : evalData.profiles,
                 } as unknown as EvaluationData

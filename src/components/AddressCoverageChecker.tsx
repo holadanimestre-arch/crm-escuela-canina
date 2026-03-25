@@ -21,7 +21,7 @@ interface AddressCoverageCheckerProps {
 }
 
 export function AddressCoverageChecker({ cityId, initialAddress = '', onAddressSelect }: AddressCoverageCheckerProps) {
-    const { loadError } = useJsApiLoader({
+    const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
         libraries
@@ -32,6 +32,7 @@ export function AddressCoverageChecker({ cityId, initialAddress = '', onAddressS
     const [evalMessage, setEvalMessage] = useState('');
 
     const {
+        ready,
         value,
         suggestions: { status, data },
         setValue,
@@ -41,6 +42,7 @@ export function AddressCoverageChecker({ cityId, initialAddress = '', onAddressS
             // Optional: specify country or bounds
         },
         debounce: 300,
+        initOnMount: isLoaded,
     });
 
     useEffect(() => {
@@ -179,9 +181,9 @@ export function AddressCoverageChecker({ cityId, initialAddress = '', onAddressS
                             onAddressSelect(e.target.value, null, null, null);
                         }
                     }}
-                    disabled={false}
-                    placeholder="Empieza a escribir la dirección..."
-                    style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', outline: 'none' }}
+                    disabled={!ready}
+                    placeholder={ready ? "Empieza a escribir la dirección..." : "Cargando Google Maps..."}
+                    style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', outline: 'none', backgroundColor: !ready ? '#f3f4f6' : 'white' }}
                 />
                 {status === "OK" && (
                     <ul style={{ position: 'absolute', zIndex: 50, background: 'white', width: '100%', listStyle: 'none', margin: '0.25rem 0 0 0', padding: 0, border: '1px solid #e5e7eb', borderRadius: '0.5rem', maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>

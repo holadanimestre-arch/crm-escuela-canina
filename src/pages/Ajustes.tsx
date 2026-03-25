@@ -47,7 +47,7 @@ export function Ajustes() {
             const { data } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('role', 'comercial')
+                .in('role', ['comercial', 'admin'])
                 .order('full_name')
             if (data) setComerciales(data)
         } else {
@@ -85,6 +85,7 @@ export function Ajustes() {
     const handleAddCity = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!newCityName.trim()) return
+        setSaving(true)
 
         try {
             const { error } = await supabase
@@ -94,14 +95,17 @@ export function Ajustes() {
             if (error) throw error
 
             setNewCityName('')
-            fetchInitialData()
+            await fetchInitialData()
         } catch (error: any) {
             showAlert('Error al añadir ciudad: ' + error.message)
+        } finally {
+            setSaving(false)
         }
     }
 
     const handleDeleteCity = async () => {
         if (!cityToDelete) return
+        setSaving(true)
 
         try {
             // We soft delete by setting active = false, OR hard delete if no clients are attached.
@@ -118,14 +122,17 @@ export function Ajustes() {
             }
 
             setCityToDelete(null)
-            fetchInitialData()
+            await fetchInitialData()
         } catch (error: any) {
             showAlert(error.message)
             setCityToDelete(null)
+        } finally {
+            setSaving(false)
         }
     }
 
     const handleUpdateAvatar = async (userId: string, avatarUrl: string) => {
+        setSaving(true)
         try {
             const { error } = await supabase
                 .from('profiles')
@@ -138,6 +145,8 @@ export function Ajustes() {
             showAlert(avatarUrl ? 'Foto actualizada correctamente' : 'Foto eliminada correctamente')
         } catch (error: any) {
             showAlert('Error al actualizar foto: ' + error.message)
+        } finally {
+            setSaving(false)
         }
     }
 
@@ -522,14 +531,15 @@ export function Ajustes() {
                             />
                             <button
                                 type="submit"
+                                disabled={saving}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '0.5rem',
                                     padding: '0.625rem 1.25rem', backgroundColor: '#000', color: 'white',
-                                    borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 500
+                                    borderRadius: '0.5rem', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 500
                                 }}
                             >
                                 <Plus size={18} />
-                                Añadir
+                                {saving ? 'Añadiendo...' : 'Añadir'}
                             </button>
                         </form>
                     </div>
@@ -627,18 +637,19 @@ export function Ajustes() {
                                                 <button
                                                     onClick={async () => {
                                                         if (await showConfirm('¿Estás seguro de que quieres eliminar la foto?')) {
-                                                            handleUpdateAvatar(comercial.id, '')
+                                                            await handleUpdateAvatar(comercial.id, '')
                                                         }
                                                     }}
+                                                    disabled={saving}
                                                     style={{
                                                         display: 'flex', alignItems: 'center', gap: '0.25rem',
                                                         padding: '0.5rem 0.75rem', backgroundColor: '#fee2e2', color: '#dc2626',
-                                                        borderRadius: '0.375rem', border: '1px solid #fecaca', cursor: 'pointer',
+                                                        borderRadius: '0.375rem', border: '1px solid #fecaca', cursor: saving ? 'not-allowed' : 'pointer',
                                                         fontSize: '0.875rem', fontWeight: 500
                                                     }}
                                                 >
                                                     <Trash2 size={16} />
-                                                    Eliminar
+                                                    {saving ? 'Eliminando...' : 'Eliminar'}
                                                 </button>
                                             )}
                                         </div>
@@ -735,9 +746,10 @@ export function Ajustes() {
                             </button>
                             <button
                                 onClick={handleDeleteCity}
-                                style={{ flex: 1, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', backgroundColor: '#ef4444', color: 'white', cursor: 'pointer', fontWeight: 600 }}
+                                disabled={saving}
+                                style={{ flex: 1, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', backgroundColor: '#ef4444', color: 'white', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 600 }}
                             >
-                                Eliminar
+                                {saving ? 'Eliminando...' : 'Eliminar'}
                             </button>
                         </div>
                     </div>

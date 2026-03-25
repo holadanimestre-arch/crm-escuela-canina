@@ -29,7 +29,7 @@ export function ComercialesPanel() {
             try {
                 // Fetch independently so if one table doesn't exist (like evaluations), it doesn't break the rest
                 const [usersRes, leadsRes, clientsRes, evalsRes, paymentsRes] = await Promise.allSettled([
-                    supabase.from('profiles').select('*').eq('role', 'comercial'),
+                    supabase.from('profiles').select('*').in('role', ['comercial', 'admin']),
                     supabase.from('leads').select('*'),
                     supabase.from('clients').select('*'),
                     supabase.from('evaluations').select('*'),

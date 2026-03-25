@@ -70,6 +70,13 @@ export function Usuarios() {
 
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!EMAIL_REGEX.test(email)) {
+            showAlert('Por favor, introduce un correo electrónico válido.');
+            return;
+        }
+
         setSubmitting(true)
 
         try {
@@ -84,6 +91,7 @@ export function Usuarios() {
                 email,
                 password,
                 options: {
+                    emailRedirectTo: `${window.location.origin}/login`,
                     data: {
                         full_name: fullName,
                     }

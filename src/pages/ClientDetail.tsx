@@ -14,7 +14,7 @@ type Evaluation = Database['public']['Tables']['evaluations']['Row']
 type Session = Database['public']['Tables']['sessions']['Row']
 
 export function ClientDetail() {
-    const { showAlert, showConfirm } = useDialog()
+    const { showAlert, showConfirm, showPrompt } = useDialog()
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const { profile } = useAuth()
@@ -25,6 +25,7 @@ export function ClientDetail() {
     const [showPaymentForm, setShowPaymentForm] = useState(false)
     const [newPayment, setNewPayment] = useState({ amount: '', method: 'transferencia', notes: '' })
     const [loading, setLoading] = useState(true)
+    const [isDeleting, setIsDeleting] = useState(false)
     const [settings, setSettings] = useState<any>(null)
     const [activeTab, setActiveTab] = useState<'info' | 'evaluations' | 'sessions' | 'payments'>('info')
 
@@ -52,9 +53,18 @@ export function ClientDetail() {
                 .single()
 
             if (error) throw error
+
+            if (profile?.role === 'adiestrador' && data.city_id !== profile.assigned_city_id) {
+                showAlert('No tienes permiso para ver este cliente.')
+                navigate('/')
+                return
+            }
+
             setClient(data as unknown as Client)
         } catch (error) {
             console.error('Error fetching client:', error)
+            // Redirect to home if fetch fails or trying to access invalid UUID
+            navigate('/')
         } finally {
             setLoading(false)
         }
@@ -217,10 +227,19 @@ export function ClientDetail() {
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem', borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
                             <button
+                                disabled={isDeleting}
                                 onClick={async () => {
-                                    if (!await showConfirm('¿Estás seguro de que quieres eliminar este cliente?\n\nSe eliminarán sus sesiones, evaluaciones y pagos. Las facturas se conservarán. Esta acción no se puede deshacer.')) return
+                                    if (!await showConfirm('⚠️ ¿Estás seguro de que quieres eliminar este cliente?\n\nSe eliminarán sus sesiones, evaluaciones y pagos. Las facturas se conservarán. Esta acción no se puede deshacer.')) return
+
+                                    const typedName = await showPrompt(`Para confirmar, escribe el nombre del cliente: "${client.name}"`)
+                                    if (typedName === null) return // User cancelled
+                                    if (typedName.trim().toLowerCase() !== client.name.trim().toLowerCase()) {
+                                        showAlert('El nombre introducido no coincide. La eliminación ha sido cancelada.')
+                                        return
+                                    }
+
+                                    setIsDeleting(true)
                                     try {
-                                        // Cascade delete handles sessions, evaluations, payments and invoices automatically
                                         if (client.lead_id) {
                                             await supabase.from('leads').delete().eq('id', client.lead_id)
                                         }
@@ -229,6 +248,7 @@ export function ClientDetail() {
                                         navigate('/clientes')
                                     } catch (err: any) {
                                         showAlert('Error al eliminar: ' + err.message)
+                                        setIsDeleting(false)
                                     }
                                 }}
                                 style={{
@@ -239,10 +259,10 @@ export function ClientDetail() {
                                     borderRadius: '0.375rem',
                                     fontWeight: 600,
                                     fontSize: '0.875rem',
-                                    cursor: 'pointer'
+                                    cursor: isDeleting ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                Eliminar Cliente
+                                {isDeleting ? 'Eliminando...' : 'Eliminar Cliente'}
                             </button>
                         </div>
                     </div>

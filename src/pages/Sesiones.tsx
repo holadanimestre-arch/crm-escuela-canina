@@ -97,6 +97,31 @@ export function Sesiones() {
     }
 
     const handleSessionCompleted = async (session: Session) => {
+        // Validate that all previous sessions are completed
+        if (session.session_number > 1) {
+            const { data: previousSessions } = await supabase
+                .from('sessions')
+                .select('session_number, completed')
+                .eq('client_id', session.client_id)
+                .lt('session_number', session.session_number)
+                .order('session_number', { ascending: true })
+
+            if (previousSessions) {
+                // Check that sessions 1 through N-1 all exist
+                for (let i = 1; i < session.session_number; i++) {
+                    const prev = previousSessions.find(s => s.session_number === i)
+                    if (!prev) {
+                        showAlert(`No se puede completar la sesión ${session.session_number} porque la sesión ${i} no existe. Debes agendar las sesiones anteriores primero.`)
+                        return
+                    }
+                    if (!prev.completed) {
+                        showAlert(`No se puede completar la sesión ${session.session_number} porque la sesión ${i} aún no está completada.`)
+                        return
+                    }
+                }
+            }
+        }
+
         if (!await showConfirm('¿Marcar sesión como completada?')) return
 
         try {

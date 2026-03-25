@@ -125,8 +125,14 @@ export function Leads() {
         })
         // Pre-load adiestradores for the lead's city
         if (lead.city_id) {
-            const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').eq('assigned_city_id', lead.city_id)
-            setAdiestradores(data || [])
+            const { data, error } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').eq('assigned_city_id', lead.city_id)
+            if (error) {
+                console.error('Error cargando adiestradores:', error)
+                showAlert('Error al cargar los adiestradores: ' + error.message)
+                setAdiestradores([])
+            } else {
+                setAdiestradores(data || [])
+            }
         } else {
             setAdiestradores([])
         }
@@ -189,6 +195,19 @@ export function Leads() {
         } catch (error: any) {
             console.error('Error converting lead:', error)
             showAlert('Error al convertir lead: ' + error.message)
+            // Reset form state to avoid inconsistencies
+            setConvertData({
+                city_id: selectedLead.city_id || '',
+                dog_breed: '',
+                dog_age: '',
+                address: '',
+                location_lat: null,
+                location_lng: null,
+                call_reason: '',
+                observations: '',
+                converted_by: '',
+                adiestrador_id: ''
+            })
         } finally {
             setSubmitting(false)
         }
@@ -214,6 +233,15 @@ export function Leads() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
+
+        if (formData.email) {
+            const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!EMAIL_REGEX.test(formData.email)) {
+                showAlert('Por favor, introduce un correo electrónico válido.');
+                return;
+            }
+        }
+
         setSubmitting(true)
         try {
             const { error } = await supabase.from('leads').insert({
@@ -222,7 +250,8 @@ export function Leads() {
                 phone: formData.phone,
                 city_id: formData.city_id || null,
                 comercial_id: profile?.id, // Auto-assign current user
-                source: 'manual'
+                source: 'manual',
+                status: 'nuevo'
             })
 
             if (error) throw error
@@ -449,8 +478,14 @@ export function Leads() {
                                 const newCityId = e.target.value;
                                 setConvertData(prev => ({ ...prev, city_id: newCityId, adiestrador_id: '' }));
                                 if (newCityId) {
-                                    const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').eq('assigned_city_id', newCityId);
-                                    setAdiestradores(data || []);
+                                    const { data, error } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').eq('assigned_city_id', newCityId);
+                                    if (error) {
+                                        console.error('Error cargando adiestradores:', error);
+                                        showAlert('Error al cargar los adiestradores: ' + error.message);
+                                        setAdiestradores([]);
+                                    } else {
+                                        setAdiestradores(data || []);
+                                    }
                                 } else {
                                     setAdiestradores([]);
                                 }

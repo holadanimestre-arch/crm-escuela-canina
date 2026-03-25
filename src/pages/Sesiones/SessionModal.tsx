@@ -137,20 +137,25 @@ export function SessionModal({ isOpen, onClose, client, onSessionSaved }: Sessio
                             {[1, 2, 3, 4, 5, 6, 7, 8].map(num => {
                                 const exists = existingSessions.includes(num)
                                 const isSelected = sessionNumber === num
+                                // Only allow selecting session N if all sessions 1..N-1 exist
+                                const previousAllExist = Array.from({ length: num - 1 }, (_, i) => i + 1)
+                                    .every(n => existingSessions.includes(n))
+                                const isAvailable = !exists && previousAllExist
                                 return (
                                     <button
                                         key={num}
                                         type="button"
-                                        onClick={() => !exists && setSessionNumber(num)}
-                                        disabled={exists}
+                                        onClick={() => isAvailable && setSessionNumber(num)}
+                                        disabled={!isAvailable}
+                                        title={!isAvailable && !exists ? `Debes agendar primero las sesiones anteriores` : undefined}
                                         style={{
                                             width: '2.5rem', height: '2.5rem', borderRadius: '50%',
                                             border: isSelected ? '2px solid #000' : '1px solid #e5e7eb',
                                             backgroundColor: exists ? '#dcfce7' : isSelected ? '#000' : 'white',
                                             color: exists ? '#16a34a' : isSelected ? 'white' : '#374151',
                                             fontWeight: 600,
-                                            cursor: exists ? 'default' : 'pointer',
-                                            opacity: exists ? 0.8 : 1
+                                            cursor: isAvailable ? 'pointer' : 'default',
+                                            opacity: (!isAvailable && !exists) ? 0.4 : exists ? 0.8 : 1
                                         }}
                                     >
                                         {num}
@@ -159,7 +164,7 @@ export function SessionModal({ isOpen, onClose, client, onSessionSaved }: Sessio
                             })}
                         </div>
                         <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>
-                            Las sesiones en verde ya están agendadas.
+                            Las sesiones en verde ya están agendadas. Solo puedes agendar la siguiente sesión en orden.
                         </p>
                     </div>
 
