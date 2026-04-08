@@ -12,6 +12,7 @@ export default function AdiestradorDashboard() {
     const [activeView, setActiveView] = useState<'home' | 'llamadas' | 'resultado' | 'sesiones' | 'modificar'>('home')
     const { profile } = useAuth()
     const { cityId } = useFilters()
+    const { showAlert } = useDialog()
 
     // Scroll to top when view changes
     useEffect(() => {
@@ -30,11 +31,15 @@ export default function AdiestradorDashboard() {
         
         if (profile.role === 'admin' && cityId !== 'all') {
             llamadasQ = llamadasQ.eq('city_id', cityId)
-        } else if (profile.role !== 'admin' && profile.assigned_city_id) {
-            llamadasQ = llamadasQ.eq('city_id', profile.assigned_city_id)
+        } else if (profile.role !== 'admin' && cityId && cityId !== 'all') {
+            llamadasQ = llamadasQ.eq('city_id', cityId)
         }
 
-        const { data: llamadasData } = await llamadasQ
+        const { data: llamadasData, error: llamadasError } = await llamadasQ
+        if (llamadasError) {
+            showAlert('Error al cargar llamadas pendientes: ' + llamadasError.message)
+            return
+        }
         const llamadas = (llamadasData || []).filter(c => !c.evaluations || (c.evaluations as any).length === 0).length
 
         let resultadoQ = supabase.from('evaluations').select('*', { count: 'exact', head: true }).is('result', null)
@@ -45,13 +50,16 @@ export default function AdiestradorDashboard() {
             sesionesQ = sesionesQ.eq('city_id', cityId)
         } else if (profile.role !== 'admin') {
             resultadoQ = resultadoQ.eq('adiestrador_id', profile.id)
-            if (profile.assigned_city_id) {
-                sesionesQ = sesionesQ.eq('city_id', profile.assigned_city_id)
+            if (cityId && cityId !== 'all') {
+                sesionesQ = sesionesQ.eq('city_id', cityId)
             }
         }
 
-        const { count: resultado } = await resultadoQ
-        const { count: sesiones } = await sesionesQ
+        const { count: resultado, error: resultadoError } = await resultadoQ
+        if (resultadoError) showAlert('Error al cargar resultados: ' + resultadoError.message)
+
+        const { count: sesiones, error: sesionesError } = await sesionesQ
+        if (sesionesError) showAlert('Error al cargar sesiones: ' + sesionesError.message)
 
         setCounts({
             llamadas,
@@ -200,11 +208,16 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
 
         if (profile.role === 'admin' && cityId !== 'all') {
             query = query.eq('city_id', cityId)
-        } else if (profile.role !== 'admin' && profile.assigned_city_id) {
-            query = query.eq('city_id', profile.assigned_city_id)
+        } else if (profile.role !== 'admin' && cityId && cityId !== 'all') {
+            query = query.eq('city_id', cityId)
         }
 
-        const { data } = await query
+        const { data, error } = await query
+        if (error) {
+            showAlert('Error al cargar clientes: ' + error.message)
+            setLoading(false)
+            return
+        }
         // Filtramos: solo clientes que NO tienen records en evaluations (o todos sus records tienen resultado ya puesto, aunque aquí buscamos los que ni tienen cita)
         const finalClients = (data || []).filter(c => !c.evaluations || (c.evaluations as any).length === 0)
         
@@ -456,7 +469,12 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
             query = query.eq('adiestrador_id', profile.id)
         }
 
-        const { data } = await query
+        const { data, error } = await query
+        if (error) {
+            showAlert('Error al cargar evaluaciones: ' + error.message)
+            setLoading(false)
+            return
+        }
         setEvaluations(data || [])
         setLoading(false)
     }
@@ -648,7 +666,12 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
             query = query.eq('adiestrador_id', profile.id)
         }
 
-        const { data } = await query
+        const { data, error } = await query
+        if (error) {
+            showAlert('Error al cargar clientes: ' + error.message)
+            setLoading(false)
+            return
+        }
         
         const clientsWithSessions = (data || []).map(client => {
             const sessions = client.sessions || []

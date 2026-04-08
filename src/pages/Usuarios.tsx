@@ -19,7 +19,7 @@ export function Usuarios() {
     const [password, setPassword] = useState('')
     const [fullName, setFullName] = useState('')
     const [role, setRole] = useState<'admin' | 'comercial' | 'adiestrador'>('comercial')
-    const [assignedCityId, setAssignedCityId] = useState('')
+    const [assignedCityIds, setAssignedCityIds] = useState<string[]>([])
     const [submitting, setSubmitting] = useState(false)
     
     // Coverage Map States
@@ -37,10 +37,7 @@ export function Usuarios() {
         setLoading(true)
         const { data: profilesData } = await supabase
             .from('profiles')
-            .select(`
-                *,
-                cities:assigned_city_id(name)
-            `)
+            .select('*')
             .order('created_at', { ascending: false })
 
         const { data: citiesData } = await supabase
@@ -49,7 +46,24 @@ export function Usuarios() {
             .eq('active', true)
             .order('name')
 
-        if (profilesData) setProfiles(profilesData)
+        // Fetch all adiestrador-city assignments
+        const { data: adiestradorCities } = await supabase
+            .from('adiestrador_cities')
+            .select('profile_id, city_id, cities:city_id(name)')
+
+        // Attach city names to each profile
+        const enrichedProfiles = (profilesData || []).map(p => {
+            const cityAssignments = (adiestradorCities || []).filter(ac => ac.profile_id === p.id)
+            return {
+                ...p,
+                assigned_cities: cityAssignments.map(ac => ({
+                    id: ac.city_id,
+                    name: (ac.cities as any)?.name || 'Desconocida'
+                }))
+            }
+        })
+
+        setProfiles(enrichedProfiles)
         if (citiesData) setCities(citiesData)
         setLoading(false)
     }
@@ -59,7 +73,7 @@ export function Usuarios() {
         setPassword('')
         setFullName('')
         setRole('comercial')
-        setAssignedCityId('')
+        setAssignedCityIds([])
         setBaseAddress('')
         setBaseLat(null)
         setBaseLng(null)
@@ -125,7 +139,7 @@ export function Usuarios() {
                     email: email,
                     full_name: fullName,
                     role,
-                    assigned_city_id: role === 'adiestrador' ? assignedCityId : null,
+                    assigned_city_id: role === 'adiestrador' && assignedCityIds.length > 0 ? assignedCityIds[0] : null,
                     base_address: role === 'adiestrador' ? baseAddress : null,
                     base_lat: role === 'adiestrador' ? baseLat : null,
                     base_lng: role === 'adiestrador' ? baseLng : null,
@@ -133,6 +147,14 @@ export function Usuarios() {
                     coverage_polygon_yellow: role === 'adiestrador' ? polygonYellow : null
                 }, { onConflict: 'id' })
                 .select()
+
+            // Sync junction table for adiestrador cities
+            if (role === 'adiestrador' && assignedCityIds.length > 0 && authData.user) {
+                await supabase.from('adiestrador_cities').delete().eq('profile_id', authData.user.id)
+                await supabase.from('adiestrador_cities').insert(
+                    assignedCityIds.map(cId => ({ profile_id: authData.user!.id, city_id: cId }))
+                )
+            }
 
             if (profileError) throw profileError
             if (!profileData || profileData.length === 0) {
@@ -166,7 +188,7 @@ export function Usuarios() {
                 .from('profiles')
                 .update({
                     role,
-                    assigned_city_id: role === 'adiestrador' ? assignedCityId : null,
+                    assigned_city_id: role === 'adiestrador' && assignedCityIds.length > 0 ? assignedCityIds[0] : null,
                     full_name: fullName,
                     base_address: role === 'adiestrador' ? baseAddress : null,
                     base_lat: role === 'adiestrador' ? baseLat : null,
@@ -175,6 +197,14 @@ export function Usuarios() {
                     coverage_polygon_yellow: role === 'adiestrador' ? polygonYellow : null
                 })
                 .eq('id', editingUser.id)
+
+            // Sync junction table
+            await supabase.from('adiestrador_cities').delete().eq('profile_id', editingUser.id)
+            if (role === 'adiestrador' && assignedCityIds.length > 0) {
+                await supabase.from('adiestrador_cities').insert(
+                    assignedCityIds.map(cId => ({ profile_id: editingUser.id, city_id: cId }))
+                )
+            }
 
             if (error) throw error
 
@@ -238,7 +268,7 @@ export function Usuarios() {
         setEditingUser(user)
         setFullName(user.full_name || '')
         setRole(user.role)
-        setAssignedCityId(user.assigned_city_id || '')
+        setAssignedCityIds((user.assigned_cities || []).map((c: any) => c.id))
         setBaseAddress(user.base_address || '')
         setBaseLat(user.base_lat || null)
         setBaseLng(user.base_lng || null)
@@ -277,7 +307,7 @@ export function Usuarios() {
                         <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
                             <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Nombre y Email</th>
                             <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Rol</th>
-                            <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Ciudad Asignada</th>
+                            <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Ciudades Asignadas</th>
                             <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>F. Registro</th>
                             <th style={{ padding: '1rem', textAlign: 'right' }}>Acciones</th>
                         </tr>
@@ -305,9 +335,11 @@ export function Usuarios() {
                                 </td>
                                 <td style={{ padding: '1rem' }}>
                                     {p.role === 'adiestrador' ? (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#374151' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#374151', flexWrap: 'wrap' }}>
                                             <MapPin size={16} color="#6b7280" />
-                                            {p.cities?.name || 'No asignada'}
+                                            {p.assigned_cities?.length > 0
+                                                ? p.assigned_cities.map((c: any) => c.name).join(', ')
+                                                : 'No asignada'}
                                         </div>
                                     ) : (
                                         <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>N/A (Acceso Total)</span>
@@ -408,19 +440,30 @@ export function Usuarios() {
 
                             {role === 'adiestrador' && (
                                 <div style={{ padding: '1rem', backgroundColor: '#f0fdf4', borderRadius: '0.5rem', border: '1px solid #bbf7d0' }}>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>Ciudad Asignada</label>
-                                    <p style={{ fontSize: '0.75rem', color: '#166534', marginBottom: '0.75rem' }}>El adiestrador solo verá clientes y evaluaciones de esta ciudad.</p>
-                                    <select
-                                        value={assignedCityId}
-                                        onChange={(e) => setAssignedCityId(e.target.value)}
-                                        required={role === 'adiestrador'}
-                                        style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #bbf7d0', backgroundColor: 'white' }}
-                                    >
-                                        <option value="">Seleccionar ciudad...</option>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>Ciudades Asignadas</label>
+                                    <p style={{ fontSize: '0.75rem', color: '#166534', marginBottom: '0.75rem' }}>El adiestrador verá clientes y evaluaciones de las ciudades seleccionadas.</p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                         {cities.map(city => (
-                                            <option key={city.id} value={city.id}>{city.name}</option>
+                                            <label key={city.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.375rem 0.5rem', borderRadius: '0.375rem', backgroundColor: assignedCityIds.includes(city.id) ? '#dcfce7' : 'white', border: `1px solid ${assignedCityIds.includes(city.id) ? '#86efac' : '#e5e7eb'}`, transition: 'all 0.15s' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={assignedCityIds.includes(city.id)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setAssignedCityIds(prev => [...prev, city.id])
+                                                        } else {
+                                                            setAssignedCityIds(prev => prev.filter(id => id !== city.id))
+                                                        }
+                                                    }}
+                                                    style={{ accentColor: '#16a34a' }}
+                                                />
+                                                <span style={{ fontSize: '0.875rem', fontWeight: assignedCityIds.includes(city.id) ? 600 : 400, color: assignedCityIds.includes(city.id) ? '#166534' : '#374151' }}>{city.name}</span>
+                                            </label>
                                         ))}
-                                    </select>
+                                    </div>
+                                    {assignedCityIds.length === 0 && (
+                                        <p style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '0.5rem' }}>⚠️ Selecciona al menos una ciudad.</p>
+                                    )}
 
                                     {/* Componente Mapa de Cobertura */}
                                     <CoverageMap

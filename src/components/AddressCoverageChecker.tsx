@@ -58,11 +58,24 @@ export function AddressCoverageChecker({ cityId, initialAddress = '', onAddressS
                 setAdiestradores([]);
                 return;
             }
+            // Get adiestrador IDs for this city from the junction table
+            const { data: cityLinks } = await supabase
+                .from('adiestrador_cities')
+                .select('profile_id')
+                .eq('city_id', cityId);
+
+            if (!cityLinks || cityLinks.length === 0) {
+                setAdiestradores([]);
+                return;
+            }
+
+            const adiestradorIds = cityLinks.map(cl => cl.profile_id);
+
             const { data } = await supabase
                 .from('profiles')
                 .select('id, full_name, coverage_polygon_green, coverage_polygon_yellow, base_lat, base_lng')
                 .eq('role', 'adiestrador')
-                .eq('assigned_city_id', cityId);
+                .in('id', adiestradorIds);
             
             if (data) {
                 setAdiestradores(data);
@@ -181,9 +194,8 @@ export function AddressCoverageChecker({ cityId, initialAddress = '', onAddressS
                             onAddressSelect(e.target.value, null, null, null);
                         }
                     }}
-                    disabled={!ready}
-                    placeholder={ready ? "Empieza a escribir la dirección..." : "Cargando Google Maps..."}
-                    style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', outline: 'none', backgroundColor: !ready ? '#f3f4f6' : 'white' }}
+                    placeholder={ready ? "Empieza a escribir la dirección..." : "Cargando sugerencias de Google..."}
+                    style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', outline: 'none', backgroundColor: 'white' }}
                 />
                 {status === "OK" && (
                     <ul style={{ position: 'absolute', zIndex: 50, background: 'white', width: '100%', listStyle: 'none', margin: '0.25rem 0 0 0', padding: 0, border: '1px solid #e5e7eb', borderRadius: '0.5rem', maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>

@@ -92,15 +92,15 @@ export function Clients() {
             // Find if there is an adiestrador assigned to this city
             let finalAdiestradorId = formData.adiestrador_id || null;
             if (formData.city_id && !finalAdiestradorId) {
-                const { data: adiestrador } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('role', 'adiestrador')
-                    .eq('assigned_city_id', formData.city_id)
-                    .maybeSingle();
+                // Find adiestradores assigned to this city via junction table
+                const { data: cityLinks } = await supabase
+                    .from('adiestrador_cities')
+                    .select('profile_id')
+                    .eq('city_id', formData.city_id)
+                    .limit(1);
                 
-                if (adiestrador) {
-                    finalAdiestradorId = adiestrador.id;
+                if (cityLinks && cityLinks.length > 0) {
+                    finalAdiestradorId = cityLinks[0].profile_id;
                 }
             }
 
@@ -333,8 +333,18 @@ export function Clients() {
                                     const newCityId = e.target.value;
                                     setFormData(prev => ({ ...prev, city_id: newCityId, adiestrador_id: '' }));
                                     if (newCityId) {
-                                        const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').eq('assigned_city_id', newCityId);
-                                        setAdiestradores(data || []);
+                                        // Fetch adiestradores for this city via junction table
+                                        const { data: cityLinks } = await supabase
+                                            .from('adiestrador_cities')
+                                            .select('profile_id')
+                                            .eq('city_id', newCityId);
+                                        if (cityLinks && cityLinks.length > 0) {
+                                            const ids = cityLinks.map(cl => cl.profile_id);
+                                            const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').in('id', ids);
+                                            setAdiestradores(data || []);
+                                        } else {
+                                            setAdiestradores([]);
+                                        }
                                     } else {
                                         setAdiestradores([]);
                                     }

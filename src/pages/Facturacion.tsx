@@ -140,15 +140,22 @@ export function Facturacion() {
                 .from('clients').select('email').eq('id', client.id).maybeSingle()
             const clientEmail = freshClient?.email || client.email
 
-            // 3. Wait for invoice — 10 attempts × 1s = up to 10s
+            // 3. Wait for invoice — 20 attempts × 1s = up to 20s
             let invoice = null
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 20; i++) {
                 const query = paymentId
                     ? supabase.from('invoices').select('*').eq('payment_id', paymentId).maybeSingle()
                     : supabase.from('invoices').select('*').eq('client_id', client.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
                 const { data: inv } = await query
                 if (inv) { invoice = inv; break }
                 await new Promise(r => setTimeout(r, 1000))
+            }
+
+            if (!invoice) {
+                setPollingInvoice(null)
+                showAlert('El pago se ha registrado pero la factura está tardando en generarse. Por favor, búscala en el historial dentro de unos segundos.')
+                fetchData()
+                return
             }
 
             setPollingInvoice(null)
@@ -204,9 +211,12 @@ export function Facturacion() {
             setProcessingPayment(null)
         }
     }
-
     const handleSendEmail = async () => {
         if (!emailModal) return
+        if (!emailModal.pdfUrl) {
+            showAlert('El PDF aún se está preparando. Por favor, espera un momento.')
+            return
+        }
         setSendingEmail(true)
         try {
             const { error } = await supabase.functions.invoke('send-invoice-email', {
@@ -500,8 +510,8 @@ export function Facturacion() {
                             {emailModal.clientEmail && (
                                 <button
                                     onClick={handleSendEmail}
-                                    disabled={sendingEmail || generatingPdf}
-                                    style={{ flex: 2, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', background: '#111827', color: 'white', cursor: (sendingEmail || generatingPdf) ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (sendingEmail || generatingPdf) ? 0.7 : 1 }}
+                                    disabled={sendingEmail || generatingPdf || !emailModal.pdfUrl}
+                                    style={{ flex: 2, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', background: '#111827', color: 'white', cursor: (sendingEmail || generatingPdf || !emailModal.pdfUrl) ? 'wait' : 'pointer', fontWeight: 600, fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (sendingEmail || generatingPdf || !emailModal.pdfUrl) ? 0.7 : 1 }}
                                 >
                                     {sendingEmail ? 'Enviando...' : generatingPdf ? '⏳ Preparando PDF...' : '📧 Sí, enviar factura'}
                                 </button>

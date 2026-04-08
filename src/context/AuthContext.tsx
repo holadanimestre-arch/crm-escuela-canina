@@ -9,6 +9,7 @@ interface AuthContextType {
     session: Session | null
     user: User | null
     profile: Profile | null
+    assignedCityIds: string[]
     loading: boolean
     signOut: () => Promise<void>
 }
@@ -19,6 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [session, setSession] = useState<Session | null>(null)
     const [user, setUser] = useState<User | null>(null)
     const [profile, setProfile] = useState<Profile | null>(null)
+    const [assignedCityIds, setAssignedCityIds] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 fetchProfile(session.user.id)
             } else {
                 setProfile(null)
+                setAssignedCityIds([])
                 setLoading(false)
             }
         })
@@ -63,6 +66,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 console.error('Error fetching profile:', error)
             } else {
                 setProfile(data)
+                // Fetch assigned cities from junction table for adiestradores
+                if (data.role === 'adiestrador') {
+                    const { data: cityData, error: cityError } = await supabase
+                        .from('adiestrador_cities')
+                        .select('city_id')
+                        .eq('profile_id', userId)
+                    if (cityError) {
+                        console.error('Error fetching adiestrador cities:', cityError)
+                    } else {
+                        setAssignedCityIds((cityData || []).map(c => c.city_id))
+                    }
+                } else {
+                    setAssignedCityIds([])
+                }
             }
         } catch (err) {
             console.error('Unexpected error fetching profile:', err)
@@ -74,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signOut = async () => {
         await supabase.auth.signOut()
         setProfile(null)
+        setAssignedCityIds([])
         setSession(null)
         setUser(null)
     }
@@ -82,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         user,
         profile,
+        assignedCityIds,
         loading,
         signOut
     }
@@ -96,3 +115,4 @@ export const useAuth = () => {
     }
     return context
 }
+

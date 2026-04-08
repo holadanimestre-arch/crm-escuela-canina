@@ -17,7 +17,7 @@ export function ClientDetail() {
     const { showAlert, showConfirm, showPrompt } = useDialog()
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
-    const { profile } = useAuth()
+    const { profile, assignedCityIds } = useAuth()
     const [client, setClient] = useState<Client | null>(null)
     const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
     const [sessions, setSessions] = useState<Session[]>([])
@@ -54,7 +54,7 @@ export function ClientDetail() {
 
             if (error) throw error
 
-            if (profile?.role === 'adiestrador' && data.city_id !== profile.assigned_city_id) {
+            if (profile?.role === 'adiestrador' && !assignedCityIds.includes(data.city_id)) {
                 showAlert('No tienes permiso para ver este cliente.')
                 navigate('/')
                 return
@@ -240,6 +240,11 @@ export function ClientDetail() {
 
                                     setIsDeleting(true)
                                     try {
+                                        // Delete related data first (Manual Cascade)
+                                        await supabase.from('sessions').delete().eq('client_id', client.id)
+                                        await supabase.from('evaluations').delete().eq('client_id', client.id)
+                                        await supabase.from('payments').delete().eq('client_id', client.id)
+
                                         if (client.lead_id) {
                                             await supabase.from('leads').delete().eq('id', client.lead_id)
                                         }

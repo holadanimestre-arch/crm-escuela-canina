@@ -388,6 +388,26 @@ export interface Database {
                     created_at?: string
                 }
             }
+            adiestrador_cities: {
+                Row: {
+                    id: string
+                    profile_id: string
+                    city_id: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    profile_id: string
+                    city_id: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    profile_id?: string
+                    city_id?: string
+                    created_at?: string
+                }
+            }
         }
     }
 }

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 
 export function AppLayout() {
-    const { signOut, profile } = useAuth()
+    const { signOut, profile, assignedCityIds } = useAuth()
     const { cityId, setCityId, datePreset, setDatePreset, dateRange, setDateRange } = useFilters()
     const location = useLocation()
     const [cities, setCities] = useState<any[]>([])
@@ -44,10 +44,13 @@ export function AppLayout() {
     }, [])
 
     useEffect(() => {
-        if (profile?.role === 'adiestrador' && profile.assigned_city_id) {
-            setCityId(profile.assigned_city_id)
+        if (profile?.role === 'adiestrador' && assignedCityIds.length > 0) {
+            // If current cityId is not in their assigned cities, set to first one
+            if (!assignedCityIds.includes(cityId as string)) {
+                setCityId(assignedCityIds[0])
+            }
         }
-    }, [profile, setCityId])
+    }, [profile, assignedCityIds, setCityId])
 
     // Close sidebar on navigation (mobile)
     useEffect(() => {
@@ -67,7 +70,7 @@ export function AppLayout() {
             { name: 'Dashboard', href: '/', icon: LayoutDashboard },
         ]
 
-        if (role === 'admin' || profile?.email === 'lupe@escuelacaninafranestevez.es') {
+        if (role === 'admin') {
             return [
                 ...common,
                 { name: 'Agenda', href: '/agenda', icon: Calendar },
@@ -252,21 +255,26 @@ export function AppLayout() {
                             <select
                                 value={cityId}
                                 onChange={(e) => setCityId(e.target.value)}
-                                disabled={profile?.role === 'adiestrador'}
+                                disabled={profile?.role === 'adiestrador' && assignedCityIds.length <= 1}
                                 style={{
                                     padding: '0.4rem 0.75rem 0.4rem 1.75rem',
                                     borderRadius: '0.375rem',
                                     border: '1px solid #e5e7eb',
-                                    backgroundColor: profile?.role === 'adiestrador' ? '#f3f4f6' : 'white',
+                                    backgroundColor: (profile?.role === 'adiestrador' && assignedCityIds.length <= 1) ? '#f3f4f6' : 'white',
                                     fontSize: '0.8rem',
                                     minWidth: isMobile ? '120px' : '150px',
-                                    cursor: profile?.role === 'adiestrador' ? 'not-allowed' : 'pointer'
+                                    cursor: (profile?.role === 'adiestrador' && assignedCityIds.length <= 1) ? 'not-allowed' : 'pointer'
                                 }}
                             >
                                 {profile?.role !== 'adiestrador' && <option value="all">Todas las ciudades</option>}
-                                {cities.map((city: any) => (
-                                    <option key={city.id} value={city.id}>{city.name}</option>
-                                ))}
+                                {profile?.role === 'adiestrador'
+                                    ? cities.filter((city: any) => assignedCityIds.includes(city.id)).map((city: any) => (
+                                        <option key={city.id} value={city.id}>{city.name}</option>
+                                    ))
+                                    : cities.map((city: any) => (
+                                        <option key={city.id} value={city.id}>{city.name}</option>
+                                    ))
+                                }
                             </select>
                         </div>
 

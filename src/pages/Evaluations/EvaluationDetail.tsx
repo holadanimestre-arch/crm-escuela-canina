@@ -39,7 +39,7 @@ interface EvaluationResultItem {
 export function EvaluationDetail() {
     const { evaluationId } = useParams<{ evaluationId: string }>()
     const navigate = useNavigate()
-    const { profile } = useAuth()
+    const { profile, assignedCityIds } = useAuth()
     const { showAlert } = useDialog()
 
     const [evaluation, setEvaluation] = useState<EvaluationData | null>(null)
@@ -71,7 +71,7 @@ export function EvaluationDetail() {
             if (evalData) {
                 const clientData = Array.isArray(evalData.clients) ? evalData.clients[0] : evalData.clients;
                 
-                if (profile?.role === 'adiestrador' && clientData && clientData.city_id !== profile.assigned_city_id) {
+                if (profile?.role === 'adiestrador' && clientData && !assignedCityIds.includes(clientData.city_id || '')) {
                     showAlert('No tienes permiso para ver esta evaluación.')
                     navigate('/')
                     return

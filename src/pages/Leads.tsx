@@ -123,15 +123,24 @@ export function Leads() {
             converted_by: '',
             adiestrador_id: ''
         })
-        // Pre-load adiestradores for the lead's city
+        // Pre-load adiestradores for the lead's city via junction table
         if (lead.city_id) {
-            const { data, error } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').eq('assigned_city_id', lead.city_id)
-            if (error) {
-                console.error('Error cargando adiestradores:', error)
-                showAlert('Error al cargar los adiestradores: ' + error.message)
-                setAdiestradores([])
+            const { data: cityLinks } = await supabase
+                .from('adiestrador_cities')
+                .select('profile_id')
+                .eq('city_id', lead.city_id);
+            if (cityLinks && cityLinks.length > 0) {
+                const ids = cityLinks.map(cl => cl.profile_id);
+                const { data, error } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').in('id', ids);
+                if (error) {
+                    console.error('Error cargando adiestradores:', error)
+                    showAlert('Error al cargar los adiestradores: ' + error.message)
+                    setAdiestradores([])
+                } else {
+                    setAdiestradores(data || [])
+                }
             } else {
-                setAdiestradores(data || [])
+                setAdiestradores([])
             }
         } else {
             setAdiestradores([])
@@ -155,15 +164,15 @@ export function Leads() {
             // We now get adiestrador manually. Fallback to basic finding if none explicitly confirmed
             let finalAdiestradorId = convertData.adiestrador_id || null;
             if (targetCityId && !finalAdiestradorId) {
-                const { data: adiestrador } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('role', 'adiestrador')
-                    .eq('assigned_city_id', targetCityId)
-                    .maybeSingle();
+                // Find adiestrador via junction table
+                const { data: cityLinks } = await supabase
+                    .from('adiestrador_cities')
+                    .select('profile_id')
+                    .eq('city_id', targetCityId)
+                    .limit(1);
 
-                if (adiestrador) {
-                    finalAdiestradorId = adiestrador.id;
+                if (cityLinks && cityLinks.length > 0) {
+                    finalAdiestradorId = cityLinks[0].profile_id;
                 }
             }
 
@@ -358,7 +367,6 @@ export function Leads() {
                                             <option value="tiene_que_hablarlo_lupe">Tiene que hablarlo Lupe</option>
                                             <option value="tiene_que_hablarlo_aroha">Tiene que hablarlo Aroha</option>
                                             <option value="tiene_que_hablarlo_pablo">Tiene que hablarlo Pablo</option>
-                                            <option value="tiene_que_hablarlo_pablo">Tiene que hablarlo Pablo</option>
                                             <option value="evaluacion_denegada_lupe">Evaluación Denegada Lupe</option>
                                             <option value="evaluacion_denegada_aroha">Evaluación Denegada Aroha</option>
                                             <option value="evaluacion_denegada_pablo">Evaluación Denegada Pablo</option>
@@ -478,13 +486,23 @@ export function Leads() {
                                 const newCityId = e.target.value;
                                 setConvertData(prev => ({ ...prev, city_id: newCityId, adiestrador_id: '' }));
                                 if (newCityId) {
-                                    const { data, error } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').eq('assigned_city_id', newCityId);
-                                    if (error) {
-                                        console.error('Error cargando adiestradores:', error);
-                                        showAlert('Error al cargar los adiestradores: ' + error.message);
-                                        setAdiestradores([]);
+                                    // Fetch adiestradores via junction table
+                                    const { data: cityLinks } = await supabase
+                                        .from('adiestrador_cities')
+                                        .select('profile_id')
+                                        .eq('city_id', newCityId);
+                                    if (cityLinks && cityLinks.length > 0) {
+                                        const ids = cityLinks.map(cl => cl.profile_id);
+                                        const { data, error } = await supabase.from('profiles').select('id, full_name').eq('role', 'adiestrador').in('id', ids);
+                                        if (error) {
+                                            console.error('Error cargando adiestradores:', error);
+                                            showAlert('Error al cargar los adiestradores: ' + error.message);
+                                            setAdiestradores([]);
+                                        } else {
+                                            setAdiestradores(data || []);
+                                        }
                                     } else {
-                                        setAdiestradores(data || []);
+                                        setAdiestradores([]);
                                     }
                                 } else {
                                     setAdiestradores([]);

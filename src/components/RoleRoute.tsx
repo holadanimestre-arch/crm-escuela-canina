@@ -11,9 +11,7 @@ export function RoleRoute({ children, allowedRoles }: RoleRouteProps) {
 
     if (loading) return <div>Cargando permisos...</div>
 
-    const isLupe = profile?.email === 'lupe@escuelacaninafranestevez.es'
-
-    if (!profile || (!allowedRoles.includes(profile.role) && !isLupe)) {
+    if (!profile || !allowedRoles.includes(profile.role)) {
         // Redirect to dashboard if unauthorized
         return <Navigate to="/" replace />
     }
