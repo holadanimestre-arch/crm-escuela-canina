@@ -20,12 +20,14 @@ CREATE TABLE IF NOT EXISTS public.adiestrador_cities (
 ALTER TABLE public.adiestrador_cities ENABLE ROW LEVEL SECURITY;
 
 -- 3. Políticas de acceso (lectura para todos los autenticados, escritura solo admin)
+DROP POLICY IF EXISTS "Authenticated users can read adiestrador_cities" ON public.adiestrador_cities;
 CREATE POLICY "Authenticated users can read adiestrador_cities"
     ON public.adiestrador_cities
     FOR SELECT
     TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS "Admin can insert adiestrador_cities" ON public.adiestrador_cities;
 CREATE POLICY "Admin can insert adiestrador_cities"
     ON public.adiestrador_cities
     FOR INSERT
@@ -38,6 +40,7 @@ CREATE POLICY "Admin can insert adiestrador_cities"
         )
     );
 
+DROP POLICY IF EXISTS "Admin can update adiestrador_cities" ON public.adiestrador_cities;
 CREATE POLICY "Admin can update adiestrador_cities"
     ON public.adiestrador_cities
     FOR UPDATE
@@ -50,6 +53,7 @@ CREATE POLICY "Admin can update adiestrador_cities"
         )
     );
 
+DROP POLICY IF EXISTS "Admin can delete adiestrador_cities" ON public.adiestrador_cities;
 CREATE POLICY "Admin can delete adiestrador_cities"
     ON public.adiestrador_cities
     FOR DELETE

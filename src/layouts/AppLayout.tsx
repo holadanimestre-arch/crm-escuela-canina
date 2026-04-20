@@ -238,9 +238,10 @@ export function AppLayout() {
                         {isMobile && (
                             <button
                                 onClick={() => setSidebarOpen(true)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', color: '#374151' }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                             >
-                                <Menu size={24} />
+                                <img src="/logo.png" alt="Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                                <Menu size={22} color="#374151" />
                             </button>
                         )}
                         <h2 style={{ fontSize: isMobile ? '1rem' : '1.25rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
