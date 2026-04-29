@@ -100,8 +100,8 @@ export function ComercialesPanel() {
             let totalContactTimeHours = 0
             let leadsWithContactTime = 0
             contactedLeads.forEach(l => {
-                if (l.first_contacted_at) {
-                    const hours = differenceInHours(parseISO(l.first_contacted_at), parseISO(l.created_at))
+                if (l.first_contact_at) {
+                    const hours = differenceInHours(parseISO(l.first_contact_at), parseISO(l.created_at))
                     if (hours >= 0) {
                         totalContactTimeHours += hours
                         leadsWithContactTime++
@@ -168,8 +168,8 @@ export function ComercialesPanel() {
         })
 
         // Exact recalculation for global avg time
-        filteredLeads.filter(l => l.first_contacted_at).forEach(l => {
-            const hours = differenceInHours(parseISO(l.first_contacted_at), parseISO(l.created_at))
+        filteredLeads.filter(l => l.first_contact_at).forEach(l => {
+            const hours = differenceInHours(parseISO(l.first_contact_at), parseISO(l.created_at))
             if (hours >= 0) {
                 globalContactTimeSum += hours
                 globalsWithContactTimeCount++

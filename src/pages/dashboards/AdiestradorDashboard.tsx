@@ -6,6 +6,21 @@ import { useDialog } from '../../context/DialogContext'
 import { Phone, ClipboardCheck, CalendarClock, ArrowLeft, Search, MapPin, User, Edit, Calendar, Clock } from 'lucide-react'
 import { Modal } from '../../components/Modal'
 
+const todayLocalISO = () => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+const DEFAULT_TIME = '10:00'
+
+const toLocalDateInput = (iso: string) => {
+    const d = new Date(iso)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+const toLocalTimeInput = (iso: string) => {
+    const d = new Date(iso)
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 // ─── Componente Principal ──────────────────────────────────────────
 export default function AdiestradorDashboard() {
     const [counts, setCounts] = useState({ llamadas: 0, resultado: 0, sesiones: 0 })
@@ -185,8 +200,8 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
     const [loading, setLoading] = useState(true)
     const [detailClient, setDetailClient] = useState<any>(null)
     const [schedulingClient, setSchedulingClient] = useState<any>(null)
-    const [evalDate, setEvalDate] = useState('')
-    const [evalTime, setEvalTime] = useState('')
+    const [evalDate, setEvalDate] = useState(todayLocalISO())
+    const [evalTime, setEvalTime] = useState(DEFAULT_TIME)
     const [saving, setSaving] = useState(false)
     const [savingNoContesta, setSavingNoContesta] = useState(false)
 
@@ -194,8 +209,8 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
     const closeModals = () => {
         setDetailClient(null)
         setSchedulingClient(null)
-        setEvalDate('')
-        setEvalTime('')
+        setEvalDate(todayLocalISO())
+        setEvalTime(DEFAULT_TIME)
     }
 
     useEffect(() => { if (profile) fetchClients() }, [profile, cityId])
@@ -442,8 +457,8 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
     const [activeEval, setActiveEval] = useState<any>(null)
     const [rejectingEval, setRejectingEval] = useState<any>(null)
     const [evalNotes, setEvalNotes] = useState('')
-    const [firstSessionDate, setFirstSessionDate] = useState('')
-    const [firstSessionTime, setFirstSessionTime] = useState('')
+    const [firstSessionDate, setFirstSessionDate] = useState(todayLocalISO())
+    const [firstSessionTime, setFirstSessionTime] = useState(DEFAULT_TIME)
     const [totalSessions, setTotalSessions] = useState<number>(8)
     const [saving, setSaving] = useState(false)
 
@@ -451,8 +466,8 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
         setActiveEval(null)
         setRejectingEval(null)
         setEvalNotes('')
-        setFirstSessionDate('')
-        setFirstSessionTime('')
+        setFirstSessionDate(todayLocalISO())
+        setFirstSessionTime(DEFAULT_TIME)
         setTotalSessions(8)
     }
     
@@ -649,8 +664,8 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
     const [search, setSearch] = useState('')
     const [loading, setLoading] = useState(true)
     const [schedulingClient, setSchedulingClient] = useState<any>(null)
-    const [sessionDate, setSessionDate] = useState('')
-    const [sessionTime, setSessionTime] = useState('')
+    const [sessionDate, setSessionDate] = useState(todayLocalISO())
+    const [sessionTime, setSessionTime] = useState(DEFAULT_TIME)
     const [saving, setSaving] = useState(false)
 
     useEffect(() => { if (profile) fetchClients() }, [profile, cityId])
@@ -730,7 +745,7 @@ function AgendarSesion({ onBack, syncGoogleCalendar }: any) {
                     {clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).map(client => (
                         <div key={client.id} style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white' }}>
                             <h3 style={{ fontWeight: 600 }}>{client.name}</h3>
-                            <button onClick={() => { setSchedulingClient(client); setSessionDate(''); setSessionTime('') }} style={{ marginTop: '1rem', width: '100%', padding: '0.5rem', background: '#000', color: 'white', borderRadius: '0.5rem', cursor: 'pointer' }}>
+                            <button onClick={() => { setSchedulingClient(client); setSessionDate(todayLocalISO()); setSessionTime(DEFAULT_TIME) }} style={{ marginTop: '1rem', width: '100%', padding: '0.5rem', background: '#000', color: 'white', borderRadius: '0.5rem', cursor: 'pointer' }}>
                                 Agendar Sesión {client.next_session_number || ''}
                             </button>
                         </div>
@@ -839,7 +854,7 @@ function ModificarSesion({ onBack, syncGoogleCalendar }: any) {
                             <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: '0.5rem 0' }}>
                                 Actual: {new Date(sess.date).toLocaleDateString()} {new Date(sess.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
-                            <button onClick={() => { setModifyingSession(sess); setNewDate(''); setNewTime('') }} style={{ width: '100%', padding: '0.5rem', background: '#fff', border: '1px solid #000', borderRadius: '0.5rem', cursor: 'pointer' }}>
+                            <button onClick={() => { setModifyingSession(sess); setNewDate(toLocalDateInput(sess.date)); setNewTime(toLocalTimeInput(sess.date)) }} style={{ width: '100%', padding: '0.5rem', background: '#fff', border: '1px solid #000', borderRadius: '0.5rem', cursor: 'pointer' }}>
                                 Modificar Fecha
                             </button>
                         </div>
