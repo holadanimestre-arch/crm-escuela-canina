@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Database } from '../types/database.types'
 import { generateInvoicePDF } from '../utils/invoiceGenerator'
-import { ArrowLeft, Mail, Phone, MapPin, Dog, ClipboardCheck, CalendarClock, CheckCircle2, Clock, Circle, FileText } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, MapPin, Dog, ClipboardCheck, CalendarClock, CheckCircle2, Clock, Circle, FileText, Pencil } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useDialog } from '../context/DialogContext'
 
@@ -28,6 +28,10 @@ export function ClientDetail() {
     const [isDeleting, setIsDeleting] = useState(false)
     const [settings, setSettings] = useState<any>(null)
     const [activeTab, setActiveTab] = useState<'info' | 'evaluations' | 'sessions' | 'payments'>('info')
+    const [isEditingObs, setIsEditingObs] = useState(false)
+    const [obsDraft, setObsDraft] = useState('')
+    const [savingObs, setSavingObs] = useState(false)
+    const canEditObs = profile?.role === 'admin' || profile?.role === 'adiestrador'
 
     useEffect(() => {
         if (id) {
@@ -221,8 +225,66 @@ export function ClientDetail() {
                                 <p>{(client as any).converted_by || '-'}</p>
                             </div>
                             <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Observaciones</label>
-                                <p style={{ whiteSpace: 'pre-wrap' }}>{(client as any).observations || '-'}</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase' }}>Observaciones</label>
+                                    {canEditObs && !isEditingObs && (
+                                        <button
+                                            onClick={() => {
+                                                setObsDraft((client as any).observations || '')
+                                                setIsEditingObs(true)
+                                            }}
+                                            title="Editar observaciones"
+                                            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.25rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}
+                                        >
+                                            <Pencil size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                                {isEditingObs ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <textarea
+                                            value={obsDraft}
+                                            onChange={e => setObsDraft(e.target.value)}
+                                            placeholder="Añade las observaciones que consideres oportunas..."
+                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', minHeight: '120px', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.95rem' }}
+                                        />
+                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                            <button
+                                                onClick={() => { setIsEditingObs(false); setObsDraft('') }}
+                                                disabled={savingObs}
+                                                style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    if (!client) return
+                                                    setSavingObs(true)
+                                                    try {
+                                                        const newObs = obsDraft.trim() || null
+                                                        const { error } = await supabase
+                                                            .from('clients')
+                                                            .update({ observations: newObs } as any)
+                                                            .eq('id', client.id)
+                                                        if (error) throw error
+                                                        setClient({ ...(client as any), observations: newObs } as Client)
+                                                        setIsEditingObs(false)
+                                                    } catch (err: any) {
+                                                        showAlert('Error al guardar las observaciones: ' + (err.message || 'Error desconocido'))
+                                                    } finally {
+                                                        setSavingObs(false)
+                                                    }
+                                                }}
+                                                disabled={savingObs}
+                                                style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', background: '#000', color: 'white', cursor: savingObs ? 'wait' : 'pointer' }}
+                                            >
+                                                {savingObs ? 'Guardando...' : 'Guardar'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p style={{ whiteSpace: 'pre-wrap' }}>{(client as any).observations || '-'}</p>
+                                )}
                             </div>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem', borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
