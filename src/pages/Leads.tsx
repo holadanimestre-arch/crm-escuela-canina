@@ -17,7 +17,7 @@ type DogBreed = Database['public']['Tables']['dog_breeds']['Row']
 type CallReason = Database['public']['Tables']['call_reasons']['Row']
 
 export function Leads() {
-    const { showAlert } = useDialog()
+    const { showAlert, showConfirm } = useDialog()
     const { profile } = useAuth()
     const [leads, setLeads] = useState<Lead[]>([])
     const [cities, setCities] = useState<City[]>([])
@@ -222,6 +222,20 @@ export function Leads() {
         }
     }
 
+    async function handleDelete(lead: Lead) {
+        const confirmed = await showConfirm(`¿Seguro que quieres eliminar el lead "${lead.name}"? Esta acción no se puede deshacer.`)
+        if (!confirmed) return
+
+        try {
+            const { error } = await supabase.from('leads').delete().eq('id', lead.id)
+            if (error) throw error
+            setLeads(prev => prev.filter(l => l.id !== lead.id))
+        } catch (error: any) {
+            console.error('Error deleting lead:', error)
+            showAlert('Error al eliminar el lead: ' + error.message)
+        }
+    }
+
     async function handleStatusChange(leadId: string, newStatus: Lead['status']) {
         try {
             const { error } = await supabase
@@ -389,10 +403,18 @@ export function Leads() {
                                         </button>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); openConvertModal(lead) }}
-                                            style={{ color: '#059669', background: 'none', border: 'none', cursor: 'pointer' }}
+                                            style={{ color: '#059669', background: 'none', border: 'none', cursor: 'pointer', marginRight: '0.5rem' }}
                                         >
                                             Convertir
                                         </button>
+                                        {profile?.role === 'admin' && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDelete(lead) }}
+                                                style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}
+                                            >
+                                                Eliminar
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))
