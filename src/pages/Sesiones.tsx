@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Plus, Calendar, CheckCircle } from 'lucide-react'
+import { Plus, Calendar, CheckCircle, Clock, Pencil } from 'lucide-react'
 import { SessionModal } from './Sesiones/SessionModal'
+import { Modal } from '../components/Modal'
 import { useFilters } from '../context/FilterContext'
 import { useDialog } from '../context/DialogContext'
+import { useAuth } from '../hooks/useAuth'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+
+const toLocalDateInput = (iso: string) => {
+    const d = new Date(iso)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+const toLocalTimeInput = (iso: string) => {
+    const d = new Date(iso)
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
 
 interface ActiveClient {
     id: string
@@ -26,11 +37,16 @@ interface Session {
 
 export function Sesiones() {
     const { showAlert, showConfirm } = useDialog()
+    const { profile } = useAuth()
     const [activeClients, setActiveClients] = useState<ActiveClient[]>([])
     const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedClient, setSelectedClient] = useState<{ id: string; name: string } | null>(null)
     const [showModal, setShowModal] = useState(false)
+    const [editingSession, setEditingSession] = useState<Session | null>(null)
+    const [editDate, setEditDate] = useState('')
+    const [editTime, setEditTime] = useState('')
+    const [editSaving, setEditSaving] = useState(false)
 
     const { cityId } = useFilters()
 
@@ -144,6 +160,40 @@ export function Sesiones() {
         }
     }
 
+    const handleEditClick = (session: Session) => {
+        setEditingSession(session)
+        setEditDate(toLocalDateInput(session.date))
+        setEditTime(toLocalTimeInput(session.date))
+    }
+
+    const handleEditSubmit = async () => {
+        if (!editingSession || !editDate || !editTime) return
+        setEditSaving(true)
+        try {
+            const newDateIso = new Date(`${editDate}T${editTime}:00`).toISOString()
+            const { error } = await supabase
+                .from('sessions')
+                .update({ date: newDateIso })
+                .eq('id', editingSession.id)
+            if (error) throw error
+
+            try {
+                await supabase.functions.invoke('sync-google-calendar', {
+                    body: { type: 'session', id: editingSession.id, action: 'update' }
+                })
+            } catch (gcalErr) {
+                console.error('Error syncing with Google Calendar:', gcalErr)
+            }
+
+            setEditingSession(null)
+            fetchData()
+        } catch (err: any) {
+            showAlert('Error al actualizar la sesión: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setEditSaving(false)
+        }
+    }
+
     if (loading) return <div>Cargando sesiones...</div>
 
     return (
@@ -180,18 +230,32 @@ export function Sesiones() {
                                         </div>
                                     )}
                                 </div>
-                                <div>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                     {!session.completed ? (
-                                        <button
-                                            onClick={() => handleSessionCompleted(session)}
-                                            style={{
-                                                padding: '0.5rem 1rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb',
-                                                backgroundColor: 'white', color: '#000', cursor: 'pointer',
-                                                display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem'
-                                            }}
-                                        >
-                                            <CheckCircle size={16} /> Marcar Completada
-                                        </button>
+                                        <>
+                                            {profile?.role === 'admin' && (
+                                                <button
+                                                    onClick={() => handleEditClick(session)}
+                                                    style={{
+                                                        padding: '0.5rem 1rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb',
+                                                        backgroundColor: 'white', color: '#000', cursor: 'pointer',
+                                                        display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem'
+                                                    }}
+                                                >
+                                                    <Pencil size={16} /> Editar
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => handleSessionCompleted(session)}
+                                                style={{
+                                                    padding: '0.5rem 1rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb',
+                                                    backgroundColor: 'white', color: '#000', cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem'
+                                                }}
+                                            >
+                                                <CheckCircle size={16} /> Marcar Completada
+                                            </button>
+                                        </>
                                     ) : (
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#16a34a', fontWeight: 500, fontSize: '0.875rem' }}>
                                             <CheckCircle size={16} /> Completada
@@ -266,6 +330,54 @@ export function Sesiones() {
                 client={selectedClient}
                 onSessionSaved={fetchData}
             />
+
+            <Modal isOpen={!!editingSession} onClose={() => setEditingSession(null)} title="Modificar Fecha/Hora">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {editingSession && (
+                        <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
+                            <strong>{editingSession.clients?.name}</strong> · Sesión {editingSession.session_number}/8
+                        </p>
+                    )}
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                            <Calendar size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Nueva Fecha
+                        </label>
+                        <input
+                            type="date"
+                            value={editDate}
+                            onChange={e => setEditDate(e.target.value)}
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', fontSize: '1rem' }}
+                        />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                            <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Nueva Hora
+                        </label>
+                        <input
+                            type="time"
+                            value={editTime}
+                            onChange={e => setEditTime(e.target.value)}
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', fontSize: '1rem' }}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                        <button
+                            type="button"
+                            onClick={() => setEditingSession(null)}
+                            style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleEditSubmit}
+                            disabled={editSaving || !editDate || !editTime}
+                            style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', background: '#000', color: 'white', cursor: editSaving ? 'wait' : 'pointer' }}
+                        >
+                            {editSaving ? 'Guardando...' : 'Actualizar Sesión'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     )
 }
