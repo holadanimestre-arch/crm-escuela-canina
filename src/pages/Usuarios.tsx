@@ -181,6 +181,12 @@ export function Usuarios() {
 
     const handleUpdateUser = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (password && password.length < 8) {
+            showAlert('Si quieres cambiar la contraseña, debe tener al menos 8 caracteres.')
+            return
+        }
+
         setSubmitting(true)
 
         try {
@@ -208,7 +214,18 @@ export function Usuarios() {
 
             if (error) throw error
 
-            showAlert('Usuario actualizado correctamente.')
+            // Cambio de contraseña opcional
+            if (password) {
+                const { error: pwError } = await supabase.rpc('admin_set_user_password', {
+                    p_user_id: editingUser.id,
+                    p_new_password: password,
+                })
+                if (pwError) throw pwError
+            }
+
+            showAlert(password
+                ? 'Usuario actualizado y contraseña cambiada correctamente.'
+                : 'Usuario actualizado correctamente.')
             setIsModalOpen(false)
             resetForm()
             fetchData()
@@ -274,6 +291,7 @@ export function Usuarios() {
         setBaseLng(user.base_lng || null)
         setPolygonGreen(user.coverage_polygon_green || null)
         setPolygonYellow(user.coverage_polygon_yellow || null)
+        setPassword('')
         setIsModalOpen(true)
     }
 
@@ -423,6 +441,23 @@ export function Usuarios() {
                                         />
                                     </div>
                                 </>
+                            )}
+
+                            {editingUser && (
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>Nueva Contraseña <span style={{ color: '#9ca3af', fontWeight: 400 }}>(opcional)</span></label>
+                                    <input
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Dejar en blanco para no cambiar"
+                                        autoComplete="new-password"
+                                        style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', outline: 'none' }}
+                                    />
+                                    <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.375rem' }}>
+                                        Mínimo 8 caracteres. Solo se cambia si rellenas el campo.
+                                    </p>
+                                </div>
                             )}
 
                             <div>
