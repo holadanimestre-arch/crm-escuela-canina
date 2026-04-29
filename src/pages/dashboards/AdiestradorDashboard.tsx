@@ -456,6 +456,9 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
     const [loading, setLoading] = useState(true)
     const [activeEval, setActiveEval] = useState<any>(null)
     const [rejectingEval, setRejectingEval] = useState<any>(null)
+    const [reschedulingEval, setReschedulingEval] = useState<any>(null)
+    const [newEvalDate, setNewEvalDate] = useState('')
+    const [newEvalTime, setNewEvalTime] = useState('')
     const [evalNotes, setEvalNotes] = useState('')
     const [firstSessionDate, setFirstSessionDate] = useState(todayLocalISO())
     const [firstSessionTime, setFirstSessionTime] = useState(DEFAULT_TIME)
@@ -465,10 +468,42 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
     const closeModals = () => {
         setActiveEval(null)
         setRejectingEval(null)
+        setReschedulingEval(null)
+        setNewEvalDate('')
+        setNewEvalTime('')
         setEvalNotes('')
         setFirstSessionDate(todayLocalISO())
         setFirstSessionTime(DEFAULT_TIME)
         setTotalSessions(8)
+    }
+
+    const openReschedule = (ev: any) => {
+        closeModals()
+        setReschedulingEval(ev)
+        setNewEvalDate(toLocalDateInput(ev.scheduled_date))
+        setNewEvalTime(toLocalTimeInput(ev.scheduled_date))
+    }
+
+    async function confirmReschedule() {
+        if (!reschedulingEval || !newEvalDate || !newEvalTime) return
+        setSaving(true)
+        try {
+            const newScheduledDate = new Date(`${newEvalDate}T${newEvalTime}:00`).toISOString()
+            const { error } = await supabase
+                .from('evaluations')
+                .update({ scheduled_date: newScheduledDate })
+                .eq('id', reschedulingEval.id)
+            if (error) throw error
+
+            syncGoogleCalendar('evaluation', reschedulingEval.id, 'update')
+
+            closeModals()
+            fetchEvaluations()
+        } catch (err: any) {
+            showAlert(err.message)
+        } finally {
+            setSaving(false)
+        }
     }
     
     useEffect(() => { if (profile) fetchEvaluations() }, [profile, cityId])
@@ -568,18 +603,26 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
                     {evaluations.map(ev => (
                         <div key={ev.id} style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e5e7eb', backgroundColor: 'white' }}>
                             <h3 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{ev.clients.name}</h3>
-                            <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '1rem' }}>
-                                Eval: {new Date(ev.scheduled_date).toLocaleDateString()} {new Date(ev.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </p>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
+                                    Eval: {new Date(ev.scheduled_date).toLocaleDateString()} {new Date(ev.scheduled_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                                <button
+                                    onClick={() => openReschedule(ev)}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                                >
+                                    <Calendar size={12} /> Reagendar
+                                </button>
+                            </div>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button 
-                                    onClick={() => { closeModals(); setRejectingEval(ev); }} 
+                                <button
+                                    onClick={() => { closeModals(); setRejectingEval(ev); }}
                                     style={{ flex: 1, padding: '0.75rem', color: '#ef4444', border: '1px solid #fee2e2', background: '#fef2f2', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}
                                 >
                                     RECHAZADA
                                 </button>
-                                <button 
-                                    onClick={() => { closeModals(); setActiveEval(ev); }} 
+                                <button
+                                    onClick={() => { closeModals(); setActiveEval(ev); }}
                                     style={{ flex: 1, padding: '0.75rem', color: '#10b981', border: '1px solid #dcfce7', background: '#f0fdf4', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' }}
                                 >
                                     APROBADA
@@ -629,6 +672,50 @@ function ResultadoEvaluacion({ onBack, syncGoogleCalendar }: any) {
                     <button onClick={() => confirmResult(activeEval.id, 'aprobada')} disabled={saving} style={{ width: '100%', padding: '1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
                         {saving ? 'Guardando...' : 'CONFIRMAR Y APROBAR'}
                     </button>
+                </div>
+            </Modal>
+
+            <Modal isOpen={!!reschedulingEval} onClose={closeModals} title="Reagendar Evaluación">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {reschedulingEval && (
+                        <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
+                            <strong>{reschedulingEval.clients?.name}</strong>
+                        </p>
+                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 640 ? '1fr' : '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                                <Calendar size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Nueva Fecha
+                            </label>
+                            <input
+                                type="date"
+                                value={newEvalDate}
+                                onChange={e => setNewEvalDate(e.target.value)}
+                                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', color: '#000' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                                <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> Nueva Hora
+                            </label>
+                            <input
+                                type="time"
+                                value={newEvalTime}
+                                onChange={e => setNewEvalTime(e.target.value)}
+                                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', color: '#000' }}
+                            />
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        <button onClick={closeModals} style={{ flex: 1, padding: '0.875rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', background: 'white', cursor: 'pointer' }}>Cancelar</button>
+                        <button
+                            onClick={confirmReschedule}
+                            disabled={saving || !newEvalDate || !newEvalTime}
+                            style={{ flex: 2, padding: '0.875rem', borderRadius: '0.5rem', background: '#000', color: 'white', fontWeight: 700, border: 'none', cursor: saving ? 'wait' : 'pointer' }}
+                        >
+                            {saving ? 'Guardando...' : 'CONFIRMAR REAGENDADO'}
+                        </button>
+                    </div>
                 </div>
             </Modal>
 
