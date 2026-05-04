@@ -61,6 +61,19 @@ export function Leads() {
         fetchCallReasons()
     }, [cityId])
 
+    useEffect(() => {
+        const channel = supabase
+            .channel('leads-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
+                fetchLeads()
+            })
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [cityId])
+
     async function fetchLeads() {
         try {
             let query = supabase
