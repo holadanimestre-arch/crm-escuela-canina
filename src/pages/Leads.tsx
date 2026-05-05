@@ -40,6 +40,8 @@ export function Leads() {
     const [isConvertModalOpen, setIsConvertModalOpen] = useState(false)
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
     const [convertData, setConvertData] = useState({
+        name: '',
+        surname: '',
         city_id: '',
         dog_breed: '',
         dog_age: '',
@@ -125,6 +127,8 @@ export function Leads() {
     async function openConvertModal(lead: Lead) {
         setSelectedLead(lead)
         setConvertData({
+            name: lead.name || '',
+            surname: '',
             city_id: lead.city_id || '',
             dog_breed: '',
             dog_age: '',
@@ -189,10 +193,12 @@ export function Leads() {
                 }
             }
 
+            const fullName = `${convertData.name.trim()} ${convertData.surname.trim()}`.trim() || selectedLead.name
+
             const { error: clientError } = await supabase.from('clients').insert({
                 lead_id: selectedLead.id,
                 city_id: targetCityId,
-                name: selectedLead.name,
+                name: fullName,
                 email: selectedLead.email,
                 phone: selectedLead.phone,
                 dog_breed: convertData.dog_breed,
@@ -219,6 +225,8 @@ export function Leads() {
             showAlert('Error al convertir lead: ' + error.message)
             // Reset form state to avoid inconsistencies
             setConvertData({
+                name: selectedLead.name || '',
+                surname: '',
                 city_id: selectedLead.city_id || '',
                 dog_breed: '',
                 dog_age: '',
@@ -511,6 +519,29 @@ export function Leads() {
                     <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                         Estás convirtiendo a <strong>{selectedLead?.name}</strong> en cliente.
                     </p>
+
+                    <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Nombre</label>
+                            <input
+                                required
+                                type="text"
+                                value={convertData.name}
+                                onChange={e => setConvertData({ ...convertData, name: e.target.value })}
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Apellidos</label>
+                            <input
+                                type="text"
+                                value={convertData.surname}
+                                onChange={e => setConvertData({ ...convertData, surname: e.target.value })}
+                                placeholder="Si no se rellenaron en el formulario"
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
+                            />
+                        </div>
+                    </div>
 
                     <div style={{ padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb', marginBottom: '0.5rem' }}>
                         <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Asignar a Ciudad / Zona</label>
