@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Database } from '../types/database.types'
 import { useFilters } from '../context/FilterContext'
@@ -30,6 +31,8 @@ export function Clients() {
     const { cityId } = useFilters()
     const [clients, setClients] = useState<ClientWithExtras[]>([])
     const [loading, setLoading] = useState(true)
+    const [sortKey, setSortKey] = useState<'name' | 'status' | 'city' | 'evaluation' | 'session' | null>(null)
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
     const [cities, setCities] = useState<City[]>([])
     const [dogBreeds, setDogBreeds] = useState<DogBreed[]>([])
     const [callReasons, setCallReasons] = useState<CallReason[]>([])
@@ -214,6 +217,83 @@ export function Clients() {
         return { text: dateStr, bg: '#dbeafe', color: '#1e40af' }
     }
 
+    const STATUS_ORDER: Record<string, number> = { evaluado: 0, activo: 1, finalizado: 2 }
+
+    function getEvaluationOrder(client: ClientWithExtras): [number, number] {
+        const ev = client.evaluation
+        if (!ev) return [0, 0]
+        if (!ev.result) {
+            const t = ev.scheduled_date ? new Date(ev.scheduled_date).getTime() : 0
+            return [1, t]
+        }
+        if (ev.result === 'aprobada') return [2, 0]
+        return [3, 0]
+    }
+
+    function getSortValue(client: ClientWithExtras, key: NonNullable<typeof sortKey>): number | string {
+        switch (key) {
+            case 'name':       return (client.name || '').toLowerCase()
+            case 'status':     return STATUS_ORDER[client.status as string] ?? 99
+            // @ts-ignore
+            case 'city':       return ((client.cities?.name as string) || '').toLowerCase()
+            case 'evaluation': {
+                const [primary, secondary] = getEvaluationOrder(client)
+                return primary * 1e15 + secondary
+            }
+            case 'session':    return client.currentSession ?? -1
+        }
+    }
+
+    const sortedClients = useMemo(() => {
+        if (!sortKey) return clients
+        const dir = sortDir === 'asc' ? 1 : -1
+        const arr = [...clients]
+        arr.sort((a, b) => {
+            const av = getSortValue(a, sortKey)
+            const bv = getSortValue(b, sortKey)
+            if (av < bv) return -1 * dir
+            if (av > bv) return 1 * dir
+            return 0
+        })
+        return arr
+    }, [clients, sortKey, sortDir])
+
+    function handleSort(key: NonNullable<typeof sortKey>) {
+        if (sortKey !== key) {
+            setSortKey(key)
+            setSortDir('asc')
+        } else if (sortDir === 'asc') {
+            setSortDir('desc')
+        } else {
+            setSortKey(null)
+            setSortDir('asc')
+        }
+    }
+
+    function SortableTh({ label, k }: { label: string; k: NonNullable<typeof sortKey> }) {
+        const active = sortKey === k
+        const Icon = !active ? ChevronsUpDown : sortDir === 'asc' ? ChevronUp : ChevronDown
+        return (
+            <th
+                onClick={() => handleSort(k)}
+                style={{
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '0.75rem',
+                    textTransform: 'uppercase',
+                    color: active ? '#111827' : '#6b7280',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    whiteSpace: 'nowrap',
+                }}
+            >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    {label}
+                    <Icon size={12} style={{ opacity: active ? 1 : 0.5 }} />
+                </span>
+            </th>
+        )
+    }
+
     if (loading) return <div>Cargando clientes...</div>
 
     return (
@@ -241,11 +321,11 @@ export function Clients() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '800px' }}>
                     <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                         <tr>
-                            <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Nombre</th>
-                            <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Estado</th>
-                            <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Ciudad</th>
-                            <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Evaluación</th>
-                            <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Sesión</th>
+                            <SortableTh label="Nombre" k="name" />
+                            <SortableTh label="Estado" k="status" />
+                            <SortableTh label="Ciudad" k="city" />
+                            <SortableTh label="Evaluación" k="evaluation" />
+                            <SortableTh label="Sesión" k="session" />
                             <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Acciones</th>
                         </tr>
                     </thead>
@@ -255,7 +335,7 @@ export function Clients() {
                                 <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No hay clientes registrados</td>
                             </tr>
                         ) : (
-                            clients.map((client) => {
+                            sortedClients.map((client) => {
                                 const badge = getEvaluationBadge(client)
                                 return (
                                     <tr 
