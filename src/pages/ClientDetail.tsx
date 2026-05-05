@@ -7,6 +7,7 @@ import { ArrowLeft, Mail, Phone, MapPin, Dog, ClipboardCheck, CalendarClock, Che
 import { useAuth } from '../context/AuthContext'
 import { useDialog } from '../context/DialogContext'
 import { Modal } from '../components/Modal'
+import { clientStatusLabel } from '../utils/clientStatus'
 
 const toLocalDateInput = (iso: string) => {
     const d = new Date(iso)
@@ -207,11 +208,10 @@ export function ClientDetail() {
                             borderRadius: '9999px',
                             fontSize: '0.875rem',
                             fontWeight: 500,
-                            backgroundColor: client.status === 'activo' ? '#dcfce7' : '#f3f4f6',
-                            color: client.status === 'activo' ? '#166534' : '#374151',
-                            textTransform: 'capitalize'
+                            backgroundColor: client.status === 'activo' ? '#dcfce7' : client.status === 'finalizado' ? '#e0e7ff' : '#fef9c3',
+                            color: client.status === 'activo' ? '#166534' : client.status === 'finalizado' ? '#3730a3' : '#854d0e',
                         }}>
-                            {client.status}
+                            {clientStatusLabel(client.status)}
                         </span>
                     </div>
                 </div>
