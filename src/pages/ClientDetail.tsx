@@ -400,16 +400,22 @@ export function ClientDetail() {
                             <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Resultado</label>
-                                    <span style={{
-                                        padding: '0.5rem 1rem',
-                                        borderRadius: '9999px',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 600,
-                                        backgroundColor: evaluation.result === 'aprobada' ? '#dcfce7' : '#fee2e2',
-                                        color: evaluation.result === 'aprobada' ? '#166534' : '#991b1b'
-                                    }}>
-                                        {evaluation.result === 'aprobada' ? '✅ Aceptada' : '❌ Rechazada'}
-                                    </span>
+                                    {(() => {
+                                        const result = evaluation.result
+                                        let bg = '#fef9c3', color = '#854d0e', text = '⏳ Pendiente'
+                                        if (result === 'aprobada') { bg = '#dcfce7'; color = '#166534'; text = '✅ Aceptada' }
+                                        else if (result === 'rechazada') { bg = '#fee2e2'; color = '#991b1b'; text = '❌ Rechazada' }
+                                        return (
+                                            <span style={{
+                                                padding: '0.5rem 1rem',
+                                                borderRadius: '9999px',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 600,
+                                                backgroundColor: bg,
+                                                color,
+                                            }}>{text}</span>
+                                        )
+                                    })()}
                                     {evaluation.paid_to_trainer && (
                                         <span style={{
                                             marginLeft: '0.5rem',
@@ -426,7 +432,7 @@ export function ClientDetail() {
                                     )}
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Fecha Evaluación</label>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Creada el</label>
                                     <p style={{ fontSize: '1rem', fontWeight: 500 }}>{new Date(evaluation.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                                 </div>
                                 <div>
