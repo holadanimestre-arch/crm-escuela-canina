@@ -87,10 +87,16 @@ export function Ajustes() {
         if (!newCityName.trim()) return
         setSaving(true)
 
+        const slug = newCityName.trim()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[̀-ͯ]/g, '')
+            .replace(/[^a-z0-9]/g, '')
+
         try {
             const { error } = await supabase
                 .from('cities')
-                .insert([{ name: newCityName.trim(), active: true }])
+                .insert([{ name: newCityName.trim(), active: true, slug }])
 
             if (error) throw error
 
