@@ -148,6 +148,7 @@ export function ClientDetail() {
                 .from('sessions')
                 .select('*')
                 .eq('client_id', clientId)
+                .neq('is_evaluation', true)
                 .order('session_number', { ascending: true })
 
             if (error) throw error

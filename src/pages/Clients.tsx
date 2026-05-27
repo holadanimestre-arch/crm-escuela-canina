@@ -172,11 +172,12 @@ export function Clients() {
                 .select('*')
                 .in('client_id', clientIds)
 
-            // Fetch all sessions (completed and scheduled)
+            // Fetch all training sessions (excluding evaluation sessions)
             const { data: sessions } = await supabase
                 .from('sessions')
                 .select('client_id, session_number, completed')
                 .in('client_id', clientIds)
+                .neq('is_evaluation', true)
                 .order('session_number', { ascending: false })
 
             // Map evaluations and sessions to clients

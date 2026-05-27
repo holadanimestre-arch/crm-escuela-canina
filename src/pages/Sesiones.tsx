@@ -60,7 +60,7 @@ export function Sesiones() {
         // 1. Fetch active clients (status = 'activo')
         let clientsQuery = supabase
             .from('clients')
-            .select('id, name, dog_breed, sessions(session_number, completed)')
+            .select('id, name, dog_breed, sessions(session_number, completed, is_evaluation)')
             .eq('status', 'activo')
 
         if (cityId !== 'all') {
@@ -76,7 +76,7 @@ export function Sesiones() {
                 id: c.id,
                 name: c.name,
                 dog_breed: c.dog_breed,
-                sessions: Array.isArray(c.sessions) ? c.sessions : []
+                sessions: (Array.isArray(c.sessions) ? c.sessions : []).filter((s: any) => !s.is_evaluation)
             }))
             setActiveClients(mapped)
         }

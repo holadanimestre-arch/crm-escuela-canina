@@ -36,12 +36,15 @@ export function SessionModal({ isOpen, onClose, client, onSessionSaved }: Sessio
         if (!client) return
         const { data } = await supabase
             .from('sessions')
-            .select('session_number')
+            .select('session_number, is_evaluation')
             .eq('client_id', client.id)
             .order('session_number', { ascending: true })
 
         if (data) {
-            const numbers = data.map(s => s.session_number)
+            // Only count training sessions (not evaluation sessions)
+            const numbers = data
+                .filter((s: any) => !s.is_evaluation)
+                .map((s: any) => s.session_number)
             setExistingSessions(numbers)
 
             // Auto-select next available session number
