@@ -202,6 +202,9 @@ export function Clients() {
     function getEvaluationBadge(client: ClientWithExtras) {
         const ev = client.evaluation
         if (!ev) {
+            if (client.status === 'activo' || client.status === 'finalizado') {
+                return { text: '-', bg: 'transparent', color: '#6b7280' }
+            }
             return { text: 'Sin Agendar', bg: '#fef9c3', color: '#854d0e' }
         }
         if (ev.result === 'aprobada') {
