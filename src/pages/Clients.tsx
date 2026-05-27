@@ -34,6 +34,7 @@ export function Clients() {
     const [loading, setLoading] = useState(true)
     const [sortKey, setSortKey] = useState<'name' | 'status' | 'city' | 'evaluation' | 'session' | null>(null)
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+    const [search, setSearch] = useState('')
     const [cities, setCities] = useState<City[]>([])
     const [dogBreeds, setDogBreeds] = useState<DogBreed[]>([])
     const [callReasons, setCallReasons] = useState<CallReason[]>([])
@@ -253,9 +254,11 @@ export function Clients() {
     }
 
     const sortedClients = useMemo(() => {
-        if (!sortKey) return clients
+        let arr = search.trim()
+            ? clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+            : [...clients]
+        if (!sortKey) return arr
         const dir = sortDir === 'asc' ? 1 : -1
-        const arr = [...clients]
         arr.sort((a, b) => {
             const av = getSortValue(a, sortKey)
             const bv = getSortValue(b, sortKey)
@@ -264,7 +267,7 @@ export function Clients() {
             return 0
         })
         return arr
-    }, [clients, sortKey, sortDir])
+    }, [clients, sortKey, sortDir, search])
 
     function handleSort(key: NonNullable<typeof sortKey>) {
         if (sortKey !== key) {
@@ -308,21 +311,37 @@ export function Clients() {
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 600 }}>Clientes</h1>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    style={{
-                        backgroundColor: '#000',
-                        color: 'white',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '0.375rem',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontWeight: 500,
-                        fontSize: '0.9rem'
-                    }}
-                >
-                    + Cliente
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        style={{
+                            padding: '0.5rem 0.75rem',
+                            borderRadius: '0.375rem',
+                            border: '1px solid #d1d5db',
+                            fontSize: '0.875rem',
+                            outline: 'none',
+                            width: '200px',
+                        }}
+                    />
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        style={{
+                            backgroundColor: '#000',
+                            color: 'white',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '0.375rem',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontWeight: 500,
+                            fontSize: '0.9rem'
+                        }}
+                    >
+                        + Cliente
+                    </button>
+                </div>
             </div>
 
             <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', border: '1px solid #e5e7eb', overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>

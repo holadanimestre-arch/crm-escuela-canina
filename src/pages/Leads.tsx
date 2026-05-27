@@ -25,6 +25,7 @@ export function Leads() {
     const [callReasons, setCallReasons] = useState<CallReason[]>([])
     const [loading, setLoading] = useState(true)
     const [adiestradores, setAdiestradores] = useState<any[]>([])
+    const [search, setSearch] = useState('')
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
     const [isDogBreedModalOpen, setIsDogBreedModalOpen] = useState(false)
@@ -332,7 +333,21 @@ export function Leads() {
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <h1 style={{ fontSize: window.innerWidth < 640 ? '1.25rem' : '1.5rem', fontWeight: 600 }}>Leads</h1>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        style={{
+                            padding: '0.5rem 0.75rem',
+                            borderRadius: '0.375rem',
+                            border: '1px solid #d1d5db',
+                            fontSize: '0.875rem',
+                            outline: 'none',
+                            width: '200px',
+                        }}
+                    />
                     <button
                         onClick={() => setIsModalOpen(true)}
                         style={{
@@ -362,12 +377,12 @@ export function Leads() {
                         </tr>
                     </thead>
                     <tbody>
-                        {leads.length === 0 ? (
+                        {leads.filter(l => !search.trim() || l.name.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
                             <tr>
                                 <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No hay leads registrados</td>
                             </tr>
                         ) : (
-                            leads.map((lead) => (
+                            leads.filter(l => !search.trim() || l.name.toLowerCase().includes(search.toLowerCase())).map((lead) => (
                                 <tr 
                                     key={lead.id} 
                                     className="clickable-row"
