@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useDialog } from '../context/DialogContext'
 import { Database } from '../types/database.types'
@@ -26,6 +27,8 @@ export function Leads() {
     const [loading, setLoading] = useState(true)
     const [adiestradores, setAdiestradores] = useState<any[]>([])
     const [search, setSearch] = useState('')
+    const [sortKey, setSortKey] = useState<'name' | 'status' | 'city' | 'date' | null>(null)
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
     const [isDogBreedModalOpen, setIsDogBreedModalOpen] = useState(false)
@@ -327,6 +330,53 @@ export function Leads() {
         return { backgroundColor: '#f3f4f6', color: '#374151' } // Gris default (ej. evaluación aceptada)
     }
 
+    const STATUS_ORDER: Record<string, number> = {
+        nuevo: 0,
+        intentando_contactar_lupe: 1, intentando_contactar_aroha: 1, intentando_contactar_pablo: 1,
+        tiene_que_hablarlo_lupe: 2, tiene_que_hablarlo_aroha: 2, tiene_que_hablarlo_pablo: 2,
+        evaluacion_denegada_lupe: 3, evaluacion_denegada_aroha: 3, evaluacion_denegada_pablo: 3,
+        perdido: 4,
+    }
+
+    function handleSort(key: NonNullable<typeof sortKey>) {
+        if (sortKey !== key) { setSortKey(key); setSortDir('asc') }
+        else if (sortDir === 'asc') setSortDir('desc')
+        else { setSortKey(null); setSortDir('asc') }
+    }
+
+    function SortableTh({ label, k }: { label: string; k: NonNullable<typeof sortKey> }) {
+        const active = sortKey === k
+        const Icon = !active ? ChevronsUpDown : sortDir === 'asc' ? ChevronUp : ChevronDown
+        return (
+            <th onClick={() => handleSort(k)} style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: active ? '#111827' : '#6b7280', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    {label}<Icon size={12} style={{ opacity: active ? 1 : 0.5 }} />
+                </span>
+            </th>
+        )
+    }
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const sortedLeads = useMemo(() => {
+        let arr = search.trim()
+            ? leads.filter(l => l.name.toLowerCase().includes(search.toLowerCase()))
+            : [...leads]
+        if (!sortKey) return arr
+        const dir = sortDir === 'asc' ? 1 : -1
+        arr.sort((a, b) => {
+            let av: string | number, bv: string | number
+            if (sortKey === 'name')   { av = (a.name || '').toLowerCase(); bv = (b.name || '').toLowerCase() }
+            else if (sortKey === 'status') { av = STATUS_ORDER[a.status as string] ?? 99; bv = STATUS_ORDER[b.status as string] ?? 99 }
+            // @ts-ignore
+            else if (sortKey === 'city')   { av = ((a.cities?.name as string) || '').toLowerCase(); bv = ((b.cities?.name as string) || '').toLowerCase() }
+            else { av = a.created_at || ''; bv = b.created_at || '' }
+            if (av < bv) return -1 * dir
+            if (av > bv) return 1 * dir
+            return 0
+        })
+        return arr
+    }, [leads, sortKey, sortDir, search])
+
     if (loading) return <div>Cargando leads...</div>
 
     return (
@@ -369,20 +419,20 @@ export function Leads() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
                     <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                         <tr>
-                            <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Nombre</th>
-                            <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Estado</th>
-                            <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Ciudad</th>
-                            <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Fecha</th>
+                            <SortableTh label="Nombre" k="name" />
+                            <SortableTh label="Estado" k="status" />
+                            <SortableTh label="Ciudad" k="city" />
+                            <SortableTh label="Fecha" k="date" />
                             <th style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', textTransform: 'uppercase', color: '#6b7280' }}>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {leads.filter(l => !search.trim() || l.name.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
+                        {sortedLeads.length === 0 ? (
                             <tr>
                                 <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No hay leads registrados</td>
                             </tr>
                         ) : (
-                            leads.filter(l => !search.trim() || l.name.toLowerCase().includes(search.toLowerCase())).map((lead) => (
+                            sortedLeads.map((lead) => (
                                 <tr 
                                     key={lead.id} 
                                     className="clickable-row"
