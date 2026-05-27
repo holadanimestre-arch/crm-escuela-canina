@@ -18,6 +18,7 @@ type Evaluation = Database['public']['Tables']['evaluations']['Row']
 type ClientWithExtras = Client & {
     evaluation?: Evaluation | null
     currentSession?: number
+    totalSessions?: number
 }
 
 type City = Database['public']['Tables']['cities']['Row']
@@ -170,25 +171,29 @@ export function Clients() {
                 .select('*')
                 .in('client_id', clientIds)
 
-            // Fetch sessions (count completed per client)
+            // Fetch all sessions (completed and scheduled)
             const { data: sessions } = await supabase
                 .from('sessions')
                 .select('client_id, session_number, completed')
                 .in('client_id', clientIds)
-                .eq('completed', true)
                 .order('session_number', { ascending: false })
 
             // Map evaluations and sessions to clients
             const enriched: ClientWithExtras[] = clientsData.map(client => {
                 const eval_ = evaluations?.find(e => e.client_id === client.id) || null
                 const clientSessions = sessions?.filter(s => s.client_id === client.id) || []
-                const sessionNumbers = clientSessions
+                const completedNumbers = clientSessions
+                    .filter(s => s.completed)
                     .map(s => s.session_number)
                     .filter((n): n is number => n != null)
-                const maxSession = sessionNumbers.length > 0
-                    ? Math.max(...sessionNumbers)
-                    : 0
-                return { ...client, evaluation: eval_, currentSession: maxSession }
+                const allNumbers = clientSessions
+                    .map(s => s.session_number)
+                    .filter((n): n is number => n != null)
+                const maxSession = completedNumbers.length > 0 ? Math.max(...completedNumbers) : 0
+                const totalSessions = allNumbers.length > 0
+                    ? Math.max(...allNumbers)
+                    : (eval_?.total_sessions ?? 0)
+                return { ...client, evaluation: eval_, currentSession: maxSession, totalSessions }
             })
 
             setClients(enriched)
@@ -380,7 +385,7 @@ export function Clients() {
                                             </span>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>
-                                            {client.currentSession ? `${client.currentSession} / ${client.evaluation?.total_sessions || '?'}` : '-'}
+                                            {client.currentSession ? `${client.currentSession} / ${client.totalSessions || client.evaluation?.total_sessions || '?'}` : '-'}
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <button onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${client.id}`) }} style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', marginRight: '0.5rem' }}>Ver Ficha</button>
