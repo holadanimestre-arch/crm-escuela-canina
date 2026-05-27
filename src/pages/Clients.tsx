@@ -209,7 +209,7 @@ export function Clients() {
         const ev = client.evaluation
         if (!ev) {
             if (client.status === 'activo' || client.status === 'finalizado') {
-                return { text: '-', bg: 'transparent', color: '#6b7280' }
+                return { text: 'Aprobada', bg: '#dcfce7', color: '#166534' }
             }
             return { text: 'Sin Agendar', bg: '#fef9c3', color: '#854d0e' }
         }
