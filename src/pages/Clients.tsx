@@ -405,7 +405,9 @@ export function Clients() {
                                             </span>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>
-                                            {client.currentSession ? `${client.currentSession} / ${client.totalSessions || client.evaluation?.total_sessions || '?'}` : '-'}
+                                            {(client.totalSessions || client.evaluation?.total_sessions)
+                                                ? `${client.currentSession ?? 0} / ${client.totalSessions || client.evaluation?.total_sessions}`
+                                                : '-'}
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <button onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${client.id}`) }} style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', marginRight: '0.5rem' }}>Ver Ficha</button>
