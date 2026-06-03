@@ -539,11 +539,11 @@ export function ClientDetail() {
 
                                         let statusIcon, statusText, statusBg, statusColor, borderColor
                                         if (isCompleted) {
-                                            statusIcon = <CheckCircle2 size={18} color="#16a34a" />
+                                            statusIcon = <CheckCircle2 size={18} color="#15803d" />
                                             statusText = 'Completada'
-                                            statusBg = '#dcfce7'
-                                            statusColor = '#166534'
-                                            borderColor = '#bbf7d0'
+                                            statusBg = '#16a34a'
+                                            statusColor = '#ffffff'
+                                            borderColor = '#86efac'
                                         } else if (isScheduled) {
                                             statusIcon = <Clock size={18} color="#2563eb" />
                                             statusText = 'Agendada'
@@ -568,7 +568,7 @@ export function ClientDetail() {
                                                     padding: '1rem 1.25rem',
                                                     borderRadius: '0.5rem',
                                                     border: `1px solid ${borderColor}`,
-                                                    backgroundColor: isCompleted ? '#fafff9' : 'white'
+                                                    backgroundColor: isCompleted ? '#f0fdf4' : 'white'
                                                 }}
                                             >
                                                 {/* Number */}
@@ -659,7 +659,7 @@ export function ClientDetail() {
                                                                 cursor: 'pointer'
                                                             }}
                                                         >
-                                                            <CheckCircle2 size={12} /> Completada
+                                                            <CheckCircle2 size={12} /> Marcar como completada
                                                         </button>
                                                     )}
                                                     {(session as any).paid_to_trainer && (
