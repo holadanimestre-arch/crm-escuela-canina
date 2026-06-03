@@ -56,6 +56,20 @@ export function ClientDetail() {
         setEditSessionTime(toLocalTimeInput(session.date))
     }
 
+    const markSessionCompleted = async (session: Session) => {
+        if (!await showConfirm(`¿Marcar Sesión ${session.session_number} como completada?`)) return
+        try {
+            const { error } = await supabase
+                .from('sessions')
+                .update({ completed: true })
+                .eq('id', session.id)
+            if (error) throw error
+            setSessions(prev => prev.map(s => s.id === session.id ? { ...s, completed: true } : s))
+        } catch (err: any) {
+            showAlert('Error al marcar la sesión: ' + (err.message || 'Error desconocido'))
+        }
+    }
+
     const submitEditSession = async () => {
         if (!editingSession || !editSessionDate || !editSessionTime) return
         setSavingSession(true)
@@ -625,6 +639,27 @@ export function ClientDetail() {
                                                             }}
                                                         >
                                                             <Pencil size={12} /> Editar fecha
+                                                        </button>
+                                                    )}
+                                                    {profile?.role === 'admin' && isScheduled && session.id && (
+                                                        <button
+                                                            onClick={() => markSessionCompleted(session as Session)}
+                                                            title="Marcar como completada"
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '0.25rem',
+                                                                padding: '0.2rem 0.5rem',
+                                                                borderRadius: '0.375rem',
+                                                                border: '1px solid #bbf7d0',
+                                                                background: '#f0fdf4',
+                                                                color: '#166534',
+                                                                fontSize: '0.7rem',
+                                                                fontWeight: 600,
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            <CheckCircle2 size={12} /> Completada
                                                         </button>
                                                     )}
                                                     {(session as any).paid_to_trainer && (
