@@ -184,18 +184,9 @@ export function Clients() {
             const enriched: ClientWithExtras[] = clientsData.map(client => {
                 const eval_ = evaluations?.find(e => e.client_id === client.id) || null
                 const clientSessions = sessions?.filter(s => s.client_id === client.id) || []
-                const completedNumbers = clientSessions
-                    .filter(s => s.completed)
-                    .map(s => s.session_number)
-                    .filter((n): n is number => n != null)
-                const allNumbers = clientSessions
-                    .map(s => s.session_number)
-                    .filter((n): n is number => n != null)
-                const maxSession = completedNumbers.length > 0 ? Math.max(...completedNumbers) : 0
-                const totalSessions = allNumbers.length > 0
-                    ? Math.max(...allNumbers)
-                    : (eval_?.total_sessions ?? 0)
-                return { ...client, evaluation: eval_, currentSession: maxSession, totalSessions }
+                const completedCount = clientSessions.filter(s => s.completed).length
+                const totalSessions = eval_?.total_sessions ?? clientSessions.length
+                return { ...client, evaluation: eval_, currentSession: completedCount, totalSessions }
             })
 
             setClients(enriched)
