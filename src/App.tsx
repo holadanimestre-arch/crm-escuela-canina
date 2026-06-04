@@ -20,6 +20,7 @@ import { Sesiones } from './pages/Sesiones'
 import { MiFacturacion } from './pages/MiFacturacion'
 import { PagoAdiestradores } from './pages/admin/PagoAdiestradores'
 import { AgendaView } from './pages/Agenda'
+import { Notificaciones } from './pages/Notificaciones'
 
 import './index.css'
 
@@ -111,6 +112,11 @@ function AppRoutes() {
                 <Route path="ajustes" element={
                     <RoleRoute allowedRoles={['admin']}>
                         <Ajustes />
+                    </RoleRoute>
+                } />
+                <Route path="notificaciones" element={
+                    <RoleRoute allowedRoles={['admin']}>
+                        <Notificaciones />
                     </RoleRoute>
                 } />
             </Route>

@@ -16,8 +16,10 @@ import {
     Receipt,
     Wallet,
     Menu,
-    X
+    X,
+    Bell
 } from 'lucide-react'
+import { NotificationBell } from '../components/NotificationBell'
 
 export function AppLayout() {
     const { signOut, profile, assignedCityIds } = useAuth()
@@ -78,6 +80,7 @@ export function AppLayout() {
                 { name: 'Clientes', href: '/clientes', icon: UserCheck },
                 { name: 'Facturación', href: '/facturacion', icon: FileText },
                 { name: 'Pagos Adiestradores', href: '/pagos-adiestradores', icon: Wallet },
+                { name: 'Notificaciones', href: '/notificaciones', icon: Bell },
                 { name: 'Usuarios', href: '/usuarios', icon: Users },
                 { name: 'Configuración', href: '/ajustes', icon: Settings },
             ]
@@ -335,6 +338,8 @@ export function AppLayout() {
                                 </div>
                             </div>
                         )}
+
+                        {profile?.role === 'admin' && <NotificationBell />}
                     </div>
                 </header>
 

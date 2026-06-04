@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { useFilters } from '../../context/FilterContext'
 import { useDialog } from '../../context/DialogContext'
-import { Phone, ClipboardCheck, CalendarClock, ArrowLeft, Search, MapPin, User, Edit, Calendar, Clock } from 'lucide-react'
+import { Phone, PhoneOff, ClipboardCheck, CalendarClock, ArrowLeft, Search, MapPin, User, Edit, Calendar, Clock } from 'lucide-react'
 import { Modal } from '../../components/Modal'
 
 const todayLocalISO = () => {
@@ -273,15 +273,19 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
     async function handleNoContesta(client: any) {
         setSavingNoContesta(true)
         try {
+            const detalles = client.dog_breed ? ` (${client.dog_breed})` : ''
             const { error } = await supabase
-                .from('leads')
-                .update({
-                    status: 'evaluacion_denegada_pablo' // Usamos un estado que sí existe en el enum
+                .from('notifications')
+                .insert({
+                    type: 'no_contesta',
+                    title: 'Cliente no contesta',
+                    message: `${client.name}${detalles} no contesta. Insistir al menos 3 veces. Tel: ${client.phone || 'sin teléfono'}`,
+                    client_id: client.id,
+                    created_by: profile?.id ?? null
                 })
-                .eq('id', client.id)
             if (error) throw error
             closeModals()
-            fetchClients()
+            showAlert('Aviso enviado a administración. Lupe se encargará de llamar.')
         } catch (err: any) {
             showAlert(err.message)
         } finally {
@@ -344,6 +348,18 @@ function LlamadasPendientes({ onBack, syncGoogleCalendar }: any) {
                                 >
                                     <CalendarClock size={14} /> Agendar Eval.
                                 </button>
+                            </div>
+                            <div style={{ marginTop: '0.75rem' }}>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleNoContesta(client) }}
+                                    disabled={savingNoContesta}
+                                    style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', background: '#ef4444', color: 'white', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: savingNoContesta ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
+                                >
+                                    <PhoneOff size={14} /> {savingNoContesta ? 'Enviando...' : 'No contesta'}
+                                </button>
+                                <p style={{ margin: '0.4rem 0 0', textAlign: 'center', fontSize: '0.7rem', color: '#9ca3af' }}>
+                                    Insistir al menos 3 veces
+                                </p>
                             </div>
                         </div>
                     ))}
