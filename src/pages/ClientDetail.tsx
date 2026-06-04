@@ -48,7 +48,49 @@ export function ClientDetail() {
     const [editSessionDate, setEditSessionDate] = useState('')
     const [editSessionTime, setEditSessionTime] = useState('')
     const [savingSession, setSavingSession] = useState(false)
+    const [savingStatus, setSavingStatus] = useState(false)
     const canEditSessions = profile?.role === 'admin' || profile?.role === 'adiestrador'
+
+    const finalizarCliente = async () => {
+        if (!client) return
+        const completedCount = sessions.filter(s => s.completed).length
+        const total = evaluation?.total_sessions || 0
+        const aviso = total > 0 && completedCount < total
+            ? `Atención: este cliente tiene ${completedCount} de ${total} sesiones completadas.\n\n`
+            : ''
+        if (!await showConfirm(`${aviso}¿Marcar a ${client.name} como CLIENTE FINALIZADO?`)) return
+        setSavingStatus(true)
+        try {
+            const { error } = await supabase
+                .from('clients')
+                .update({ status: 'finalizado' } as any)
+                .eq('id', client.id)
+            if (error) throw error
+            setClient({ ...(client as any), status: 'finalizado' } as Client)
+        } catch (err: any) {
+            showAlert('Error al finalizar el cliente: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setSavingStatus(false)
+        }
+    }
+
+    const reactivarCliente = async () => {
+        if (!client) return
+        if (!await showConfirm(`¿Reactivar a ${client.name}? Volverá a aparecer como cliente activo.`)) return
+        setSavingStatus(true)
+        try {
+            const { error } = await supabase
+                .from('clients')
+                .update({ status: 'activo' } as any)
+                .eq('id', client.id)
+            if (error) throw error
+            setClient({ ...(client as any), status: 'activo' } as Client)
+        } catch (err: any) {
+            showAlert('Error al reactivar el cliente: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setSavingStatus(false)
+        }
+    }
 
     const openEditSession = (session: Session) => {
         setEditingSession(session)
@@ -683,6 +725,41 @@ export function ClientDetail() {
                                 </div>
                             )
                         })()}
+
+                        {/* Finalizar / Reactivar Cliente */}
+                        {canEditSessions && (
+                            <div style={{ marginTop: '2rem', borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
+                                {client.status === 'finalizado' ? (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#3730a3', fontWeight: 600, fontSize: '0.9rem' }}>
+                                            <CheckCircle2 size={18} /> Este cliente está finalizado.
+                                        </span>
+                                        {profile?.role === 'admin' && (
+                                            <button
+                                                onClick={reactivarCliente}
+                                                disabled={savingStatus}
+                                                style={{ padding: '0.5rem 1.25rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', background: 'white', color: '#374151', fontWeight: 600, fontSize: '0.875rem', cursor: savingStatus ? 'wait' : 'pointer' }}
+                                            >
+                                                {savingStatus ? 'Guardando...' : 'Reactivar cliente'}
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                                        <button
+                                            onClick={finalizarCliente}
+                                            disabled={savingStatus}
+                                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', background: '#4f46e5', color: 'white', fontWeight: 700, fontSize: '0.9rem', cursor: savingStatus ? 'wait' : 'pointer' }}
+                                        >
+                                            <CheckCircle2 size={18} /> {savingStatus ? 'Guardando...' : 'Cliente Finalizado'}
+                                        </button>
+                                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#9ca3af', textAlign: 'right' }}>
+                                            Márcalo al terminar las sesiones o si el cliente abandona antes de tiempo.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
                 {activeTab === 'payments' && (() => {
