@@ -251,6 +251,7 @@ export interface Database {
                     method: 'efectivo' | 'transferencia' | null
                     notes: string | null
                     created_at: string
+                    receipt_path: string | null
                 }
                 Insert: {
                     id?: string
@@ -262,6 +263,7 @@ export interface Database {
                     method?: 'efectivo' | 'transferencia' | 'tarjeta' | null
                     notes?: string | null
                     created_at?: string
+                    receipt_path?: string | null
                 }
                 Update: {
                     id?: string
@@ -273,6 +275,7 @@ export interface Database {
                     method?: 'efectivo' | 'transferencia' | 'tarjeta' | null
                     notes?: string | null
                     created_at?: string
+                    receipt_path?: string | null
                 }
             }
             trainer_settlements: {

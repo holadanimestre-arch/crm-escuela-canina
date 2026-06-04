@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Database } from '../types/database.types'
 import { generateInvoicePDF } from '../utils/invoiceGenerator'
-import { ArrowLeft, Mail, Phone, MapPin, Dog, ClipboardCheck, CalendarClock, CheckCircle2, Clock, Circle, FileText, Pencil, Calendar as CalendarIcon } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, MapPin, Dog, ClipboardCheck, CalendarClock, CheckCircle2, Clock, Circle, FileText, Pencil, Calendar as CalendarIcon, Paperclip, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useDialog } from '../context/DialogContext'
 import { Modal } from '../components/Modal'
@@ -71,6 +71,68 @@ export function ClientDetail() {
             showAlert('Error al finalizar el cliente: ' + (err.message || 'Error desconocido'))
         } finally {
             setSavingStatus(false)
+        }
+    }
+
+    const [uploadingReceiptId, setUploadingReceiptId] = useState<string | null>(null)
+    const canManageReceipts = profile?.role !== 'adiestrador'
+
+    const uploadReceipt = async (payment: any, file: File) => {
+        if (!client) return
+        if (!(file.type.startsWith('image/') || file.type === 'application/pdf')) {
+            showAlert('Solo se permiten imágenes o archivos PDF.')
+            return
+        }
+        setUploadingReceiptId(payment.id)
+        try {
+            const ext = (file.name.split('.').pop() || 'dat').toLowerCase()
+            const path = `${client.id}/pago-${payment.id}.${ext}`
+            const { error: upErr } = await supabase.storage
+                .from('justificantes')
+                .upload(path, file, { upsert: true, contentType: file.type })
+            if (upErr) throw upErr
+            const { error: dbErr } = await supabase
+                .from('payments')
+                .update({ receipt_path: path } as any)
+                .eq('id', payment.id)
+            if (dbErr) throw dbErr
+            setPayments(prev => prev.map(p => p.id === payment.id ? { ...p, receipt_path: path } : p))
+        } catch (err: any) {
+            showAlert('Error al subir el justificante: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setUploadingReceiptId(null)
+        }
+    }
+
+    const viewReceipt = async (payment: any) => {
+        if (!payment.receipt_path) return
+        try {
+            const { data, error } = await supabase.storage
+                .from('justificantes')
+                .createSignedUrl(payment.receipt_path, 60)
+            if (error) throw error
+            if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+        } catch (err: any) {
+            showAlert('No se pudo abrir el justificante: ' + (err.message || 'Error desconocido'))
+        }
+    }
+
+    const removeReceipt = async (payment: any) => {
+        if (!payment.receipt_path) return
+        if (!await showConfirm('¿Eliminar el justificante de este pago?')) return
+        setUploadingReceiptId(payment.id)
+        try {
+            await supabase.storage.from('justificantes').remove([payment.receipt_path])
+            const { error } = await supabase
+                .from('payments')
+                .update({ receipt_path: null } as any)
+                .eq('id', payment.id)
+            if (error) throw error
+            setPayments(prev => prev.map(p => p.id === payment.id ? { ...p, receipt_path: null } : p))
+        } catch (err: any) {
+            showAlert('Error al eliminar el justificante: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setUploadingReceiptId(null)
         }
     }
 
@@ -1036,6 +1098,43 @@ export function ClientDetail() {
                                                 }}>
                                                     {payment.received ? '✅ Cobrado' : '⏳ Pend.'}
                                                 </span>
+
+                                                {/* Justificante bancario */}
+                                                {payment.receipt_path ? (
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                        <button
+                                                            onClick={() => viewReceipt(payment)}
+                                                            title="Ver justificante"
+                                                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 600, backgroundColor: '#eef2ff', color: '#4338ca', border: '1px solid #c7d2fe', cursor: 'pointer' }}
+                                                        >
+                                                            <Paperclip size={12} /> Justificante
+                                                        </button>
+                                                        {canManageReceipts && (
+                                                            <button
+                                                                onClick={() => removeReceipt(payment)}
+                                                                title="Eliminar justificante"
+                                                                disabled={uploadingReceiptId === payment.id}
+                                                                style={{ display: 'inline-flex', background: 'none', border: 'none', color: '#9ca3af', cursor: uploadingReceiptId === payment.id ? 'wait' : 'pointer', padding: '0.1rem' }}
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        )}
+                                                    </span>
+                                                ) : canManageReceipts ? (
+                                                    <label
+                                                        title="Adjuntar justificante (imagen o PDF)"
+                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 600, backgroundColor: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb', cursor: uploadingReceiptId === payment.id ? 'wait' : 'pointer' }}
+                                                    >
+                                                        <Paperclip size={12} /> {uploadingReceiptId === payment.id ? 'Subiendo...' : 'Adjuntar'}
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*,application/pdf"
+                                                            disabled={uploadingReceiptId === payment.id}
+                                                            style={{ display: 'none' }}
+                                                            onChange={e => { const f = e.target.files?.[0]; if (f) uploadReceipt(payment, f); e.currentTarget.value = '' }}
+                                                        />
+                                                    </label>
+                                                ) : null}
                                             </div>
                                         </div>
                                     ))}
