@@ -1,0 +1,39 @@
+name: Copia de seguridad BD
+
+on:
+  schedule:
+    # Cada 2 días a las 03:00 UTC (≈ 04:00/05:00 hora España según horario)
+    - cron: '0 3 */2 * *'
+  workflow_dispatch: {} # Permite lanzarla manualmente desde la pestaña Actions
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Marca de tiempo
+        id: ts
+        run: echo "stamp=$(date -u +'%Y-%m-%d_%H%M')" >> "$GITHUB_OUTPUT"
+
+      - name: Volcar base de datos (roles + esquema + datos)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          supabase db dump --db-url "$SUPABASE_DB_URL" --role-only -f roles.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL"             -f schema.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL" --data-only  -f data.sql
+
+      - name: Subir copia como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ steps.ts.outputs.stamp }}
+          path: |
+            roles.sql
+            schema.sql
+            data.sql
+          retention-days: 90
