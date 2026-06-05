@@ -44,6 +44,29 @@ export function ClientDetail() {
     const [savingObs, setSavingObs] = useState(false)
     const canEditObs = profile?.role === 'admin' || profile?.role === 'adiestrador'
 
+    const [isEditingDogName, setIsEditingDogName] = useState(false)
+    const [dogNameDraft, setDogNameDraft] = useState('')
+    const [savingDogName, setSavingDogName] = useState(false)
+
+    const saveDogName = async () => {
+        if (!client) return
+        setSavingDogName(true)
+        try {
+            const newName = dogNameDraft.trim() || null
+            const { error } = await supabase
+                .from('clients')
+                .update({ dog_name: newName } as any)
+                .eq('id', client.id)
+            if (error) throw error
+            setClient({ ...(client as any), dog_name: newName } as Client)
+            setIsEditingDogName(false)
+        } catch (err: any) {
+            showAlert('Error al guardar el nombre del perro: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setSavingDogName(false)
+        }
+    }
+
     const [editingSession, setEditingSession] = useState<Session | null>(null)
     const [editSessionDate, setEditSessionDate] = useState('')
     const [editSessionTime, setEditSessionTime] = useState('')
@@ -373,6 +396,47 @@ export function ClientDetail() {
                             Información del Perro
                         </h3>
                         <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase' }}>Nombre del Perro</label>
+                                    {canEditObs && !isEditingDogName && (
+                                        <button
+                                            onClick={() => { setDogNameDraft((client as any).dog_name || ''); setIsEditingDogName(true) }}
+                                            title="Editar nombre del perro"
+                                            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.25rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}
+                                        >
+                                            <Pencil size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                                {isEditingDogName ? (
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <input
+                                            value={dogNameDraft}
+                                            onChange={e => setDogNameDraft(e.target.value)}
+                                            placeholder="Nombre del perro"
+                                            autoFocus
+                                            style={{ flex: 1, minWidth: 0, padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
+                                        />
+                                        <button
+                                            onClick={saveDogName}
+                                            disabled={savingDogName}
+                                            style={{ padding: '0.5rem 0.75rem', borderRadius: '0.375rem', border: 'none', background: '#000', color: 'white', fontSize: '0.8rem', cursor: savingDogName ? 'wait' : 'pointer' }}
+                                        >
+                                            {savingDogName ? '...' : 'Guardar'}
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsEditingDogName(false); setDogNameDraft('') }}
+                                            disabled={savingDogName}
+                                            style={{ padding: '0.5rem 0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', background: 'white', fontSize: '0.8rem', cursor: 'pointer' }}
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <p>{(client as any).dog_name || '-'}</p>
+                                )}
+                            </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Raza</label>
                                 <p>{client.dog_breed || '-'}</p>

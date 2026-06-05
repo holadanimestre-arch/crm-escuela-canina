@@ -32,7 +32,7 @@ export function Clients() {
     const { cityId } = useFilters()
     const [clients, setClients] = useState<ClientWithExtras[]>([])
     const [loading, setLoading] = useState(true)
-    const [sortKey, setSortKey] = useState<'name' | 'status' | 'city' | 'evaluation' | 'session' | null>(null)
+    const [sortKey, setSortKey] = useState<'name' | 'dog' | 'status' | 'city' | 'evaluation' | 'session' | null>(null)
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
     const [search, setSearch] = useState('')
     const [cities, setCities] = useState<City[]>([])
@@ -55,6 +55,7 @@ export function Clients() {
         adiestrador_id: '',
         dog_breed: '',
         dog_age: '',
+        dog_name: '',
         call_reason: '',
         observations: '',
         converted_by: ''
@@ -120,6 +121,7 @@ export function Clients() {
                 location_lng: formData.location_lng,
                 dog_breed: formData.dog_breed,
                 dog_age: formData.dog_age,
+                dog_name: formData.dog_name || null,
                 call_reason: formData.call_reason,
                 observations: formData.observations,
                 converted_by: formData.converted_by,
@@ -132,7 +134,7 @@ export function Clients() {
             setIsModalOpen(false)
             setFormData({
                 name: '', email: '', phone: '', city_id: '', address: '', location_lat: null, location_lng: null, adiestrador_id: '',
-                dog_breed: '', dog_age: '', call_reason: '', observations: '', converted_by: ''
+                dog_breed: '', dog_age: '', dog_name: '', call_reason: '', observations: '', converted_by: ''
             })
             fetchClients()
             showAlert('Cliente creado con éxito')
@@ -234,6 +236,7 @@ export function Clients() {
     function getSortValue(client: ClientWithExtras, key: NonNullable<typeof sortKey>): number | string {
         switch (key) {
             case 'name':       return (client.name || '').toLowerCase()
+            case 'dog':        return (client.dog_name || '').toLowerCase()
             case 'status':     return STATUS_ORDER[client.status as string] ?? 99
             // @ts-ignore
             case 'city':       return ((client.cities?.name as string) || '').toLowerCase()
@@ -247,7 +250,10 @@ export function Clients() {
 
     const sortedClients = useMemo(() => {
         let arr = search.trim()
-            ? clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+            ? clients.filter(c => {
+                const q = search.toLowerCase()
+                return c.name.toLowerCase().includes(q) || (c.dog_name || '').toLowerCase().includes(q)
+            })
             : [...clients]
         if (!sortKey) return arr
         const dir = sortDir === 'asc' ? 1 : -1
@@ -306,7 +312,7 @@ export function Clients() {
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <input
                         type="text"
-                        placeholder="Buscar por nombre..."
+                        placeholder="Buscar por cliente o perro..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         style={{
@@ -341,6 +347,7 @@ export function Clients() {
                     <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                         <tr>
                             <SortableTh label="Nombre" k="name" />
+                            <SortableTh label="Perro" k="dog" />
                             <SortableTh label="Estado" k="status" />
                             <SortableTh label="Ciudad" k="city" />
                             <SortableTh label="Evaluación" k="evaluation" />
@@ -351,7 +358,7 @@ export function Clients() {
                     <tbody>
                         {clients.length === 0 ? (
                             <tr>
-                                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No hay clientes registrados</td>
+                                <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No hay clientes registrados</td>
                             </tr>
                         ) : (
                             sortedClients.map((client) => {
@@ -366,6 +373,9 @@ export function Clients() {
                                         <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>
                                             {client.name}
                                             <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 400 }}>{client.email}</div>
+                                        </td>
+                                        <td style={{ padding: '1rem 1.5rem', color: client.dog_name ? '#111827' : '#9ca3af' }}>
+                                            {client.dog_name || '-'}
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <span style={{
@@ -520,6 +530,16 @@ export function Clients() {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Nombre del Perro</label>
+                            <input
+                                type="text"
+                                value={formData.dog_name}
+                                onChange={e => setFormData({ ...formData, dog_name: e.target.value })}
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
+                                placeholder="Ej: Toby"
+                            />
+                        </div>
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                 <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase' }}>Raza</label>

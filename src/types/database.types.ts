@@ -132,6 +132,7 @@ export interface Database {
                     city_id: string
                     dog_breed: string | null
                     dog_age: string | null
+                    dog_name: string | null
                     status: 'evaluado' | 'activo' | 'finalizado'
                     created_at: string
                     evaluation_done_at: string | null
@@ -149,6 +150,7 @@ export interface Database {
                     city_id: string
                     dog_breed?: string | null
                     dog_age?: string | null
+                    dog_name?: string | null
                     status?: 'evaluado' | 'activo' | 'finalizado'
                     created_at?: string
                     evaluation_done_at?: string | null

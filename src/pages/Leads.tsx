@@ -49,6 +49,7 @@ export function Leads() {
         city_id: '',
         dog_breed: '',
         dog_age: '',
+        dog_name: '',
         address: '',
         location_lat: null as number | null,
         location_lng: null as number | null,
@@ -136,6 +137,7 @@ export function Leads() {
             city_id: lead.city_id || '',
             dog_breed: '',
             dog_age: '',
+            dog_name: '',
             address: '',
             location_lat: null,
             location_lng: null,
@@ -207,6 +209,7 @@ export function Leads() {
                 phone: selectedLead.phone,
                 dog_breed: convertData.dog_breed,
                 dog_age: convertData.dog_age,
+                dog_name: convertData.dog_name || null,
                 address: convertData.address,
                 location_lat: convertData.location_lat,
                 location_lng: convertData.location_lng,
@@ -234,6 +237,7 @@ export function Leads() {
                 city_id: selectedLead.city_id || '',
                 dog_breed: '',
                 dog_age: '',
+                dog_name: '',
                 address: '',
                 location_lat: null,
                 location_lng: null,
@@ -660,6 +664,16 @@ export function Leads() {
                     </div>
 
                     <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Nombre del Perro</label>
+                            <input
+                                type="text"
+                                value={convertData.dog_name}
+                                onChange={e => setConvertData({ ...convertData, dog_name: e.target.value })}
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
+                                placeholder="Ej: Toby"
+                            />
+                        </div>
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                 <label style={{ display: 'block', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Raza</label>
