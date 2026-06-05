@@ -14,6 +14,7 @@ export interface Database {
                     id: string
                     email: string | null
                     full_name: string | null
+                    phone: string | null
                     role: 'admin' | 'comercial' | 'adiestrador'
                     assigned_city_id: string | null
                     avatar_url: string | null
@@ -28,6 +29,7 @@ export interface Database {
                     id: string
                     email?: string | null
                     full_name?: string | null
+                    phone?: string | null
                     role?: 'admin' | 'comercial' | 'adiestrador'
                     assigned_city_id?: string | null
                     avatar_url?: string | null
@@ -42,6 +44,7 @@ export interface Database {
                     id?: string
                     email?: string | null
                     full_name?: string | null
+                    phone?: string | null
                     role?: 'admin' | 'comercial' | 'adiestrador'
                     assigned_city_id?: string | null
                     avatar_url?: string | null
@@ -138,6 +141,7 @@ export interface Database {
                     evaluation_done_at: string | null
                     call_reason: string | null
                     observations: string | null
+                    satisfaction_notes: string | null
                     converted_by: string | null
                 }
                 Insert: {
@@ -156,6 +160,7 @@ export interface Database {
                     evaluation_done_at?: string | null
                     call_reason?: string | null
                     observations?: string | null
+                    satisfaction_notes?: string | null
                     converted_by?: string | null
                 }
             }

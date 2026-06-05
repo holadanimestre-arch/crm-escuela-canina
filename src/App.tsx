@@ -19,8 +19,10 @@ import { EvaluationDetail } from './pages/Evaluations/EvaluationDetail'
 import { Sesiones } from './pages/Sesiones'
 import { MiFacturacion } from './pages/MiFacturacion'
 import { PagoAdiestradores } from './pages/admin/PagoAdiestradores'
+import { PagosClientes } from './pages/admin/PagosClientes'
 import { AgendaView } from './pages/Agenda'
 import { Notificaciones } from './pages/Notificaciones'
+import { WhatsApps } from './pages/WhatsApps'
 
 import './index.css'
 
@@ -99,6 +101,11 @@ function AppRoutes() {
                         <Facturacion />
                     </RoleRoute>
                 } />
+                <Route path="pagos-clientes" element={
+                    <RoleRoute allowedRoles={['admin']}>
+                        <PagosClientes />
+                    </RoleRoute>
+                } />
                 <Route path="pagos-adiestradores" element={
                     <RoleRoute allowedRoles={['admin']}>
                         <PagoAdiestradores />
@@ -117,6 +124,11 @@ function AppRoutes() {
                 <Route path="notificaciones" element={
                     <RoleRoute allowedRoles={['admin']}>
                         <Notificaciones />
+                    </RoleRoute>
+                } />
+                <Route path="whatsapps" element={
+                    <RoleRoute allowedRoles={['admin']}>
+                        <WhatsApps />
                     </RoleRoute>
                 } />
             </Route>

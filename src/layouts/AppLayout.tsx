@@ -17,7 +17,9 @@ import {
     Wallet,
     Menu,
     X,
-    Bell
+    Bell,
+    CreditCard,
+    MessageCircle
 } from 'lucide-react'
 import { NotificationBell } from '../components/NotificationBell'
 
@@ -79,8 +81,10 @@ export function AppLayout() {
                 { name: 'Leads', href: '/leads', icon: Users },
                 { name: 'Clientes', href: '/clientes', icon: UserCheck },
                 { name: 'Facturación', href: '/facturacion', icon: FileText },
+                { name: 'Pagos Clientes', href: '/pagos-clientes', icon: CreditCard },
                 { name: 'Pagos Adiestradores', href: '/pagos-adiestradores', icon: Wallet },
                 { name: 'Notificaciones', href: '/notificaciones', icon: Bell },
+                { name: 'WhatsApps', href: '/whatsapps', icon: MessageCircle },
                 { name: 'Usuarios', href: '/usuarios', icon: Users },
                 { name: 'Configuración', href: '/ajustes', icon: Settings },
             ]

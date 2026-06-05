@@ -48,6 +48,29 @@ export function ClientDetail() {
     const [dogNameDraft, setDogNameDraft] = useState('')
     const [savingDogName, setSavingDogName] = useState(false)
 
+    const [isEditingSat, setIsEditingSat] = useState(false)
+    const [satDraft, setSatDraft] = useState('')
+    const [savingSat, setSavingSat] = useState(false)
+
+    const saveSatisfaction = async () => {
+        if (!client) return
+        setSavingSat(true)
+        try {
+            const newVal = satDraft.trim() || null
+            const { error } = await supabase
+                .from('clients')
+                .update({ satisfaction_notes: newVal } as any)
+                .eq('id', client.id)
+            if (error) throw error
+            setClient({ ...(client as any), satisfaction_notes: newVal } as Client)
+            setIsEditingSat(false)
+        } catch (err: any) {
+            showAlert('Error al guardar la satisfacción del cliente: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setSavingSat(false)
+        }
+    }
+
     const saveDogName = async () => {
         if (!client) return
         setSavingDogName(true)
@@ -517,6 +540,48 @@ export function ClientDetail() {
                                     </div>
                                 ) : (
                                     <p style={{ whiteSpace: 'pre-wrap' }}>{(client as any).observations || '-'}</p>
+                                )}
+                            </div>
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase' }}>Satisfacción del Cliente</label>
+                                    {canEditObs && !isEditingSat && (
+                                        <button
+                                            onClick={() => { setSatDraft((client as any).satisfaction_notes || ''); setIsEditingSat(true) }}
+                                            title="Editar satisfacción del cliente"
+                                            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.25rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}
+                                        >
+                                            <Pencil size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                                {isEditingSat ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <textarea
+                                            value={satDraft}
+                                            onChange={e => setSatDraft(e.target.value)}
+                                            placeholder="Anota aquí el feedback de la llamada de calidad al finalizar el adiestramiento..."
+                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', minHeight: '120px', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.95rem' }}
+                                        />
+                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                            <button
+                                                onClick={() => { setIsEditingSat(false); setSatDraft('') }}
+                                                disabled={savingSat}
+                                                style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem', border: '1px solid #d1d5db', background: 'white', cursor: 'pointer' }}
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                onClick={saveSatisfaction}
+                                                disabled={savingSat}
+                                                style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem', border: 'none', background: '#000', color: 'white', cursor: savingSat ? 'wait' : 'pointer' }}
+                                            >
+                                                {savingSat ? 'Guardando...' : 'Guardar'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p style={{ whiteSpace: 'pre-wrap' }}>{(client as any).satisfaction_notes || '-'}</p>
                                 )}
                             </div>
                         </div>

@@ -18,6 +18,7 @@ export function Usuarios() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [fullName, setFullName] = useState('')
+    const [phone, setPhone] = useState('')
     const [role, setRole] = useState<'admin' | 'comercial' | 'adiestrador'>('comercial')
     const [assignedCityIds, setAssignedCityIds] = useState<string[]>([])
     const [submitting, setSubmitting] = useState(false)
@@ -72,6 +73,7 @@ export function Usuarios() {
         setEmail('')
         setPassword('')
         setFullName('')
+        setPhone('')
         setRole('comercial')
         setAssignedCityIds([])
         setBaseAddress('')
@@ -138,6 +140,7 @@ export function Usuarios() {
                     id: authData.user.id,
                     email: email,
                     full_name: fullName,
+                    phone: phone || null,
                     role,
                     assigned_city_id: role === 'adiestrador' && assignedCityIds.length > 0 ? assignedCityIds[0] : null,
                     base_address: role === 'adiestrador' ? baseAddress : null,
@@ -196,6 +199,7 @@ export function Usuarios() {
                     role,
                     assigned_city_id: role === 'adiestrador' && assignedCityIds.length > 0 ? assignedCityIds[0] : null,
                     full_name: fullName,
+                    phone: phone || null,
                     base_address: role === 'adiestrador' ? baseAddress : null,
                     base_lat: role === 'adiestrador' ? baseLat : null,
                     base_lng: role === 'adiestrador' ? baseLng : null,
@@ -284,6 +288,7 @@ export function Usuarios() {
     const openEditModal = (user: any) => {
         setEditingUser(user)
         setFullName(user.full_name || '')
+        setPhone(user.phone || '')
         setRole(user.role)
         setAssignedCityIds((user.assigned_cities || []).map((c: any) => c.id))
         setBaseAddress(user.base_address || '')
@@ -412,6 +417,19 @@ export function Usuarios() {
                                     onChange={(e) => setFullName(e.target.value)}
                                     placeholder="Ej: Juan Pérez"
                                     required
+                                    style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', outline: 'none' }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
+                                    Teléfono <span style={{ color: '#9ca3af', fontWeight: 400 }}>(para avisos por WhatsApp)</span>
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="Ej: 600 000 000"
                                     style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', outline: 'none' }}
                                 />
                             </div>

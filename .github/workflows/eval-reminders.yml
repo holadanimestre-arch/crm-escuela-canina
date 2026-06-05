@@ -1,0 +1,21 @@
+name: Avisos evaluaciones pendientes
+
+on:
+  schedule:
+    # Cada día a las 08:00 UTC (≈ 09:00/10:00 hora España)
+    - cron: '0 8 * * *'
+  workflow_dispatch: {} # Permite lanzarlo manualmente desde la pestaña Actions
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Llamar a la Edge Function notify-pending-evaluations
+        run: |
+          curl -fsS -X POST \
+            "https://gufbkrzpalsrizkqusyr.supabase.co/functions/v1/notify-pending-evaluations" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{}'
