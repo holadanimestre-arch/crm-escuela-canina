@@ -19,7 +19,8 @@ import {
     X,
     Bell,
     CreditCard,
-    MessageCircle
+    MessageCircle,
+    ListTodo
 } from 'lucide-react'
 import { NotificationBell } from '../components/NotificationBell'
 
@@ -78,6 +79,7 @@ export function AppLayout() {
             return [
                 ...common,
                 { name: 'Agenda', href: '/agenda', icon: Calendar },
+                { name: 'Tareas', href: '/tareas', icon: ListTodo },
                 { name: 'Leads', href: '/leads', icon: Users },
                 { name: 'Clientes', href: '/clientes', icon: UserCheck },
                 { name: 'Facturación', href: '/facturacion', icon: FileText },

@@ -33,6 +33,7 @@ export function ClientDetail() {
     const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
     const [sessions, setSessions] = useState<Session[]>([])
     const [payments, setPayments] = useState<any[]>([])
+    const [completedTasks, setCompletedTasks] = useState<any[]>([])
     const [showPaymentForm, setShowPaymentForm] = useState(false)
     const [newPayment, setNewPayment] = useState({ amount: '', method: 'transferencia', notes: '' })
     const [loading, setLoading] = useState(true)
@@ -254,6 +255,7 @@ export function ClientDetail() {
             fetchEvaluation(id)
             fetchSessions(id)
             fetchPayments(id)
+            fetchCompletedTasks(id)
             fetchSettings()
         }
     }, [id])
@@ -261,6 +263,16 @@ export function ClientDetail() {
     async function fetchSettings() {
         const { data } = await supabase.from('crm_settings').select('*').single()
         if (data) setSettings(data)
+    }
+
+    async function fetchCompletedTasks(clientId: string) {
+        const { data } = await supabase
+            .from('tasks')
+            .select('id, title, type, completed_at')
+            .eq('client_id', clientId)
+            .eq('status', 'completada')
+            .order('completed_at', { ascending: false })
+        if (data) setCompletedTasks(data)
     }
 
     async function fetchClient(clientId: string) {
@@ -585,6 +597,23 @@ export function ClientDetail() {
                                 )}
                             </div>
                         </div>
+                        {completedTasks.length > 0 && (
+                            <div style={{ marginTop: '2rem', borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.75rem' }}>Tareas realizadas</label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {completedTasks.map(t => (
+                                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.875rem', color: '#374151' }}>
+                                            <CheckCircle2 size={16} color="#16a34a" style={{ flexShrink: 0 }} />
+                                            <span style={{ flex: 1 }}>{t.title}</span>
+                                            <span style={{ fontSize: '0.75rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>
+                                                {t.completed_at ? new Date(t.completed_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem', borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem' }}>
                             <button
                                 disabled={isDeleting}

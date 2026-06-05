@@ -23,6 +23,7 @@ import { PagosClientes } from './pages/admin/PagosClientes'
 import { AgendaView } from './pages/Agenda'
 import { Notificaciones } from './pages/Notificaciones'
 import { WhatsApps } from './pages/WhatsApps'
+import { Tareas } from './pages/Tareas'
 
 import './index.css'
 
@@ -129,6 +130,11 @@ function AppRoutes() {
                 <Route path="whatsapps" element={
                     <RoleRoute allowedRoles={['admin']}>
                         <WhatsApps />
+                    </RoleRoute>
+                } />
+                <Route path="tareas" element={
+                    <RoleRoute allowedRoles={['admin']}>
+                        <Tareas />
                     </RoleRoute>
                 } />
             </Route>
