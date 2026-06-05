@@ -17,6 +17,16 @@ const AUTOMATIONS = [
         defaultText: 'Hola [NOMBRE], soy de la Escuela Canina. No hemos podido contactar contigo.'
     },
     {
+        key: 'whatsapp_new_client_template' as const,
+        title: 'Cliente nuevo asignado',
+        recipient: 'Al adiestrador asignado',
+        recipientIcon: UserCheck,
+        type: 'auto' as const,
+        trigger: 'Automático: en el momento en que se le sube un cliente al adiestrador para la evaluación inicial (al convertir un lead o crear un cliente).',
+        tags: [{ tag: '[NOMBRE]', desc: 'Nombre del cliente (opcional)' }],
+        defaultText: 'Buenas! te he subido un cliente para llamar cuando puedas 😉'
+    },
+    {
         key: 'whatsapp_eval_reminder_template' as const,
         title: 'Evaluación inicial sin fecha',
         recipient: 'Al adiestrador asignado',

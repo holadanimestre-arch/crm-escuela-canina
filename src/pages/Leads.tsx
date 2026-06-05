@@ -201,7 +201,7 @@ export function Leads() {
 
             const fullName = `${convertData.name.trim()} ${convertData.surname.trim()}`.trim() || selectedLead.name
 
-            const { error: clientError } = await supabase.from('clients').insert({
+            const { data: newClient, error: clientError } = await supabase.from('clients').insert({
                 lead_id: selectedLead.id,
                 city_id: targetCityId,
                 name: fullName,
@@ -218,8 +218,14 @@ export function Leads() {
                 converted_by: convertData.converted_by,
                 status: 'evaluado',
                 adiestrador_id: finalAdiestradorId
-            })
+            }).select('id').single()
             if (clientError) throw clientError
+
+            // Avisar por WhatsApp al adiestrador de que tiene un cliente nuevo para evaluar
+            if (finalAdiestradorId && newClient?.id) {
+                supabase.functions.invoke('notify-client-assigned', { body: { clientId: newClient.id } })
+                    .catch(err => console.error('Error avisando al adiestrador:', err))
+            }
 
             const { error: leadError } = await supabase.from('leads').update({ status: 'evaluacion_aceptada' }).eq('id', selectedLead.id)
             if (leadError) throw leadError

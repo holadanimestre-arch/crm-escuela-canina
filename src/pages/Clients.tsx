@@ -111,7 +111,7 @@ export function Clients() {
                 }
             }
 
-            const { error } = await supabase.from('clients').insert({
+            const { data: newClient, error } = await supabase.from('clients').insert({
                 name: formData.name,
                 email: formData.email,
                 phone: formData.phone,
@@ -127,9 +127,15 @@ export function Clients() {
                 converted_by: formData.converted_by,
                 status: 'evaluado',
                 adiestrador_id: finalAdiestradorId
-            })
+            }).select('id').single()
 
             if (error) throw error
+
+            // Avisar por WhatsApp al adiestrador de que tiene un cliente nuevo para evaluar
+            if (finalAdiestradorId && newClient?.id) {
+                supabase.functions.invoke('notify-client-assigned', { body: { clientId: newClient.id } })
+                    .catch(err => console.error('Error avisando al adiestrador:', err))
+            }
 
             setIsModalOpen(false)
             setFormData({
