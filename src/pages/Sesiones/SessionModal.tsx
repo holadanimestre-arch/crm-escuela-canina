@@ -6,7 +6,7 @@ import { useDialog } from '../../context/DialogContext'
 interface SessionModalProps {
     isOpen: boolean
     onClose: () => void
-    client: { id: string; name: string } | null
+    client: { id: string; name: string; totalSessions?: number | null } | null
     onSessionSaved: () => void
 }
 
@@ -18,6 +18,8 @@ export function SessionModal({ isOpen, onClose, client, onSessionSaved }: Sessio
     const [comments, setComments] = useState('')
     const [saving, setSaving] = useState(false)
     const [existingSessions, setExistingSessions] = useState<number[]>([])
+
+    const maxSessions = client?.totalSessions && client.totalSessions > 0 ? client.totalSessions : 8
 
     useEffect(() => {
         if (isOpen && client) {
@@ -47,8 +49,8 @@ export function SessionModal({ isOpen, onClose, client, onSessionSaved }: Sessio
                 .map((s: any) => s.session_number)
             setExistingSessions(numbers)
 
-            // Auto-select next available session number
-            for (let i = 1; i <= 8; i++) {
+            // Auto-select next available session number (limitado al nº contratado)
+            for (let i = 1; i <= maxSessions; i++) {
                 if (!numbers.includes(i)) {
                     setSessionNumber(i)
                     break
@@ -137,7 +139,7 @@ export function SessionModal({ isOpen, onClose, client, onSessionSaved }: Sessio
                     <div style={{ marginBottom: '1rem' }}>
                         <label style={{ display: 'block', fontWeight: 500, marginBottom: '0.5rem' }}>Número de Sesión</label>
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            {[1, 2, 3, 4, 5, 6, 7, 8].map(num => {
+                            {Array.from({ length: maxSessions }, (_, i) => i + 1).map(num => {
                                 const exists = existingSessions.includes(num)
                                 const isSelected = sessionNumber === num
                                 // Only allow selecting session N if all sessions 1..N-1 exist

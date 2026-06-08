@@ -45,6 +45,10 @@ export function ClientDetail() {
     const [savingObs, setSavingObs] = useState(false)
     const canEditObs = profile?.role === 'admin' || profile?.role === 'adiestrador'
 
+    const [isEditingTotal, setIsEditingTotal] = useState(false)
+    const [totalDraft, setTotalDraft] = useState('')
+    const [savingTotal, setSavingTotal] = useState(false)
+
     const [isEditingDogName, setIsEditingDogName] = useState(false)
     const [dogNameDraft, setDogNameDraft] = useState('')
     const [savingDogName, setSavingDogName] = useState(false)
@@ -208,7 +212,8 @@ export function ClientDetail() {
     }
 
     const markSessionCompleted = async (session: Session) => {
-        if (!await showConfirm(`¿Marcar Sesión ${session.session_number} como completada?`)) return
+        const num = (session as any).displayNumber ?? session.session_number
+        if (!await showConfirm(`¿Marcar Sesión ${num} como completada?`)) return
         try {
             const { error } = await supabase
                 .from('sessions')
@@ -218,6 +223,49 @@ export function ClientDetail() {
             setSessions(prev => prev.map(s => s.id === session.id ? { ...s, completed: true } : s))
         } catch (err: any) {
             showAlert('Error al marcar la sesión: ' + (err.message || 'Error desconocido'))
+        }
+    }
+
+    const openEditTotal = () => {
+        setTotalDraft(String(evaluation?.total_sessions ?? sessions.length ?? ''))
+        setIsEditingTotal(true)
+    }
+
+    const submitTotalSessions = async () => {
+        if (!evaluation) return
+        const value = parseInt(totalDraft, 10)
+        if (!Number.isFinite(value) || value < 1) {
+            showAlert('Introduce un número de sesiones válido.')
+            return
+        }
+        if (value > 50) {
+            showAlert('El máximo permitido es 50 sesiones.')
+            return
+        }
+        // No se puede bajar por debajo de las sesiones ya creadas
+        const realCount = sessions.length
+        if (value < realCount) {
+            showAlert(`No puedes fijar ${value} sesiones: este cliente ya tiene ${realCount} sesión(es) agendada(s). Si necesitas reducirlo, elimina antes las sesiones sobrantes.`)
+            return
+        }
+        setSavingTotal(true)
+        try {
+            const { error } = await supabase
+                .from('evaluations')
+                .update({ total_sessions: value })
+                .eq('id', evaluation.id)
+            if (error) throw error
+            setEvaluation(prev => prev ? { ...prev, total_sessions: value } : prev)
+            // Si el cliente estaba finalizado y se amplían sesiones, se reactiva
+            if (client?.status === 'finalizado' && value > sessions.filter(s => s.completed).length) {
+                await supabase.from('clients').update({ status: 'activo' }).eq('id', client.id)
+                setClient(prev => prev ? { ...prev, status: 'activo' } : prev)
+            }
+            setIsEditingTotal(false)
+        } catch (err: any) {
+            showAlert('Error al actualizar el número de sesiones: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setSavingTotal(false)
         }
     }
 
@@ -752,14 +800,55 @@ export function ClientDetail() {
 
                             return (
                                 <div style={{ marginBottom: '2rem', padding: '1.25rem', backgroundColor: '#f9fafb', borderRadius: '0.75rem', border: '1px solid #e5e7eb' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', gap: '0.75rem', flexWrap: 'wrap' }}>
                                         <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
                                             {completedSessions} de {totalSessions || '?'} sesiones completadas
                                         </span>
-                                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                                            {totalSessions > 0 ? `${Math.round(progress)}%` : ''}
-                                        </span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                                                {totalSessions > 0 ? `${Math.round(progress)}%` : ''}
+                                            </span>
+                                            {canEditSessions && evaluation && !isEditingTotal && (
+                                                <button
+                                                    onClick={openEditTotal}
+                                                    title="Corregir o ampliar el nº de sesiones contratadas"
+                                                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.6rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                                                >
+                                                    <Pencil size={12} /> Editar nº de sesiones
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
+                                    {canEditSessions && evaluation && isEditingTotal && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                                            <label style={{ fontSize: '0.8rem', color: '#374151', fontWeight: 600 }}>Nº de sesiones contratadas:</label>
+                                            <input
+                                                type="number"
+                                                min={Math.max(1, sessions.length)}
+                                                max={50}
+                                                value={totalDraft}
+                                                onChange={e => setTotalDraft(e.target.value)}
+                                                style={{ width: '5rem', padding: '0.35rem 0.5rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
+                                            />
+                                            <button
+                                                onClick={submitTotalSessions}
+                                                disabled={savingTotal}
+                                                style={{ padding: '0.35rem 0.9rem', borderRadius: '0.375rem', border: 'none', background: '#4f46e5', color: 'white', fontWeight: 600, fontSize: '0.8rem', cursor: savingTotal ? 'wait' : 'pointer' }}
+                                            >
+                                                {savingTotal ? 'Guardando...' : 'Guardar'}
+                                            </button>
+                                            <button
+                                                onClick={() => setIsEditingTotal(false)}
+                                                disabled={savingTotal}
+                                                style={{ padding: '0.35rem 0.9rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
+                                            >
+                                                Cancelar
+                                            </button>
+                                            {sessions.length > 0 && (
+                                                <span style={{ fontSize: '0.72rem', color: '#9ca3af' }}>Mínimo {sessions.length} (sesiones ya agendadas)</span>
+                                            )}
+                                        </div>
+                                    )}
                                     <div style={{ width: '100%', height: '8px', backgroundColor: '#e5e7eb', borderRadius: '9999px', overflow: 'hidden' }}>
                                         <div style={{
                                             width: `${progress}%`,
@@ -776,14 +865,56 @@ export function ClientDetail() {
                         {/* Session Cards */}
                         {(() => {
                             const plannedTotal = evaluation?.total_sessions || 0
-                            const realMaxNumber = sessions.length ? Math.max(...sessions.map(s => s.session_number)) : 0
-                            const slotCount = Math.max(plannedTotal, realMaxNumber)
+                            // Renumeramos las sesiones reales de forma contigua (1, 2, 3...) para mostrar,
+                            // independientemente del session_number guardado en BD.
+                            const realSessions = [...sessions].sort((a, b) => a.session_number - b.session_number)
+                            const slotCount = Math.max(plannedTotal, realSessions.length)
                             const allSlots = Array.from({ length: slotCount }, (_, i) => {
-                                const existing = sessions.find(s => s.session_number === i + 1)
-                                return existing || { session_number: i + 1, date: undefined, completed: false, comments: null } as Partial<Session>
+                                const existing = realSessions[i]
+                                return existing
+                                    ? { ...existing, displayNumber: i + 1 }
+                                    : { session_number: null, displayNumber: i + 1, date: undefined, completed: false, comments: null } as any
                             })
 
-                            if (slotCount === 0) {
+                            // Estado de la evaluación inicial para la tarjeta de cabecera
+                            const evalCompleted = evaluation?.result === 'aprobada' || evaluation?.result === 'rechazada'
+                            const evalScheduled = !evalCompleted && !!evaluation?.scheduled_date
+
+                            const evalCard = evaluation ? (() => {
+                                let icon, text, bg, color, border, dotBg, dotColor
+                                if (evalCompleted) {
+                                    icon = <CheckCircle2 size={18} color="#15803d" />; text = 'Completada'
+                                    bg = '#16a34a'; color = '#ffffff'; border = '#86efac'; dotBg = '#dcfce7'; dotColor = '#166534'
+                                } else if (evalScheduled) {
+                                    icon = <Clock size={18} color="#2563eb" />; text = 'Agendada'
+                                    bg = '#dbeafe'; color = '#1e40af'; border = '#bfdbfe'; dotBg = '#dbeafe'; dotColor = '#1e40af'
+                                } else {
+                                    icon = <Circle size={18} color="#9ca3af" />; text = 'Pendiente'
+                                    bg = '#f3f4f6'; color = '#6b7280'; border = '#e5e7eb'; dotBg = '#f3f4f6'; dotColor = '#6b7280'
+                                }
+                                const evalDate = evaluation.scheduled_date || evaluation.created_at
+                                return (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.25rem', borderRadius: '0.5rem', border: `1px solid ${border}`, backgroundColor: evalCompleted ? '#f0fdf4' : '#faf5ff' }}>
+                                        <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', backgroundColor: dotBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                            <ClipboardCheck size={18} color={dotColor} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Sesión Evaluación Inicial</div>
+                                            {evalDate && (
+                                                <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '0.125rem' }}>
+                                                    {new Date(evalDate).toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' })}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                            {icon}
+                                            <span style={{ padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 600, backgroundColor: bg, color }}>{text}</span>
+                                        </div>
+                                    </div>
+                                )
+                            })() : null
+
+                            if (slotCount === 0 && !evalCard) {
                                 return (
                                     <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
                                         <Circle size={40} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
@@ -795,6 +926,7 @@ export function ClientDetail() {
 
                             return (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    {evalCard}
                                     {allSlots.map((session) => {
                                         const isCompleted = session.completed
                                         const isScheduled = !isCompleted && session.date
@@ -822,7 +954,7 @@ export function ClientDetail() {
 
                                         return (
                                             <div
-                                                key={session.session_number}
+                                                key={session.displayNumber}
                                                 style={{
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -847,13 +979,13 @@ export function ClientDetail() {
                                                     color: isCompleted ? '#166534' : isScheduled ? '#1e40af' : '#6b7280',
                                                     flexShrink: 0
                                                 }}>
-                                                    {session.session_number}
+                                                    {session.displayNumber}
                                                 </div>
 
                                                 {/* Info */}
                                                 <div style={{ flex: 1 }}>
                                                     <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>
-                                                        Sesión {session.session_number}
+                                                        Sesión {session.displayNumber}
                                                     </div>
                                                     {session.date && (
                                                         <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '0.125rem' }}>
@@ -1307,7 +1439,7 @@ export function ClientDetail() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {editingSession && (
                         <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
-                            <strong>Sesión {editingSession.session_number}</strong>
+                            <strong>Sesión {(editingSession as any).displayNumber ?? editingSession.session_number}</strong>
                         </p>
                     )}
                     <div>

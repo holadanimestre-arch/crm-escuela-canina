@@ -77,7 +77,8 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
             let sessionsQuery = supabase
                 .from('sessions')
                 .select('id, date, session_number, completed, comments, client_id, adiestrador_id, clients!inner(id, name, phone, dog_breed, city_id)')
-            
+                .neq('is_evaluation', true)
+
             if (cityId !== 'all') {
                 sessionsQuery = sessionsQuery.eq('clients.city_id', cityId)
             }
@@ -105,14 +106,20 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
             const mappedEvents: any[] = []
 
             if (sessionsData) {
+                // Renumeramos por cliente para mostrar 1, 2, 3... de forma contigua
+                const byClient: Record<string, any[]> = {}
+                sessionsData.forEach((s: any) => { (byClient[s.client_id] ||= []).push(s) })
+                Object.values(byClient).forEach(arr => arr.sort((a, b) => a.session_number - b.session_number))
+
                 sessionsData.forEach((s: any) => {
                     const start = new Date(s.date)
+                    const displayNumber = byClient[s.client_id].findIndex(x => x.id === s.id) + 1
                     mappedEvents.push({
                         id: s.id,
-                        title: `${s.clients?.name || 'Cliente'} (S${s.session_number})`,
+                        title: `${s.clients?.name || 'Cliente'} (S${displayNumber})`,
                         start: start,
                         end: new Date(start.getTime() + 60 * 60 * 1000), // Default 1h
-                        resource: { ...s, client: s.clients },
+                        resource: { ...s, displayNumber, client: s.clients },
                         type: 'session',
                         completed: s.completed
                     })
@@ -125,7 +132,7 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
                     const start = new Date(e.scheduled_date)
                     mappedEvents.push({
                         id: e.id,
-                        title: `EVAL: ${e.clients?.name || 'Cliente'}`,
+                        title: `Eval. Inicial: ${e.clients?.name || 'Cliente'}`,
                         start: start,
                         end: new Date(start.getTime() + 60 * 60 * 1000),
                         resource: { ...e, client: e.clients },
@@ -297,7 +304,7 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
                                 fontWeight: 700,
                                 textTransform: 'uppercase'
                             }}>
-                                {selectedEvent.type === 'session' ? `Sesión ${selectedEvent.resource.session_number}` : 'Evaluación'}
+                                {selectedEvent.type === 'session' ? `Sesión ${selectedEvent.resource.displayNumber ?? selectedEvent.resource.session_number}` : 'Sesión Evaluación Inicial'}
                             </div>
                         </div>
 

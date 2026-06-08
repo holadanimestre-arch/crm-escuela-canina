@@ -22,6 +22,7 @@ interface ActiveClient {
     id: string
     name: string
     dog_breed: string | null
+    total_sessions: number | null
     sessions: { session_number: number; completed: boolean }[]
 }
 
@@ -29,6 +30,8 @@ interface Session {
     id: string
     client_id: string
     session_number: number
+    displayNumber?: number
+    total?: number | null
     date: string
     completed: boolean
     comments: string | null
@@ -41,7 +44,7 @@ export function Sesiones() {
     const [activeClients, setActiveClients] = useState<ActiveClient[]>([])
     const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([])
     const [loading, setLoading] = useState(true)
-    const [selectedClient, setSelectedClient] = useState<{ id: string; name: string } | null>(null)
+    const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; totalSessions?: number | null } | null>(null)
     const [showModal, setShowModal] = useState(false)
     const [editingSession, setEditingSession] = useState<Session | null>(null)
     const [editDate, setEditDate] = useState('')
@@ -60,7 +63,7 @@ export function Sesiones() {
         // 1. Fetch active clients (status = 'activo')
         let clientsQuery = supabase
             .from('clients')
-            .select('id, name, dog_breed, sessions(session_number, completed, is_evaluation)')
+            .select('id, name, dog_breed, sessions(session_number, completed, is_evaluation), evaluations(total_sessions, result, created_at)')
             .eq('status', 'activo')
 
         if (cityId !== 'all') {
@@ -72,12 +75,19 @@ export function Sesiones() {
 
         if (clients) {
             // Transform to handle array relations if needed
-            const mapped = clients.map((c: any) => ({
-                id: c.id,
-                name: c.name,
-                dog_breed: c.dog_breed,
-                sessions: (Array.isArray(c.sessions) ? c.sessions : []).filter((s: any) => !s.is_evaluation)
-            }))
+            const mapped = clients.map((c: any) => {
+                const evals = Array.isArray(c.evaluations) ? c.evaluations : (c.evaluations ? [c.evaluations] : [])
+                const latestEval = [...evals]
+                    .filter((e: any) => e.total_sessions != null)
+                    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+                return {
+                    id: c.id,
+                    name: c.name,
+                    dog_breed: c.dog_breed,
+                    total_sessions: latestEval?.total_sessions ?? null,
+                    sessions: (Array.isArray(c.sessions) ? c.sessions : []).filter((s: any) => !s.is_evaluation)
+                }
+            })
             setActiveClients(mapped)
         }
 
@@ -87,6 +97,7 @@ export function Sesiones() {
             .from('sessions')
             .select('id, client_id, session_number, date, completed, comments, clients(name, city_id)')
             .gte('date', today)
+            .neq('is_evaluation', true)
 
         if (cityId !== 'all') {
             sessionsQuery = sessionsQuery.filter('clients.city_id', 'eq', cityId)
@@ -97,9 +108,34 @@ export function Sesiones() {
             .limit(10)
 
         if (sessions) {
+            // Renumeramos por cliente (1, 2, 3...) trayendo todas sus sesiones reales
+            const clientIds = [...new Set(sessions.map((s: any) => s.client_id))]
+            const { data: allForClients } = await supabase
+                .from('sessions')
+                .select('id, client_id, session_number')
+                .in('client_id', clientIds)
+                .neq('is_evaluation', true)
+            const byClient: Record<string, any[]> = {}
+            ;(allForClients || []).forEach((s: any) => { (byClient[s.client_id] ||= []).push(s) })
+            Object.values(byClient).forEach(arr => arr.sort((a, b) => a.session_number - b.session_number))
+
+            // Nº de sesiones contratadas por cliente (para mostrar "X/N")
+            const { data: evalRows } = await supabase
+                .from('evaluations')
+                .select('client_id, total_sessions, created_at')
+                .in('client_id', clientIds)
+                .not('total_sessions', 'is', null)
+                .order('created_at', { ascending: false })
+            const totalByClient: Record<string, number> = {}
+            ;(evalRows || []).forEach((e: any) => {
+                if (totalByClient[e.client_id] == null) totalByClient[e.client_id] = e.total_sessions
+            })
+
             const mappedSessions = sessions.map((s: any) => ({
                 ...s,
-                clients: Array.isArray(s.clients) ? s.clients[0] : s.clients
+                clients: Array.isArray(s.clients) ? s.clients[0] : s.clients,
+                displayNumber: ((byClient[s.client_id] || []).findIndex(x => x.id === s.id) + 1) || s.session_number,
+                total: totalByClient[s.client_id] ?? null
             }))
             setUpcomingSessions(mappedSessions)
         }
@@ -107,8 +143,8 @@ export function Sesiones() {
         setLoading(false)
     }
 
-    const handleScheduleClick = (client: { id: string; name: string }) => {
-        setSelectedClient(client)
+    const handleScheduleClick = (client: { id: string; name: string; total_sessions?: number | null }) => {
+        setSelectedClient({ id: client.id, name: client.name, totalSessions: client.total_sessions ?? null })
         setShowModal(true)
     }
 
@@ -146,12 +182,23 @@ export function Sesiones() {
                 .update({ completed: true })
                 .eq('id', session.id)
 
-            // Logic to check if it's the 8th session and update client status
-            if (session.session_number === 8) {
-                await supabase
-                    .from('clients')
-                    .update({ status: 'finalizado' })
-                    .eq('id', session.client_id)
+            // Si se han completado todas las sesiones contratadas, finalizar al cliente
+            const total = session.total
+                ?? activeClients.find(c => c.id === session.client_id)?.total_sessions
+                ?? null
+            if (total) {
+                const { count } = await supabase
+                    .from('sessions')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('client_id', session.client_id)
+                    .eq('completed', true)
+                    .neq('is_evaluation', true)
+                if ((count ?? 0) >= total) {
+                    await supabase
+                        .from('clients')
+                        .update({ status: 'finalizado' })
+                        .eq('id', session.client_id)
+                }
             }
 
             fetchData()
@@ -222,7 +269,7 @@ export function Sesiones() {
                                 <div>
                                     <div style={{ fontWeight: 600, fontSize: '1rem' }}>{session.clients?.name}</div>
                                     <div style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                                        Sesión {session.session_number}/8 • {format(new Date(session.date), "EEEE d 'de' MMMM, HH:mm", { locale: es })}
+                                        Sesión {session.displayNumber ?? session.session_number}/{session.total ?? 8} • {format(new Date(session.date), "EEEE d 'de' MMMM, HH:mm", { locale: es })}
                                     </div>
                                     {session.comments && (
                                         <div style={{ fontSize: '0.875rem', color: '#4b5563', marginTop: '0.5rem', fontStyle: 'italic' }}>
@@ -287,6 +334,7 @@ export function Sesiones() {
                             <tbody>
                                 {activeClients.map(client => {
                                     const completedCount = client.sessions.filter(s => s.completed).length
+                                    const clientTotal = client.total_sessions || 8
                                     return (
                                         <tr key={client.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                                             <td style={{ padding: '1rem 0.75rem', fontWeight: 500 }}>{client.name}</td>
@@ -295,11 +343,11 @@ export function Sesiones() {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                     <div style={{ width: '100px', height: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px', overflow: 'hidden' }}>
                                                         <div style={{
-                                                            width: `${(completedCount / 8) * 100}%`,
+                                                            width: `${Math.min(100, (completedCount / clientTotal) * 100)}%`,
                                                             height: '100%', backgroundColor: '#16a34a', borderRadius: '4px'
                                                         }} />
                                                     </div>
-                                                    <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>{completedCount}/8</span>
+                                                    <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>{completedCount}/{clientTotal}</span>
                                                 </div>
                                             </td>
                                             <td style={{ padding: '1rem 0.75rem', textAlign: 'right' }}>
@@ -335,7 +383,7 @@ export function Sesiones() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {editingSession && (
                         <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
-                            <strong>{editingSession.clients?.name}</strong> · Sesión {editingSession.session_number}/8
+                            <strong>{editingSession.clients?.name}</strong> · Sesión {editingSession.displayNumber ?? editingSession.session_number}/{editingSession.total ?? 8}
                         </p>
                     )}
                     <div>
