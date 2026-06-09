@@ -94,16 +94,36 @@ serve(async (req) => {
   let cityName: string | null = null
 
   if (citySlug) {
-    const { data: city, error: cityErr } = await supabase
+    // 1) Coincidencia exacta por slug (p.ej. la landing envía "madrid").
+    const { data: exact, error: cityErr } = await supabase
       .from('cities')
       .select('id, name')
       .eq('slug', citySlug)
       .maybeSingle()
 
     if (cityErr) return json(500, { error: 'City lookup failed', detail: cityErr.message })
-    if (city) {
-      cityId = city.id
-      cityName = city.name
+
+    if (exact) {
+      cityId = exact.id
+      cityName = exact.name
+    } else {
+      // 2) Coincidencia flexible: el texto puede ser el TÍTULO del formulario de Meta
+      //    (p.ej. "Escuela Canina Madrid"). Buscamos la ciudad cuyo slug/nombre
+      //    aparezca dentro del texto normalizado, prefiriendo la coincidencia más larga.
+      const { data: cities } = await supabase.from('cities').select('id, name, slug')
+      if (cities && cities.length) {
+        const candidates = cities
+          .filter((c) => {
+            const s = normaliseSlug(String(c.slug ?? ''))
+            const n = normaliseSlug(String(c.name ?? ''))
+            return (s && citySlug.includes(s)) || (n && citySlug.includes(n))
+          })
+          .sort((a, b) => String(b.name ?? '').length - String(a.name ?? '').length)
+        if (candidates[0]) {
+          cityId = candidates[0].id
+          cityName = candidates[0].name
+        }
+      }
     }
   }
 
