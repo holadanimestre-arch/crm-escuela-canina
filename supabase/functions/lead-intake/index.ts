@@ -20,6 +20,37 @@ const normaliseSlug = (raw: string) =>
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]/g, '')
 
+// Convierte las respuestas del formulario (preguntas) en texto legible para `notes`.
+// Acepta: un string ya formateado, un objeto { pregunta: respuesta },
+// o un array de { question/name, answer/value/values }.
+const formatAnswers = (raw: unknown): string => {
+  if (!raw) return ''
+  if (typeof raw === 'string') return raw.trim()
+
+  const lines: string[] = []
+  const pushLine = (q: unknown, a: unknown) => {
+    const question = String(q ?? '').trim()
+    const answer = Array.isArray(a) ? a.join(', ') : String(a ?? '').trim()
+    if (!question && !answer) return
+    lines.push(question ? `${question}: ${answer}` : answer)
+  }
+
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (item && typeof item === 'object') {
+        const o = item as Record<string, unknown>
+        pushLine(o.question ?? o.name ?? o.key, o.answer ?? o.value ?? o.values)
+      } else {
+        pushLine('', item)
+      }
+    }
+  } else if (typeof raw === 'object') {
+    for (const [q, a] of Object.entries(raw as Record<string, unknown>)) pushLine(q, a)
+  }
+
+  return lines.join('\n')
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json(405, { error: 'Method not allowed' })
@@ -42,6 +73,14 @@ serve(async (req) => {
   const phone = String(payload.phone ?? '').trim()
   const citySlugRaw = String(payload.city_slug ?? '').trim()
   const citySlug = normaliseSlug(citySlugRaw)
+  const sourceOverride = String(payload.source ?? '').trim()
+
+  // Respuestas a las preguntas del formulario: se pueden enviar como `notes`
+  // (string) y/o `answers` (objeto o array pregunta/respuesta).
+  const notesText = [formatAnswers(payload.notes), formatAnswers(payload.answers)]
+    .filter(Boolean)
+    .join('\n')
+    .trim()
 
   if (!name) return json(400, { error: 'Missing name' })
   if (!email && !phone) return json(400, { error: 'Missing email or phone' })
@@ -68,7 +107,7 @@ serve(async (req) => {
     }
   }
 
-  const sourceTag = cityId ? `landing:${citySlug}` : 'landing:general'
+  const sourceTag = sourceOverride || (cityId ? `landing:${citySlug}` : 'landing:general')
   const externalSourceId = `${sourceTag}:${email || 'noemail'}:${phone || 'nophone'}`
 
   const { data: inserted, error: insertErr } = await supabase
@@ -81,6 +120,7 @@ serve(async (req) => {
       status: 'nuevo',
       source: sourceTag,
       external_source_id: externalSourceId,
+      notes: notesText || null,
     })
     .select('id')
     .single()
