@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { finalizeClientIfSessionsComplete } from '../lib/sessions'
 import { useAuth } from '../hooks/useAuth'
 import { useFilters } from '../context/FilterContext'
 import { useDialog } from '../context/DialogContext'
@@ -193,10 +194,15 @@ export function AgendaView({ onBack }: { onBack?: () => void }) {
 
             if (error) throw error
 
+            // Si con esta sesión se completan todas las contratadas, finalizar el cliente
+            const finalized = await finalizeClientIfSessionsComplete(selectedEvent.resource?.client_id)
+
             // Re-fetch to update calendar
             fetchAgenda()
             setSelectedEvent(null)
-            showAlert('Sesión completada correctamente')
+            showAlert(finalized
+                ? '¡Todas las sesiones completadas! El cliente se ha marcado como finalizado.'
+                : 'Sesión completada correctamente')
         } catch (err: any) {
             showAlert('Error: ' + err.message)
         }

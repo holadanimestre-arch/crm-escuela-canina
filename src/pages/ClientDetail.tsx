@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { finalizeClientIfSessionsComplete } from '../lib/sessions'
 import { Database } from '../types/database.types'
 import { generateInvoicePDF } from '../utils/invoiceGenerator'
 import { ArrowLeft, Mail, Phone, MapPin, Dog, ClipboardCheck, CalendarClock, CheckCircle2, Clock, Circle, FileText, Pencil, Calendar as CalendarIcon, Paperclip, X } from 'lucide-react'
@@ -221,6 +222,13 @@ export function ClientDetail() {
                 .eq('id', session.id)
             if (error) throw error
             setSessions(prev => prev.map(s => s.id === session.id ? { ...s, completed: true } : s))
+
+            // Si con esta sesión completa todas las contratadas, finalizar el cliente
+            const finalized = await finalizeClientIfSessionsComplete(client?.id)
+            if (finalized) {
+                setClient(prev => prev ? ({ ...(prev as any), status: 'finalizado' }) as Client : prev)
+                showAlert('¡Todas las sesiones completadas! El cliente se ha marcado como finalizado.')
+            }
         } catch (err: any) {
             showAlert('Error al marcar la sesión: ' + (err.message || 'Error desconocido'))
         }
@@ -1035,7 +1043,7 @@ export function ClientDetail() {
                                                             <Pencil size={12} /> Editar fecha
                                                         </button>
                                                     )}
-                                                    {profile?.role === 'admin' && isScheduled && session.id && (
+                                                    {canEditSessions && isScheduled && session.id && (
                                                         <button
                                                             onClick={() => markSessionCompleted(session as Session)}
                                                             title="Marcar como completada"

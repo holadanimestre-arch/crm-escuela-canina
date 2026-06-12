@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { finalizeClientIfSessionsComplete } from '../lib/sessions'
 import { Plus, Calendar, CheckCircle, Clock, Pencil } from 'lucide-react'
 import { SessionModal } from './Sesiones/SessionModal'
 import { Modal } from '../components/Modal'
@@ -183,22 +184,9 @@ export function Sesiones() {
                 .eq('id', session.id)
 
             // Si se han completado todas las sesiones contratadas, finalizar al cliente
-            const total = session.total
-                ?? activeClients.find(c => c.id === session.client_id)?.total_sessions
-                ?? null
-            if (total) {
-                const { count } = await supabase
-                    .from('sessions')
-                    .select('id', { count: 'exact', head: true })
-                    .eq('client_id', session.client_id)
-                    .eq('completed', true)
-                    .neq('is_evaluation', true)
-                if ((count ?? 0) >= total) {
-                    await supabase
-                        .from('clients')
-                        .update({ status: 'finalizado' })
-                        .eq('id', session.client_id)
-                }
+            const finalized = await finalizeClientIfSessionsComplete(session.client_id)
+            if (finalized) {
+                showAlert('¡Todas las sesiones completadas! El cliente se ha marcado como finalizado.')
             }
 
             fetchData()
