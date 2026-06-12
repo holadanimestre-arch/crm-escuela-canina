@@ -193,30 +193,56 @@ export function Usuarios() {
         setSubmitting(true)
 
         try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({
-                    role,
-                    assigned_city_id: role === 'adiestrador' && assignedCityIds.length > 0 ? assignedCityIds[0] : null,
-                    full_name: fullName,
-                    phone: phone || null,
-                    base_address: role === 'adiestrador' ? baseAddress : null,
-                    base_lat: role === 'adiestrador' ? baseLat : null,
-                    base_lng: role === 'adiestrador' ? baseLng : null,
-                    coverage_polygon_green: role === 'adiestrador' ? polygonGreen : null,
-                    coverage_polygon_yellow: role === 'adiestrador' ? polygonYellow : null
-                })
-                .eq('id', editingUser.id)
-
-            // Sync junction table
-            await supabase.from('adiestrador_cities').delete().eq('profile_id', editingUser.id)
-            if (role === 'adiestrador' && assignedCityIds.length > 0) {
-                await supabase.from('adiestrador_cities').insert(
-                    assignedCityIds.map(cId => ({ profile_id: editingUser.id, city_id: cId }))
-                )
+            const updatePayload: Record<string, any> = {
+                role,
+                full_name: fullName,
+                phone: phone || null,
+                base_address: role === 'adiestrador' ? baseAddress : null,
+                base_lat: role === 'adiestrador' ? baseLat : null,
+                base_lng: role === 'adiestrador' ? baseLng : null,
+                coverage_polygon_green: role === 'adiestrador' ? polygonGreen : null,
+                coverage_polygon_yellow: role === 'adiestrador' ? polygonYellow : null
+            }
+            // assigned_city_id: solo se modifica si deja de ser adiestrador o si hay
+            // selección. Si es adiestrador y no hay selección, se preserva (no se pisa).
+            if (role !== 'adiestrador') {
+                updatePayload.assigned_city_id = null
+            } else if (assignedCityIds.length > 0) {
+                updatePayload.assigned_city_id = assignedCityIds[0]
             }
 
+            const { error } = await supabase
+                .from('profiles')
+                .update(updatePayload)
+                .eq('id', editingUser.id)
             if (error) throw error
+
+            // Sincronizar ciudades (tabla adiestrador_cities) de forma segura:
+            // - Diff (solo se añade/quita lo que cambia), nunca un borrado total.
+            // - SALVAGUARDA: si es adiestrador y no hay ninguna ciudad seleccionada,
+            //   NO se toca nada (evita perder las ciudades por un guardado sin selección).
+            // - Solo se limpian todas si el usuario deja de ser adiestrador.
+            if (role === 'adiestrador') {
+                if (assignedCityIds.length > 0) {
+                    const { data: current } = await supabase
+                        .from('adiestrador_cities')
+                        .select('city_id')
+                        .eq('profile_id', editingUser.id)
+                    const currentIds = (current || []).map((r: any) => r.city_id)
+                    const toRemove = currentIds.filter((id: string) => !assignedCityIds.includes(id))
+                    const toAdd = assignedCityIds.filter((id: string) => !currentIds.includes(id))
+                    if (toRemove.length > 0) {
+                        await supabase.from('adiestrador_cities')
+                            .delete().eq('profile_id', editingUser.id).in('city_id', toRemove)
+                    }
+                    if (toAdd.length > 0) {
+                        await supabase.from('adiestrador_cities')
+                            .insert(toAdd.map((cId: string) => ({ profile_id: editingUser.id, city_id: cId })))
+                    }
+                }
+            } else {
+                await supabase.from('adiestrador_cities').delete().eq('profile_id', editingUser.id)
+            }
 
             // Cambio de contraseña opcional
             if (password) {
