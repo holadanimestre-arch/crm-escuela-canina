@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { finalizeClientIfSessionsComplete } from '../../lib/sessions'
 import { useAuth } from '../../hooks/useAuth'
 import { useFilters } from '../../context/FilterContext'
 import { useDialog } from '../../context/DialogContext'
-import { Phone, PhoneOff, ClipboardCheck, CalendarClock, ArrowLeft, Search, MapPin, User, Edit, Calendar, Clock } from 'lucide-react'
+import { Phone, PhoneOff, ClipboardCheck, CalendarClock, ArrowLeft, Search, MapPin, User, Edit, Calendar, Clock, CheckCircle } from 'lucide-react'
 import { Modal } from '../../components/Modal'
 
 const todayLocalISO = () => {
@@ -25,9 +26,11 @@ const toLocalTimeInput = (iso: string) => {
 export default function AdiestradorDashboard() {
     const [counts, setCounts] = useState({ llamadas: 0, resultado: 0, sesiones: 0 })
     const [activeView, setActiveView] = useState<'home' | 'llamadas' | 'resultado' | 'sesiones' | 'modificar'>('home')
+    const [upcoming, setUpcoming] = useState<any[]>([])
+    const [completingId, setCompletingId] = useState<string | null>(null)
     const { profile } = useAuth()
     const { cityId } = useFilters()
-    const { showAlert } = useDialog()
+    const { showAlert, showConfirm } = useDialog()
 
     // Scroll to top when view changes
     useEffect(() => {
@@ -35,8 +38,42 @@ export default function AdiestradorDashboard() {
     }, [activeView])
 
     useEffect(() => {
-        if (profile) fetchCounts()
+        if (profile) { fetchCounts(); fetchUpcoming() }
     }, [profile, cityId])
+
+    async function fetchUpcoming() {
+        if (!profile) return
+        // Sesiones pendientes (sin completar) del adiestrador, las más próximas primero.
+        // Incluye atrasadas para que pueda marcarlas si se le pasó alguna.
+        const { data } = await supabase
+            .from('sessions')
+            .select('id, date, session_number, client_id, completed, clients(name)')
+            .eq('adiestrador_id', profile.id)
+            .eq('completed', false)
+            .neq('is_evaluation', true)
+            .order('date', { ascending: true })
+            .limit(8)
+        setUpcoming((data || []).map((s: any) => ({ ...s, clients: Array.isArray(s.clients) ? s.clients[0] : s.clients })))
+    }
+
+    async function completeSessionQuick(s: any) {
+        const fecha = s.date ? new Date(s.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'long' }) : ''
+        if (!await showConfirm(`¿Marcar como completada la sesión con ${s.clients?.name || 'el cliente'}${fecha ? ` del ${fecha}` : ''}?`)) return
+        setCompletingId(s.id)
+        try {
+            const { error } = await supabase.from('sessions').update({ completed: true }).eq('id', s.id)
+            if (error) throw error
+            const finalized = await finalizeClientIfSessionsComplete(s.client_id)
+            await Promise.all([fetchUpcoming(), fetchCounts()])
+            showAlert(finalized
+                ? '¡Sesión completada! Era la última: el cliente se ha marcado como finalizado.'
+                : 'Sesión marcada como completada ✅')
+        } catch (err: any) {
+            showAlert('Error al marcar la sesión: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setCompletingId(null)
+        }
+    }
 
     async function fetchCounts() {
         if (!profile) return
@@ -126,6 +163,36 @@ export default function AdiestradorDashboard() {
                     color="#8b5cf6"
                 />
             </div>
+
+            {upcoming.length > 0 && (
+                <div style={{ marginTop: '2rem', backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem' }}>
+                    <h2 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <CheckCircle size={20} /> Marcar Sesión Completada
+                    </h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        {upcoming.map(s => {
+                            const d = s.date ? new Date(s.date) : null
+                            return (
+                                <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', padding: '0.75rem 1rem', border: '1px solid #f3f4f6', borderRadius: '0.5rem', flexWrap: 'wrap' }}>
+                                    <div>
+                                        <div style={{ fontWeight: 600 }}>{s.clients?.name || 'Cliente'}</div>
+                                        <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                                            {d ? `${d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: 'long' })} · ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : 'Sin fecha'}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => completeSessionQuick(s)}
+                                        disabled={completingId === s.id}
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1rem', borderRadius: '0.5rem', border: 'none', backgroundColor: '#16a34a', color: 'white', fontWeight: 700, cursor: completingId === s.id ? 'default' : 'pointer', opacity: completingId === s.id ? 0.6 : 1, whiteSpace: 'nowrap' }}
+                                    >
+                                        <CheckCircle size={18} /> {completingId === s.id ? 'Guardando...' : 'Completada'}
+                                    </button>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
 
             <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
                 <button
